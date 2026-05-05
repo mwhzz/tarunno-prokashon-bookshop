@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block page_title %}খরচের খাত{% endblock %}
+
+{% block extra_css %}
+<style>
+.cat-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.cat-shell {
+  display: grid;
+  grid-template-columns: 340px minmax(0,1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* ─── FORM PANEL ─── */
+.form-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  position: sticky;
+  top: 16px;
+}
+
+.fp-header {
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  padding: 18px 20px;
+}
+
+.fp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 800; color: #fff;
+}
+
+.fp-sub { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 4px; }
+
+.fp-body { padding: 20px; }
+
+.fp-field { margin-bottom: 16px; }
+
+.fp-field label {
+  display: block; font-size: 12px; font-weight: 800;
+  color: var(--text2); margin-bottom: 6px; letter-spacing:.02em;
+}
+
+.fp-field input,
+.fp-field textarea {
+  width: 100%; min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 14px; color: var(--text);
+  outline: none; transition: all .18s;
+}
+
+.fp-field input:focus,
+.fp-field textarea:focus {
+  border-color: var(--accent); background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.fp-field textarea { min-height: 80px; resize: vertical; }
+
+.fp-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+.fp-save {
+  flex: 1; min-height: 46px;
+  border-radius: 99px; background: var(--accent);
+  color: #fff; border: none; cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px; font-weight: 800;
+  box-shadow: 0 6px 18px rgba(27,122,85,.28);
+  transition: all .18s;
+}
+
+.fp-save:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+.fp-cancel {
+  padding: 10px 18px; border-radius: 99px;
+  background: var(--surface); color: var(--text2);
+  border: 1.5px solid var(--border-hard);
+  cursor: pointer; font-family: 'Hind Siliguri', sans-serif;
+  font-size: 14px; font-weight: 700; transition: all .18s; display: none;
+}
+
+.fp-cancel:hover { background: var(--g100); border-color: var(--accent); color: var(--accent); }
+
+/* editing state */
+.form-panel.editing .fp-header { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+
+/* ─── LIST PANEL ─── */
+.list-panel {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+
+.lp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+}
+
+.lp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 800; color: var(--g900);
+}
+
+/* category rows */
+.cat-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-bottom: 1px solid #f0f7f3;
+  transition: background .12s;
+}
+
+.cat-row:last-child { border-bottom: none; }
+.cat-row:hover { background: var(--g100); }
+
+.cat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--g100); display: grid; place-items: center;
+  font-size: 18px; flex-shrink: 0;
+}
+
+.cat-info { flex: 1; min-width: 0; }
+.cat-info strong { display: block; font-size: 14px; font-weight: 800; color: var(--g900); }
+.cat-info small  { font-size: 12px; color: var(--muted); }
+
+.cat-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.act-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  cursor: pointer; display: grid; place-items: center;
+  font-size: 14px; transition: all .15s; color: var(--text2);
+}
+
+.act-btn:hover { background: var(--g100); border-color: var(--accent); }
+.act-btn.del:hover { background: #fee2e2; border-color: var(--danger); }
+
+@media (max-width: 860px) {
+  .cat-shell { grid-template-columns: 1fr; }
+  .form-panel { position: static; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cat-page">
+  <div class="cat-shell">
+
+    <!-- ─── FORM ─── -->
+    <div class="form-panel" id="form-panel">
+      <div class="fp-header">
+        <div class="fp-title" id="fp-title">➕ নতুন খাত তৈরি করুন</div>
+        <div class="fp-sub">খরচ ট্র্যাক করার জন্য খাত দরকার</div>
+      </div>
+      <div class="fp-body">
+        <input type="hidden" id="cat-id">
+
+        <div class="fp-field">
+          <label>খাতের নাম <span style="color:var(--danger)">*</span></label>
+          <input id="cat-name" placeholder="যেমন: দোকান ভাড়া, বেতন, বিদ্যুৎ বিল...">
+        </div>
+
+        <div class="fp-field">
+          <label>বিবরণ (ঐচ্ছিক)</label>
+          <textarea id="cat-desc" placeholder="এই খাতে কী ধরনের খরচ থাকবে..."></textarea>
+        </div>
+
+        <div class="fp-actions">
+          <button class="fp-save" id="fp-save" onclick="saveCategory()">✅ সেভ করুন</button>
+          <button class="fp-cancel" id="fp-cancel" onclick="resetForm()">বাতিল</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── LIST ─── -->
+    <div class="list-panel">
+      <div class="lp-header">
+        <div class="lp-title">📋 খরচের খাতসমূহ</div>
+        <span class="badge badge-gray" id="cat-count">লোড হচ্ছে...</span>
+      </div>
+      <div id="cat-list">
+        <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const catIcons = ['🏠','💡','🚌','📦','🧑‍💼','📞','🖥️','🔧','🍽️','📝','💰','🏥','🎓','🚗','🌐'];
+
+function catIcon(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xff;
+  return catIcons[h % catIcons.length];
+}
+
+async function fetchCats() {
+  const list  = document.getElementById('cat-list');
+  const count = document.getElementById('cat-count');
+  try {
+    const data = await api('/expenses/categories/');
+    const cats = data.results || [];
+    count.textContent = `${cats.length}টি খাত`;
+
+    if (!cats.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:50px 20px;">
+          <div class="empty-icon">📂</div>
+          <h3>কোনো খাত নেই</h3>
+          <p>বাম দিকের ফর্ম থেকে প্রথম খাত তৈরি করুন।</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = cats.map(c => `
+      <div class="cat-row">
+        <div class="cat-icon">${catIcon(c.name)}</div>
+        <div class="cat-info">
+          <strong>${c.name}</strong>
+          <small>${c.description || 'কোনো বিবরণ নেই'}</small>
+        </div>
+        <div class="cat-actions">
+          <button class="act-btn" onclick='editCat(${JSON.stringify(c)})' title="এডিট">✏️</button>
+          <button class="act-btn del" onclick="deleteCat(${c.id})" title="ডিলিট">🗑️</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state" style="padding:40px"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+    toast('খাত লোড করা যায়নি।','error');
+  }
+}
+
+async function saveCategory() {
+  const id   = document.getElementById('cat-id').value;
+  const name = document.getElementById('cat-name').value.trim();
+  const desc = document.getElementById('cat-desc').value;
+
+  if (!name) { shake('cat-name'); toast('খাতের নাম দিতে হবে!','error'); return; }
+
+  const btn = document.getElementById('fp-save');
+  btn.disabled = true; btn.textContent = '⏳...';
+
+  try {
+    const method = id ? 'PUT' : 'POST';
+    const path   = id ? `/expenses/categories/${id}/` : '/expenses/categories/';
+    await api(path, method, { name, description: desc });
+    toast(id ? 'খাত আপডেট হয়েছে ✓' : 'নতুন খাত যোগ হয়েছে ✓');
+    resetForm();
+    fetchCats();
+  } catch(e) {
+    toast('সেভ হয়নি। হয়তো এই নামে একটি খাত আছে।','error');
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ সেভ করুন';
+  }
+}
+
+function editCat(c) {
+  document.getElementById('cat-id').value   = c.id;
+  document.getElementById('cat-name').value = c.name;
+  document.getElementById('cat-desc').value = c.description || '';
+
+  document.getElementById('fp-title').textContent    = `✏️ খাত এডিট করুন`;
+  document.getElementById('fp-save').textContent     = '✅ আপডেট করুন';
+  document.getElementById('fp-cancel').style.display = 'inline-flex';
+  document.getElementById('form-panel').classList.add('editing');
+  document.getElementById('cat-name').focus();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function resetForm() {
+  document.getElementById('cat-id').value   = '';
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-desc').value = '';
+
+  document.getElementById('fp-title').textContent    = '➕ নতুন খাত তৈরি করুন';
+  document.getElementById('fp-save').textContent     = '✅ সেভ করুন';
+  document.getElementById('fp-cancel').style.display = 'none';
+  document.getElementById('form-panel').classList.remove('editing');
+}
+
+async function deleteCat(id) {
+  if (!confirm('এই খাতটি ডিলিট করলে এর সাথে যুক্ত সব খরচও মুছে যেতে পারে।\nনিশ্চিত?')) return;
+  try {
+    await api(`/expenses/categories/${id}/`, 'DELETE');
+    toast('খাত ডিলিট হয়েছে।');
+    fetchCats();
+  } catch(e) { toast('ডিলিট করা যায়নি।','error'); }
+}
+
+function shake(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor='var(--danger)'; el.style.animation='none';
+  void el.offsetWidth; el.style.animation='shake .3s ease'; el.focus();
+  setTimeout(()=>{ el.style.borderColor=''; el.style.animation=''; },1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent=`@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', fetchCats);
+</script>
+{% endblock %}

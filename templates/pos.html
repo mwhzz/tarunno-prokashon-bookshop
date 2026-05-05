@@ -1,0 +1,1263 @@
+{% extends 'base.html' %}
+{% block page_title %}বিক্রয় (POS){% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── POS SHELL ─── */
+.pos-shell {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 400px;
+  gap: 16px;
+  height: calc(100vh - 100px);
+  animation: fadeUp .3s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── LEFT: Book picker ─── */
+.books-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+/* search */
+.pos-search {
+  position: relative;
+}
+
+.pos-search input {
+  width: 100%;
+  height: 52px;
+  padding: 0 18px 0 50px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: 0 2px 12px rgba(13,51,38,.06);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.pos-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+  outline: none;
+}
+
+.pos-search-icon {
+  position: absolute;
+  left: 17px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* stats bar */
+.pos-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.psb-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.psb-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: var(--g100);
+  display: grid; place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.psb-info strong {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700;
+  color: var(--g900);
+  line-height: 1;
+}
+
+.psb-info span { font-size: 11px; color: var(--muted); font-weight: 700; }
+
+/* book grid */
+.books-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px,1fr));
+  gap: 12px;
+  padding-right: 4px;
+}
+
+/* book card */
+.book-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all .18s;
+  box-shadow: 0 2px 8px rgba(13,51,38,.04);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.book-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(27,122,85,.15);
+  transform: translateY(-3px);
+}
+
+.book-card:active { transform: scale(.97); }
+
+.book-card.out {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.book-card.out::after {
+  content: 'স্টক নেই';
+  position: absolute;
+  inset: 0;
+  background: rgba(229,62,62,.08);
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--danger);
+  pointer-events: none;
+}
+
+.book-cover {
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--g100);
+  border: 1px solid var(--border);
+}
+
+.book-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--g900);
+  line-height: 1.35;
+  height: 33px;
+  overflow: hidden;
+}
+
+.book-author {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.book-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.book-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.book-stock-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--g100);
+  color: var(--g700);
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+/* add-to-cart overlay on hover */
+.book-card .add-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(27,122,85,.0);
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: all .18s;
+  font-size: 28px;
+}
+
+.book-card:hover .add-overlay {
+  background: rgba(27,122,85,.07);
+  opacity: 1;
+}
+
+/* ─── RIGHT: Receipt / cart panel ─── */
+.receipt-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0;
+  box-shadow: 0 4px 24px rgba(13,51,38,.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Receipt header */
+.receipt-header {
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  padding: 18px 20px 16px;
+  flex-shrink: 0;
+}
+
+.rh-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.rh-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.rh-sub { font-size: 11px; color: rgba(255,255,255,.55); }
+
+.clear-btn {
+  background: rgba(229,62,62,.2);
+  border: 1px solid rgba(229,62,62,.3);
+  border-radius: 99px;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 12px;
+  transition: background .15s;
+}
+.clear-btn:hover { background: rgba(229,62,62,.35); }
+
+/* Cart items */
+.cart-scroll {
+  flex-shrink: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.cart-empty {
+  text-align: center;
+  padding: 28px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cart-empty-icon { font-size: 36px; margin-bottom: 8px; opacity: .5; }
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  margin-bottom: 7px;
+  transition: background .15s;
+}
+
+.cart-item:last-child { margin-bottom: 0; }
+.cart-item:hover { background: var(--g100); }
+
+.ci-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.ci-name strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--g900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ci-name small { font-size: 11px; color: var(--muted); }
+
+.ci-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.qb {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text2);
+  display: grid; place-items: center;
+  transition: all .14s;
+}
+.qb:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.ci-count {
+  min-width: 22px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--g900);
+}
+
+.ci-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 54px;
+  text-align: right;
+}
+
+/* Billing form */
+.billing-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Step labels */
+.step-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 14px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.step-label:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+
+.step-num {
+  width: 20px; height: 20px;
+  background: var(--g100);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 800;
+  color: var(--g700);
+  flex-shrink: 0;
+}
+
+/* form fields in billing */
+.bf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bf-row.single { grid-template-columns: 1fr; }
+
+.bf-field { display: flex; flex-direction: column; gap: 4px; }
+
+.bf-field label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text2);
+  letter-spacing: .02em;
+}
+
+.bf-field input,
+.bf-field select {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-size: 13px;
+  font-family: 'Hind Siliguri', sans-serif;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+}
+
+.bf-field input:focus,
+.bf-field select:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(27,122,85,.1);
+}
+
+/* charges box */
+.charges-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.charges-box .bf-row { margin-bottom: 0; gap: 8px; }
+
+/* wholesale customer dropdown */
+.ws-wrap { position: relative; margin-bottom: 8px; }
+
+#wholesale-results {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(13,51,38,.12);
+  display: none;
+}
+
+.wsr-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.wsr-item:last-child { border-bottom: none; }
+.wsr-item:hover { background: var(--g100); }
+.wsr-item strong { display: block; font-size: 13px; color: var(--g900); }
+.wsr-item small  { font-size: 11px; color: var(--muted); }
+
+/* Summary totals */
+.totals-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 600;
+  border-bottom: 1px solid #eef4f0;
+}
+
+.total-line:last-child { border-bottom: none; }
+
+.total-line span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.total-line.big {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--g900);
+  padding: 8px 0;
+  border-top: 2px solid var(--border);
+  margin-top: 4px;
+}
+
+.total-line.due-line span:last-child { color: var(--danger); }
+
+.total-line.grand {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--danger);
+}
+
+/* paid amount input — big & obvious */
+.paid-wrap {
+  background: #f0fbf4;
+  border: 2px solid var(--g400);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+
+.paid-wrap label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--g700);
+  margin-bottom: 6px;
+  display: block;
+  letter-spacing: .04em;
+}
+
+.paid-wrap input {
+  width: 100%;
+  height: 48px;
+  background: #fff !important;
+  border: 2px solid var(--g300) !important;
+  border-radius: 10px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: var(--g800) !important;
+  text-align: right;
+  padding: 0 14px !important;
+}
+
+.paid-wrap input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.12) !important;
+  outline: none;
+}
+
+/* CTA button */
+.cta-btn {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+  box-shadow: 0 8px 28px rgba(27,122,85,.3);
+  transition: all .18s;
+}
+
+.cta-btn:hover {
+  background: var(--accent-dark);
+  box-shadow: 0 12px 36px rgba(27,122,85,.4);
+  transform: translateY(-2px);
+}
+
+.cta-btn:active { transform: scale(.98); }
+
+.cta-btn:disabled {
+  background: var(--muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── SUCCESS MODAL ─── */
+.sale-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,51,38,.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn .2s ease;
+}
+
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.sale-modal {
+  background: #fff;
+  border-radius: 22px;
+  padding: 36px 32px 28px;
+  width: 380px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(13,51,38,.25);
+  animation: popUp .25s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes popUp {
+  from { transform: scale(.88) translateY(20px); opacity:0; }
+  to   { transform: scale(1)   translateY(0);    opacity:1; }
+}
+
+.modal-check {
+  width: 72px; height: 72px;
+  background: var(--g100);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  margin: 0 auto 18px;
+}
+
+.modal-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--g900);
+  margin-bottom: 8px;
+}
+
+.modal-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.modal-invoice {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.modal-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* ─── Responsive ─── */
+@media (max-width:1100px) {
+  .pos-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  .books-panel { overflow: visible; }
+  .books-scroll { overflow: visible; max-height: none; }
+  .receipt-panel { max-height: none; height: auto; }
+  .cart-scroll { max-height: none; }
+}
+
+@media (max-width:600px) {
+  .pos-stats-bar { grid-template-columns: 1fr 1fr; }
+  .book-grid { grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="pos-root">
+  <div class="loading"><div class="spinner"></div>&nbsp; বই লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allBooks     = [];
+let allCustomers = [];
+let cart         = [];
+let currentCustomerDue = 0;
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+async function initPOS() {
+  const root = document.getElementById('pos-root');
+  try {
+    let page = 1;
+    while (true) {
+      const r = await api(`/books/?page=${page}&page_size=100`);
+      allBooks = allBooks.concat(r.results);
+      if (!r.next) break;
+      page++;
+    }
+    const cRes = await api('/sales/customers/?page_size=1000');
+    allCustomers = cRes.results;
+    renderPOS(root);
+  } catch (e) {
+    root.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <h3>বই লোড হয়নি</h3>
+        <p>সার্ভার চালু আছে কিনা দেখুন।</p>
+      </div>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   RENDER FULL POS UI
+══════════════════════════════════════ */
+function renderPOS(container) {
+  const active   = allBooks.filter(b => b.is_active);
+  const stock    = active.reduce((s,b) => s + Number(b.shop_quantity||0), 0);
+  const lowStock = active.filter(b => Number(b.shop_quantity||0) <= 5).length;
+
+  container.innerHTML = `
+  <div class="pos-shell">
+
+    <!-- ══ LEFT: Book picker ══ -->
+    <div class="books-panel">
+
+      <div class="pos-stats-bar">
+        <div class="psb-item">
+          <div class="psb-icon">📗</div>
+          <div class="psb-info">
+            <strong>${active.length}</strong>
+            <span>মোট বই</span>
+          </div>
+        </div>
+        <div class="psb-item">
+          <div class="psb-icon">📦</div>
+          <div class="psb-info">
+            <strong>${stock}</strong>
+            <span>দোকানে স্টক</span>
+          </div>
+        </div>
+        <div class="psb-item">
+          <div class="psb-icon" style="background:#fee2e2">⚠️</div>
+          <div class="psb-info">
+            <strong style="color:var(--danger)">${lowStock}</strong>
+            <span>কম স্টক</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-search">
+        <span class="pos-search-icon">🔍</span>
+        <input
+          type="text"
+          id="book-search"
+          placeholder="বইয়ের নাম, লেখক বা কোড লিখুন..."
+          oninput="filterBooks()"
+          autofocus
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="books-scroll">
+        <div id="book-grid" class="book-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- ══ RIGHT: Receipt panel ══ -->
+    <aside class="receipt-panel">
+
+      <!-- header -->
+      <div class="receipt-header">
+        <div class="rh-top">
+          <div>
+            <div class="rh-title">🛒 নির্বাচিত বই</div>
+          </div>
+          <button class="clear-btn" onclick="clearCart()">সব মুছুন</button>
+        </div>
+        <div class="rh-sub" id="cart-count-lbl">কোনো বই নেই — বাম থেকে বই যোগ করুন</div>
+      </div>
+
+      <!-- cart items -->
+      <div class="cart-scroll" id="cart-scroll">
+        <div class="cart-empty">
+          <div class="cart-empty-icon">📋</div>
+          বাম পাশ থেকে বই ক্লিক করুন
+        </div>
+      </div>
+
+      <!-- billing form -->
+      <div class="billing-form">
+
+        <!-- STEP 1: Sale type -->
+        <div class="step-label">
+          <div class="step-num">১</div>
+          বিক্রয়ের ধরন
+        </div>
+
+        <div class="bf-row">
+          <div class="bf-field">
+            <label>বিক্রয় ধরন</label>
+            <select id="sale-type" onchange="toggleSaleType()">
+              <option value="retail">খুচরা (Retail)</option>
+              <option value="wholesale">পাইকারি (Wholesale)</option>
+            </select>
+          </div>
+          <div class="bf-field">
+            <label>পেমেন্ট মাধ্যম</label>
+            <select id="pay-method">
+              <option value="cash">💵 Cash</option>
+              <option value="mobile">📱 Bkash/Nagad</option>
+              <option value="bank">🏦 Bank</option>
+              <option value="credit">📝 Credit</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- wholesale search (hidden by default) -->
+        <div id="ws-section" style="display:none">
+          <div class="ws-wrap">
+            <div class="bf-field">
+              <label>পাইকারি গ্রাহক খুঁজুন</label>
+              <input type="text" id="wholesale-search" placeholder="নাম, কোড বা ফোন নম্বর লিখুন..." oninput="searchWS()" autocomplete="off">
+            </div>
+            <div id="wholesale-results"></div>
+            <input type="hidden" id="selected-ws-id">
+          </div>
+        </div>
+
+        <!-- STEP 2: Customer -->
+        <div class="step-label">
+          <div class="step-num">২</div>
+          গ্রাহকের তথ্য
+        </div>
+
+        <div class="bf-row">
+          <div class="bf-field">
+            <label>গ্রাহকের নাম</label>
+            <input id="cus-name" placeholder="Walk-in Customer">
+          </div>
+          <div class="bf-field">
+            <label>ফোন নম্বর</label>
+            <input id="cus-phone" placeholder="01XXXXXXXXX" onchange="fetchDue()">
+          </div>
+        </div>
+
+        <!-- STEP 3: Discount/charges -->
+        <div class="step-label">
+          <div class="step-num">৩</div>
+          ছাড় ও অতিরিক্ত চার্জ
+        </div>
+
+        <div class="bf-row">
+          <div class="bf-field">
+            <label>কমিশন %</label>
+            <input id="commission" type="number" value="0" min="0" placeholder="0" oninput="fromCommission()">
+          </div>
+          <div class="bf-field">
+            <label>ডিসকাউন্ট ৳</label>
+            <input id="discount" type="number" value="0" min="0" placeholder="0" oninput="calcTotals(true)">
+          </div>
+        </div>
+
+        <div class="charges-box">
+          <div class="bf-row" style="grid-template-columns:1fr 1fr 1fr; gap:7px;">
+            <div class="bf-field">
+              <label>প্যাকিং ৳</label>
+              <input id="pack" type="number" value="0" min="0" oninput="calcTotals()">
+            </div>
+            <div class="bf-field">
+              <label>কুরিয়ার ৳</label>
+              <input id="courier" type="number" value="0" min="0" oninput="calcTotals()">
+            </div>
+            <div class="bf-field">
+              <label>MFS ফি ৳</label>
+              <input id="txfee" type="number" value="0" min="0" oninput="calcTotals()">
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Totals -->
+        <div class="step-label">
+          <div class="step-num">৪</div>
+          বিলের হিসাব
+        </div>
+
+        <div class="totals-box">
+          <div class="total-line">
+            <span>সাবটোটাল</span>
+            <span id="t-sub">৳০</span>
+          </div>
+          <div class="total-line">
+            <span>ছাড়</span>
+            <span id="t-disc" style="color:var(--danger)">−৳০</span>
+          </div>
+          <div class="total-line">
+            <span>অতিরিক্ত চার্জ</span>
+            <span id="t-extra">+৳০</span>
+          </div>
+          <div class="total-line big">
+            <span>মোট বিল</span>
+            <span id="t-total">৳০</span>
+          </div>
+          <div class="total-line" id="prev-due-row" style="display:none; color:var(--warning)">
+            <span>পূর্বের বাকি ⚠️</span>
+            <span id="t-prev-due">৳০</span>
+          </div>
+        </div>
+
+        <!-- paid input -->
+        <div class="paid-wrap">
+          <label>✅ কত টাকা পেলেন? (পরিশোধিত)</label>
+          <input id="paid" type="number" value="0" min="0" placeholder="0" oninput="calcTotals()">
+        </div>
+
+        <div class="totals-box" style="margin-top:0">
+          <div class="total-line due-line">
+            <span>নতুন বাকি</span>
+            <span id="t-due">৳০</span>
+          </div>
+          <div class="total-line grand">
+            <span>মোট মোট বাকি</span>
+            <span id="t-grand-due">৳০</span>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="cta-btn" id="complete-btn" onclick="completeSale()">
+          ✅ বিক্রয় সম্পন্ন করুন
+        </button>
+
+      </div><!-- /billing-form -->
+    </aside>
+
+  </div>`;
+
+  filterBooks();
+  renderCart();
+}
+
+/* ══════════════════════════════════════
+   BOOK GRID
+══════════════════════════════════════ */
+function filterBooks() {
+  const q = (document.getElementById('book-search')?.value || '').toLowerCase();
+  const list = allBooks.filter(b =>
+    b.is_active && (
+      b.title.toLowerCase().includes(q) ||
+      (b.author||'').toLowerCase().includes(q) ||
+      (b.product_code||'').toLowerCase().includes(q)
+    )
+  );
+
+  const grid = document.getElementById('book-grid');
+  if (!grid) return;
+
+  if (!list.length) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🔍</div>
+        <h3>কোনো বই পাওয়া যায়নি</h3>
+        <p>অন্য কিছু লিখে চেষ্টা করুন</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(b => `
+    <div class="book-card ${b.shop_quantity <= 0 ? 'out' : ''}" onclick="addToCart(${b.id})">
+      <div class="add-overlay">➕</div>
+      <img class="book-cover"
+           src="${b.image || ''}"
+           onerror="this.src='https://placehold.co/158x130/eafaf2/1a6347?text=📗'"
+           alt="${b.title}">
+      <div class="book-title">${b.title}</div>
+      <div class="book-author">${b.author || '—'}</div>
+      <div class="book-footer">
+        <span class="book-price">৳${b.selling_price}</span>
+        <span class="book-stock-badge">${b.shop_quantity} কপি</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   CART
+══════════════════════════════════════ */
+function addToCart(id) {
+  const book = allBooks.find(b => b.id === id);
+  if (!book || book.shop_quantity <= 0) return;
+
+  const ex = cart.find(i => i.bid === id);
+  if (ex) {
+    if (ex.qty >= book.shop_quantity) { toast(`দোকানে মাত্র ${book.shop_quantity}টি আছে`, 'error'); return; }
+    ex.qty++;
+  } else {
+    cart.push({ bid: id, title: book.title, price: parseFloat(book.selling_price), qty: 1, max: book.shop_quantity });
+  }
+  renderCart();
+  calcTotals();
+}
+
+function changeQty(id, d) {
+  const item = cart.find(i => i.bid === id);
+  if (!item) return;
+  item.qty = Math.max(0, Math.min(item.max, item.qty + d));
+  if (item.qty === 0) cart = cart.filter(i => i.bid !== id);
+  renderCart();
+  calcTotals();
+}
+
+function clearCart() {
+  cart = [];
+  renderCart();
+  calcTotals();
+}
+
+function renderCart() {
+  const el  = document.getElementById('cart-scroll');
+  const lbl = document.getElementById('cart-count-lbl');
+  if (!el) return;
+
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  if (lbl) lbl.textContent = cart.length
+    ? `${cart.length}টি বই • সাবটোটাল ৳${total.toFixed(0)}`
+    : 'কোনো বই নেই — বাম থেকে বই যোগ করুন';
+
+  if (!cart.length) {
+    el.innerHTML = `
+      <div class="cart-empty">
+        <div class="cart-empty-icon">📋</div>
+        বাম পাশ থেকে বই ক্লিক করুন
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = cart.map(i => `
+    <div class="cart-item">
+      <div class="ci-name">
+        <strong>${i.title}</strong>
+        <small>৳${i.price} × ${i.qty}</small>
+      </div>
+      <div class="ci-qty">
+        <button class="qb" onclick="changeQty(${i.bid},-1)">−</button>
+        <span class="ci-count">${i.qty}</span>
+        <button class="qb" onclick="changeQty(${i.bid},+1)">+</button>
+      </div>
+      <div class="ci-total">৳${(i.price*i.qty).toFixed(0)}</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   WHOLESALE
+══════════════════════════════════════ */
+function toggleSaleType() {
+  const type = document.getElementById('sale-type').value;
+  const ws   = document.getElementById('ws-section');
+  const n    = document.getElementById('cus-name');
+  const p    = document.getElementById('cus-phone');
+
+  if (type === 'wholesale') {
+    ws.style.display = 'block';
+    n.readOnly = true; p.readOnly = true;
+    document.getElementById('wholesale-search').focus();
+  } else {
+    ws.style.display = 'none';
+    n.readOnly = false; p.readOnly = false;
+    n.value = ''; p.value = '';
+    document.getElementById('commission').value = 0;
+    document.getElementById('wholesale-search').value = '';
+    fromCommission();
+  }
+}
+
+function searchWS() {
+  const q   = document.getElementById('wholesale-search').value.toLowerCase();
+  const box = document.getElementById('wholesale-results');
+  if (!q) { box.style.display = 'none'; return; }
+
+  const m = allCustomers.filter(c =>
+    c.customer_type === 'wholesale' &&
+    (c.name.toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.customer_code||'').toLowerCase().includes(q))
+  );
+
+  box.innerHTML = m.length
+    ? m.map(c => `
+        <div class="wsr-item" onclick="selectWS(${c.id})">
+          <strong>${c.name}</strong>
+          <small>কোড: ${c.customer_code||'N/A'} | ফোন: ${c.phone}</small>
+        </div>`).join('')
+    : `<div class="wsr-item"><small>কোনো গ্রাহক পাওয়া যায়নি</small></div>`;
+
+  box.style.display = 'block';
+}
+
+function selectWS(id) {
+  const c = allCustomers.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('selected-ws-id').value   = c.id;
+  document.getElementById('wholesale-search').value = `${c.name} (${c.customer_code})`;
+  document.getElementById('wholesale-results').style.display = 'none';
+  document.getElementById('cus-name').value  = c.name;
+  document.getElementById('cus-phone').value = c.phone;
+  document.getElementById('commission').value = c.default_commission;
+  fetchDue(); fromCommission();
+}
+
+/* ══════════════════════════════════════
+   CUSTOMER DUE
+══════════════════════════════════════ */
+async function fetchDue() {
+  const phone = document.getElementById('cus-phone').value;
+  const row   = document.getElementById('prev-due-row');
+  const val   = document.getElementById('t-prev-due');
+  currentCustomerDue = 0;
+
+  if (phone && phone.length >= 11) {
+    try {
+      const res = await api(`/sales/customers/find_by_phone/?phone=${phone}`);
+      if (res && res.id) {
+        document.getElementById('cus-name').value = res.name;
+        currentCustomerDue = parseFloat(res.total_due || 0);
+      }
+    } catch (_) {}
+  }
+
+  if (currentCustomerDue > 0) {
+    row.style.display = 'flex';
+    val.textContent   = `৳${currentCustomerDue.toFixed(0)}`;
+  } else {
+    row.style.display = 'none';
+  }
+  calcTotals();
+}
+
+/* ══════════════════════════════════════
+   TOTALS
+══════════════════════════════════════ */
+function fromCommission() {
+  const sub  = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const comm = parseFloat(document.getElementById('commission')?.value || 0);
+  if (document.getElementById('discount'))
+    document.getElementById('discount').value = Math.round(sub * comm / 100);
+  calcTotals();
+}
+
+function calcTotals(manualDisc = false) {
+  const sub  = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const disc = parseFloat(document.getElementById('discount')?.value || 0);
+
+  if (manualDisc && sub > 0)
+    document.getElementById('commission').value = ((disc/sub)*100).toFixed(1);
+
+  const extra = (parseFloat(document.getElementById('pack')?.value||0))
+              + (parseFloat(document.getElementById('courier')?.value||0))
+              + (parseFloat(document.getElementById('txfee')?.value||0));
+
+  const total = Math.max(0, sub - disc + extra);
+  const paid  = parseFloat(document.getElementById('paid')?.value || 0);
+  const due   = Math.max(0, total - paid);
+  const grand = currentCustomerDue + due;
+
+  setText('t-sub',      `৳${sub.toFixed(0)}`);
+  setText('t-disc',     `−৳${disc.toFixed(0)}`);
+  setText('t-extra',    `+৳${extra.toFixed(0)}`);
+  setText('t-total',    `৳${total.toFixed(0)}`);
+  setText('t-due',      `৳${due.toFixed(0)}`);
+  setText('t-grand-due',`৳${grand.toFixed(0)}`);
+
+  const btn = document.getElementById('complete-btn');
+  if (btn) btn.disabled = cart.length === 0;
+}
+
+function setText(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+
+/* ══════════════════════════════════════
+   COMPLETE SALE
+══════════════════════════════════════ */
+async function completeSale() {
+  if (!cart.length) { toast('বই যোগ করুন আগে!', 'error'); return; }
+
+  const btn = document.getElementById('complete-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ প্রসেস হচ্ছে...';
+
+  const payload = {
+    customer_name:     document.getElementById('cus-name')?.value || 'Walk-in Customer',
+    customer_phone:    document.getElementById('cus-phone')?.value || '',
+    discount:          parseFloat(document.getElementById('discount')?.value||0),
+    packaging_charge:  parseFloat(document.getElementById('pack')?.value||0),
+    courier_charge:    parseFloat(document.getElementById('courier')?.value||0),
+    transaction_fee:   parseFloat(document.getElementById('txfee')?.value||0),
+    paid_amount:       parseFloat(document.getElementById('paid')?.value||0),
+    payment_method:    document.getElementById('pay-method')?.value,
+    sale_type:         document.getElementById('sale-type')?.value || 'retail',
+    items: cart.map(i => ({ book: i.bid, quantity: i.qty, unit_price: i.price, discount: 0 }))
+  };
+
+  try {
+    const sale = await api('/sales/', 'POST', payload);
+    showSuccessModal(sale);
+    cart = [];
+
+    // reload books for fresh stock count
+    const r = await api('/books/?page_size=100');
+    allBooks = r.results;
+    renderPOS(document.getElementById('pos-root'));
+  } catch (e) {
+    toast(typeof e === 'object' ? (e.detail || JSON.stringify(e)) : 'ত্রুটি হয়েছে', 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ বিক্রয় সম্পন্ন করুন';
+  }
+}
+
+/* ══════════════════════════════════════
+   SUCCESS MODAL
+══════════════════════════════════════ */
+function showSuccessModal(sale) {
+  const html = `
+    <div class="sale-modal-bg" id="sale-modal">
+      <div class="sale-modal">
+        <div class="modal-check">✅</div>
+        <div class="modal-title">বিক্রয় হয়েছে!</div>
+        <div class="modal-sub">
+          ইনভয়েস নম্বর:
+          <div class="modal-invoice">#${sale.invoice_number}</div>
+          মোট বিল: ৳${sale.total}
+        </div>
+        <div class="modal-actions">
+          <a href="/api/sales/${sale.id}/print_invoice/"
+             class="btn btn-primary"
+             target="_blank"
+             onclick="closeModal()"
+             style="justify-content:center; text-decoration:none; border-radius:12px; min-height:48px; font-size:15px;">
+            🖨️ ইনভয়েস প্রিন্ট করুন
+          </a>
+          <button class="btn btn-ghost" onclick="closeModal()" style="border-radius:12px; min-height:44px;">
+            নতুন বিক্রয় শুরু করুন →
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function closeModal() {
+  document.getElementById('sale-modal')?.remove();
+}
+
+document.addEventListener('DOMContentLoaded', initPOS);
+</script>
+{% endblock %}

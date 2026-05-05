@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block page_title %}স্টক রিপোর্ট{% endblock %}
+
+{% block content %}
+<!-- 
+=============================================================================
+* স্টক সামারি পেজ (Stock Summary)
+* এখানে দোকানে থাকা সব বইয়ের মোট স্টক এবং তার ভ্যালু দেখা যাবে।
+=============================================================================
+-->
+
+<div id="stock-wrapper">
+    <div class="loading"><div class="spinner"></div> স্টক রিপোর্ট লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function initStock() {
+  const w = document.getElementById('stock-wrapper');
+  try {
+    // API থেকে স্টক লিস্ট এবং টোটাল সামারি রিপোর্ট আনা হচ্ছে
+    const [r, rep] = await Promise.all([
+      api('/stock/summary/?page_size=200'),
+      api('/stock/summary/report/')
+    ]);
+    
+    w.innerHTML = `
+      <!-- স্টকের মূল হিসাব (Cards) -->
+      <div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-label">বইয়ের ধরন (Items)</div>
+            <div class="stat-value">${rep.total_book_types}</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">দোকানে স্টক (Shop)</div>
+            <div class="stat-value">${rep.total_shop_quantity} pcs</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-label">গোডাউনে স্টক (Godown)</div>
+            <div class="stat-value">${rep.total_godown_quantity} pcs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">স্টকের মোট মূল্য (Value)</div>
+            <div class="stat-value">৳${num(rep.total_stock_value)}</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-label">স্টক শেষ (Out of Stock)</div>
+            <div class="stat-value">${rep.out_of_stock_count}</div>
+        </div>
+      </div>
+      
+      <!-- স্টক লিস্ট টেবিল -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">📦 বর্তমান স্টক বিস্তারিত</span>
+          <a href="/stock/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ স্টক যোগ করুন</a>
+        </div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+                <th>বইয়ের নাম</th>
+                <th>লেখক</th>
+                <th>দোকানে (Shop)</th>
+                <th>গোডাউনে (Godown)</th>
+                <th>মোট পরিমাণ</th>
+                <th>বিক্রয়মূল্য (MRP)</th>
+                <th>মোট মূল্য (Total Value)</th>
+                <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${r.results.map(s => `<tr>
+                <td><strong>${s.book_title}</strong></td>
+                <td>${s.book_author || '—'}</td>
+                <td><span class="badge ${s.shop_quantity > 0 ? 'badge-green' : 'badge-red'}">${s.shop_quantity}</span></td>
+                <td><span class="badge ${s.godown_quantity > 0 ? 'badge-blue' : 'badge-red'}">${s.godown_quantity}</span></td>
+                <td>
+                    ${s.quantity <= 0 
+                        ? '<span class="badge badge-red">শূন্য</span>' 
+                        : s.quantity <= 5 
+                        ? `<span class="badge badge-yellow">${s.quantity} pcs</span>` 
+                        : `<span>${s.quantity} pcs</span>`
+                    }
+                </td>
+                <td style="font-family:monospace">৳${s.selling_price}</td>
+                <td style="font-family:monospace;color:var(--accent2)">৳${num(s.stock_value)}</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="recordDamage(${s.book}, 'shop', '${s.book_title}')">
+                    ⚠ ড্যামেজ
+                  </button>
+                </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) { 
+      w.innerHTML = '<div class="empty">স্টক ডাটা লোড করতে সমস্যা হয়েছে।</div>'; 
+  }
+}
+
+async function recordDamage(bookId, location, bookTitle) {
+  let html = `
+    <div id="damage-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+      <div class="form-card" style="width:400px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1)">
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">
+          <span style="color:var(--danger)">⚠</span> ড্যামেজ রেকর্ড করুন
+        </h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">বই: <strong>${bookTitle}</strong> (${location.toUpperCase()})</p>
+        
+        <div class="form-group">
+          <label>ড্যামেজ হওয়া বইয়ের পরিমাণ (Quantity)</label>
+          <input type="number" id="dmg-qty" value="1" min="1" style="width:100%">
+        </div>
+        
+        <div class="form-group" style="margin-top:12px">
+          <label>ড্যামেজ হওয়ার কারণ</label>
+          <input type="text" id="dmg-note" placeholder="যেমন: পানি লেগে নষ্ট হয়েছে" style="width:100%">
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
+          <button class="btn btn-ghost" onclick="document.getElementById('damage-modal').remove()">বাতিল</button>
+          <button class="btn btn-danger" id="confirm-dmg-btn">ড্যামেজ নিশ্চিত করুন</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  
+  document.getElementById('confirm-dmg-btn').onclick = async () => {
+    const qty = document.getElementById('dmg-qty').value;
+    const note = document.getElementById('dmg-note').value;
+    
+    if(!qty || qty <= 0) { toast('সঠিক পরিমাণ লিখুন', 'error'); return; }
+    
+    try {
+      await api('/stock/entries/', 'POST', {
+        book: bookId,
+        quantity: -parseInt(qty),
+        location: location,
+        source: 'damage',
+        note: note || 'নষ্ট হয়ে গেছে'
+      });
+      toast('ড্যামেজ রেকর্ড সফল হয়েছে ✓');
+      document.getElementById('damage-modal').remove();
+      initStock();
+    } catch(e) {
+      toast('রেকর্ড করা যায়নি', 'error');
+    }
+  };
+}
+
+document.addEventListener('DOMContentLoaded', initStock);
+</script>
+{% endblock %}

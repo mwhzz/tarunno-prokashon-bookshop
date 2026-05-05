@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block page_title %}হিসাব ইতিহাস ও পূর্ববর্তী রিপোর্ট (Cash History){% endblock %}
+
+{% block content %}
+<div class="table-wrap" style="padding:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-size:16px; color:var(--accent);">📅 প্রতিদিনের ক্যাশ রিপোর্ট তালিকা</h3>
+    </div>
+    
+    <table style="width:100%; border-collapse: collapse; font-size:14px;">
+        <thead>
+            <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                <th style="padding:12px 8px;">তারিখ</th>
+                <th style="padding:12px 8px; text-align:right;">ওপেনিং ব্যালেন্স</th>
+                <th style="padding:12px 8px; text-align:right;">ক্লোজিং ব্যালেন্স</th>
+                <th style="padding:12px 8px; text-align:center;">স্ট্যাটাস</th>
+                <th style="padding:12px 8px; text-align:right;">অ্যাকশন</th>
+            </tr>
+        </thead>
+        <tbody id="history-list">
+            <!-- ডাটা এখানে লোড হবে -->
+        </tbody>
+    </table>
+    <div id="loading" class="loading" style="display:none;"><div class="spinner"></div> লোড হচ্ছে...</div>
+</div>
+
+<!-- ডিটেইল মডাল -->
+<div id="detail-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:20px;">
+    <div class="form-card" style="width:100%; max-width:800px; max-height:90vh; overflow-y:auto; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="modal-title" style="color:var(--accent);">দিনভিত্তিক লেনদেন বিবরণী</h3>
+            <button class="btn btn-ghost" onclick="closeModal()">✖ বন্ধ করুন</button>
+        </div>
+        <div id="modal-content">
+            <!-- ট্রানজেকশন তালিকা এখানে আসবে -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', fetchHistory);
+
+async function fetchHistory() {
+    const list = document.getElementById('history-list');
+    const loader = document.getElementById('loading');
+    list.innerHTML = '';
+    loader.style.display = 'flex';
+    
+    try {
+        const data = await api('/accounts/daily/');
+        loader.style.display = 'none';
+        
+        if (data.results.length === 0) {
+            list.innerHTML = '<tr><td colspan="5" class="empty">কোনো ইতিহাস পাওয়া যায়নি।</td></tr>';
+            return;
+        }
+        
+        list.innerHTML = data.results.map(d => `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:12px 8px; font-weight:600;">${fmtDate(d.date)}</td>
+                <td style="padding:12px 8px; text-align:right;">৳${num(d.opening_balance)}</td>
+                <td style="padding:12px 8px; text-align:right; font-weight:700;">৳${num(d.closing_balance)}</td>
+                <td style="padding:12px 8px; text-align:center;">
+                    ${d.is_closed ? '<span class="badge badge-green">বন্ধ (Closed)</span>' : '<span class="badge badge-yellow">চলমান (Open)</span>'}
+                </td>
+                <td style="padding:12px 8px; text-align:right;">
+                    <button class="btn btn-ghost btn-sm" onclick="viewDetails(${d.id})">👁 দেখুন</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        loader.style.display = 'none';
+        toast('ইতিহাস লোড করা যায়নি।', 'error');
+    }
+}
+
+async function viewDetails(id) {
+    const modal = document.getElementById('detail-modal');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    modal.style.display = 'flex';
+    content.innerHTML = '<div class="loading"><div class="spinner"></div> লোড হচ্ছে...</div>';
+    
+    try {
+        const d = await api(`/accounts/daily/${id}/`);
+        title.innerText = `${fmtDate(d.date)} - এর লেনদেন বিবরণী`;
+        
+        if (d.transactions.length === 0) {
+            content.innerHTML = '<div class="empty">এই দিনে কোনো লেনদেন হয়নি।</div>';
+            return;
+        }
+        
+        content.innerHTML = `
+            <table style="width:100%; border-collapse: collapse; font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                        <th style="padding:8px;">সময়</th>
+                        <th style="padding:8px;">ধরণ</th>
+                        <th style="padding:8px;">নোট</th>
+                        <th style="padding:8px; text-align:right;">পরিমাণ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${d.transactions.map(t => `
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:8px; color:var(--muted);">${new Date(t.timestamp).toLocaleTimeString('bn-BD')}</td>
+                            <td style="padding:8px; font-weight:600;">${t.type_display}</td>
+                            <td style="padding:8px;">${t.note || '-'}</td>
+                            <td style="padding:8px; text-align:right; font-weight:700;">৳${num(t.amount)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        toast('বিস্তারিত লোড করা যায়নি।', 'error');
+    }
+}
+
+function closeModal() {
+    document.getElementById('detail-modal').style.display = 'none';
+}
+</script>
+{% endblock %}

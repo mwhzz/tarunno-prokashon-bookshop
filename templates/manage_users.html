@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block page_title %}স্টাফ ও পদমর্যাদা ব্যবস্থাপনা (Staff Management){% endblock %}
+
+{% block content %}
+<div class="table-wrap" style="padding:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-size:16px; color:var(--accent);">👥 স্টাফ তালিকা</h3>
+        <p style="font-size:12px; color:var(--muted);">অ্যাডমিন প্যানেল থেকে নতুন ইউজার তৈরি করুন, এখান থেকে শুধু পদমর্যাদা পরিবর্তন করা যাবে।</p>
+    </div>
+    
+    <table style="width:100%; border-collapse: collapse; font-size:14px;">
+        <thead>
+            <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                <th style="padding:12px 8px;">ইউজারনেম</th>
+                <th style="padding:12px 8px;">নাম</th>
+                <th style="padding:12px 8px;">ফোন</th>
+                <th style="padding:12px 8px;">বর্তমান পদমর্যাদা</th>
+                <th style="padding:12px 8px; text-align:right;">অ্যাকশন</th>
+            </tr>
+        </thead>
+        <tbody id="user-list">
+            <!-- ডাটা এখানে লোড হবে -->
+        </tbody>
+    </table>
+    <div id="loading" class="loading" style="display:none;"><div class="spinner"></div> লোড হচ্ছে...</div>
+</div>
+
+<!-- এডিট মডাল -->
+<div id="edit-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:20px;">
+    <div class="form-card" style="width:100%; max-width:400px; padding:24px;">
+        <h3 style="margin-bottom:20px; color:var(--accent);">✎ পদমর্যাদা পরিবর্তন করুন</h3>
+        
+        <input type="hidden" id="edit-user-id">
+        
+        <div class="form-group section-gap">
+            <label>স্টাফের নাম</label>
+            <input type="text" id="edit-name" readonly style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px; background:#f8fafc;">
+        </div>
+
+        <div class="form-group section-gap">
+            <label>পদমর্যাদা (Role) নির্বাচন করুন *</label>
+            <select id="edit-role" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
+                <option value="admin">Admin (অ্যাডমিন)</option>
+                <option value="manager">Manager (ম্যানেজার)</option>
+                <option value="staff">Staff (স্টাফ)</option>
+            </select>
+        </div>
+        
+        <div style="display:flex; gap:8px; margin-top:20px;">
+            <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="updateUserRole()">
+                ✓ আপডেট করুন
+            </button>
+            <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="closeModal()">
+                বাতিল
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', fetchUsers);
+
+async function fetchUsers() {
+    const list = document.getElementById('user-list');
+    const loader = document.getElementById('loading');
+    list.innerHTML = '';
+    loader.style.display = 'flex';
+    
+    try {
+        const data = await api('/users/manage/');
+        loader.style.display = 'none';
+        
+        list.innerHTML = data.results.map(u => `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:12px 8px; font-weight:700;">${u.username}</td>
+                <td style="padding:12px 8px;">${u.first_name} ${u.last_name}</td>
+                <td style="padding:12px 8px; color:var(--muted);">${u.profile.phone || '-'}</td>
+                <td style="padding:12px 8px;">
+                    <span class="badge ${u.profile.role === 'admin' ? 'badge-blue' : u.profile.role === 'manager' ? 'badge-green' : 'badge-yellow'}">
+                        ${u.profile.role.toUpperCase()}
+                    </span>
+                </td>
+                <td style="padding:12px 8px; text-align:right;">
+                    <button class="btn btn-ghost btn-sm" onclick='openEditModal(${JSON.stringify(u)})'>✎ এডিট রোল</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        loader.style.display = 'none';
+        toast('স্টাফ তালিকা লোড করা যায়নি।', 'error');
+    }
+}
+
+function openEditModal(u) {
+    document.getElementById('edit-user-id').value = u.id;
+    document.getElementById('edit-name').value = u.first_name + ' ' + u.last_name;
+    document.getElementById('edit-role').value = u.profile.role;
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+async function updateUserRole() {
+    const id = document.getElementById('edit-user-id').value;
+    const role = document.getElementById('edit-role').value;
+    
+    try {
+        await api(`/users/manage/${id}/`, 'PATCH', {
+            profile: { role: role }
+        });
+        toast('পদমর্যাদা আপডেট করা হয়েছে।');
+        closeModal();
+        fetchUsers();
+    } catch (e) {
+        toast('আপডেট করা যায়নি।', 'error');
+    }
+}
+</script>
+{% endblock %}

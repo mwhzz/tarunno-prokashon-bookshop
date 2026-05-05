@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% block page_title %}বই এডিট করুন{% endblock %}
+
+{% block extra_css %}
+<style>
+.edit-page { max-width: 780px; margin: 0 auto; animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── book identity header ─── */
+.book-hero {
+  background: linear-gradient(140deg, #0d3a28, #1a5c3e);
+  border-radius: 18px;
+  padding: 22px 24px;
+  display: flex; align-items: center; gap: 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 28px rgba(13,51,38,.25);
+  position: relative; overflow: hidden;
+}
+
+.book-hero::after {
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background: rgba(39,169,110,.15);
+}
+
+.bh-cover {
+  width: 60px; height: 80px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.12);
+  display: grid; place-items: center;
+  font-size: 28px; flex-shrink: 0;
+  overflow: hidden; border: 2px solid rgba(255,255,255,.2);
+}
+
+.bh-cover img { width:100%; height:100%; object-fit:cover; }
+
+.bh-info strong { display:block; font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:800; color:#fff; line-height:1.2; }
+.bh-info small  { font-size:13px; color:rgba(255,255,255,.6); font-weight:600; }
+
+.bh-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px; padding: 6px 14px;
+  font-size: 12px; font-weight: 800; color: rgba(255,255,255,.85);
+  white-space: nowrap; flex-shrink: 0; z-index: 1;
+}
+
+/* ─── section card ─── */
+.edit-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 18px; padding: 24px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  margin-bottom: 16px;
+}
+
+.ec-section-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 800; color: var(--g900);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 18px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ec-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.ec-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.ec-row.single { grid-template-columns: 1fr; margin-bottom: 0; }
+
+.ec-field { display: flex; flex-direction: column; gap: 5px; }
+
+.ec-field label {
+  font-size: 12px; font-weight: 800;
+  color: var(--text2); letter-spacing: .02em;
+}
+
+.ec-field input,
+.ec-field select,
+.ec-field textarea {
+  width: 100%; min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 14px; color: var(--text);
+  outline: none; transition: all .18s;
+}
+
+.ec-field input:focus,
+.ec-field select:focus,
+.ec-field textarea:focus {
+  border-color: var(--accent); background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.ec-field .mono-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700; text-align: right;
+}
+
+.ec-field .mono-input:focus { color: var(--accent); }
+
+.ec-field textarea { min-height: 90px; resize: vertical; }
+
+/* profit live badge */
+.price-live {
+  background: var(--g100); border: 1px solid var(--g200);
+  border-radius: 10px; padding: 12px 14px;
+  display: none; margin-top: 4px;
+  font-size: 13px; font-weight: 700; color: var(--g700);
+  display: flex; gap: 18px; flex-wrap: wrap;
+}
+
+.pl-item span { display: block; font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+.pl-item strong { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--g600); }
+.pl-item strong.loss { color: var(--danger); }
+
+/* image upload */
+.img-zone {
+  border: 2px dashed var(--border-hard);
+  border-radius: 12px; padding: 20px; text-align: center;
+  cursor: pointer; transition: all .18s; background: var(--surface2);
+}
+
+.img-zone:hover { border-color: var(--accent); background: var(--g100); }
+.img-zone.has-img { border-style: solid; border-color: var(--accent); padding: 8px; }
+
+#img-prev { width:100%; max-height:160px; object-fit:contain; border-radius:8px; display:none; }
+#b-image  { display: none; }
+
+.iz-icon  { font-size:30px; opacity:.4; margin-bottom:6px; }
+.iz-title { font-size:13px; font-weight:700; color:var(--text2); }
+.iz-sub   { font-size:11px; color:var(--muted); margin-top:3px; }
+
+/* status toggle */
+.status-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.st-card {
+  border: 2px solid var(--border); border-radius: 10px;
+  padding: 12px 10px; text-align: center; cursor: pointer; transition: all .18s;
+}
+
+.st-card:hover { border-color: var(--accent); background: var(--g100); }
+.st-card.sel-active { border-color: var(--g500); background: #f0fdf4; }
+.st-card.sel-inactive { border-color: var(--danger); background: #fef2f2; }
+
+.st-icon  { font-size: 20px; margin-bottom: 5px; }
+.st-title { font-size: 13px; font-weight: 800; color: var(--g900); }
+
+/* actions */
+.edit-actions {
+  display: flex; gap: 10px; align-items: center;
+  padding-top: 16px; margin-top: 4px;
+}
+
+.save-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 30px; border-radius: 99px;
+  background: var(--accent); color: #fff; border: none;
+  cursor: pointer; font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px; font-weight: 800;
+  box-shadow: 0 6px 20px rgba(27,122,85,.28);
+  transition: all .18s;
+}
+
+.save-btn:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(27,122,85,.4); }
+.save-btn:disabled { background: var(--muted); box-shadow: none; cursor:not-allowed; transform:none; }
+
+@media (max-width: 600px) {
+  .ec-row, .ec-row.three { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-page">
+  <div id="edit-root">
+    <div class="loading"><div class="spinner"></div>&nbsp;বইয়ের তথ্য লোড হচ্ছে...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const bookId = "{{ book_id }}";
+let bookStatus = true;
+
+async function initEdit() {
+  const root = document.getElementById('edit-root');
+  try {
+    const book = await api(`/books/${bookId}/`);
+    bookStatus = book.is_active;
+
+    root.innerHTML = `
+      <!-- Book hero -->
+      <div class="book-hero">
+        <div class="bh-cover" id="hero-cover">
+          ${book.image ? `<img src="${book.image}" onerror="this.parentNode.textContent='📗'">` : '📗'}
+        </div>
+        <div class="bh-info">
+          <strong>${book.title}</strong>
+          <small>${book.author || '—'} ${book.publisher ? '• '+book.publisher : ''}</small>
+        </div>
+        <div class="bh-badge">${book.product_code || 'কোড নেই'}</div>
+      </div>
+
+      <!-- ── SECTION 1: পরিচয় ── -->
+      <div class="edit-card">
+        <div class="ec-section-title">📗 বইয়ের পরিচয়</div>
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>বইয়ের নাম *</label>
+            <input id="b-title" value="${esc(book.title)}">
+          </div>
+          <div class="ec-field">
+            <label>লেখক</label>
+            <input id="b-author" value="${esc(book.author||'')}">
+          </div>
+        </div>
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>প্রকাশনী</label>
+            <input id="b-pub" value="${esc(book.publisher||'')}">
+          </div>
+          <div class="ec-field">
+            <label>সংস্করণ</label>
+            <input id="b-edition" value="${esc(book.edition||'')}">
+          </div>
+        </div>
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>ISBN</label>
+            <input id="b-isbn" value="${esc(book.isbn||'')}">
+          </div>
+          <div class="ec-field">
+            <label>প্রোডাক্ট কোড</label>
+            <input id="b-code" value="${esc(book.product_code||'')}">
+          </div>
+        </div>
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>বইয়ের ধরন</label>
+            <select id="b-type">
+              <option value="single" ${book.book_type==='single'?'selected':''}>📖 Single — একটি বই</option>
+              <option value="series" ${book.book_type==='series'?'selected':''}>📚 Series — সিরিজ</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: দাম ── -->
+      <div class="edit-card">
+        <div class="ec-section-title">💰 দামের হিসাব</div>
+        <div class="ec-row three">
+          <div class="ec-field">
+            <label>MRP (গায়ের দাম) ৳</label>
+            <input class="mono-input" id="b-mrp" type="number" value="${book.mrp||0}" oninput="livePriceCalc()">
+          </div>
+          <div class="ec-field">
+            <label>ক্রয় মূল্য ৳</label>
+            <input class="mono-input" id="b-cost" type="number" value="${book.purchase_price||0}" oninput="livePriceCalc()">
+          </div>
+          <div class="ec-field">
+            <label>বিক্রয় মূল্য ৳</label>
+            <input class="mono-input" id="b-price" type="number" value="${book.selling_price||0}" oninput="livePriceCalc()">
+          </div>
+        </div>
+        <div class="ec-field">
+          <label>কমিশন %</label>
+          <input id="b-commission" type="number" value="${book.commission||0}" style="max-width:180px">
+        </div>
+        <!-- live profit indicator -->
+        <div class="price-live" id="price-live">
+          <div class="pl-item"><span>MRP থেকে ছাড়</span><strong id="pl-disc">—</strong></div>
+          <div class="pl-item"><span>প্রতি কপি লাভ</span><strong id="pl-profit">—</strong></div>
+          <div class="pl-item"><span>লাভের হার</span><strong id="pl-margin">—</strong></div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: ছবি ও স্ট্যাটাস ── -->
+      <div class="edit-card">
+        <div class="ec-section-title">🖼️ ছবি ও স্ট্যাটাস</div>
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>কভার ছবি পরিবর্তন করুন</label>
+            <div class="img-zone" id="img-zone" onclick="document.getElementById('b-image').click()">
+              <img id="img-prev" src="">
+              <div id="img-ph">
+                <div class="iz-icon">🖼️</div>
+                <div class="iz-title">ছবি পরিবর্তন করতে ক্লিক করুন</div>
+                <div class="iz-sub">না করলে আগের ছবি থাকবে</div>
+              </div>
+            </div>
+            <input type="file" id="b-image" accept="image/*" onchange="previewImg(this)">
+          </div>
+          <div class="ec-field">
+            <label>বইটি কি সক্রিয়?</label>
+            <div class="status-toggle">
+              <div class="st-card ${book.is_active ? 'sel-active' : ''}" id="st-active" onclick="setStatus(true)">
+                <div class="st-icon">✅</div>
+                <div class="st-title">সক্রিয়</div>
+              </div>
+              <div class="st-card ${!book.is_active ? 'sel-inactive' : ''}" id="st-inactive" onclick="setStatus(false)">
+                <div class="st-icon">🔴</div>
+                <div class="st-title">বন্ধ</div>
+              </div>
+            </div>
+            <div class="ec-field" style="margin-top:12px">
+              <label>অতিরিক্ত নোট</label>
+              <textarea id="b-note">${esc(book.notes||'')}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- actions -->
+      <div class="edit-actions">
+        <button class="save-btn" id="save-btn" onclick="doUpdate()">✅ আপডেট করুন</button>
+        <a href="/books/" class="btn btn-ghost" style="border-radius:99px; padding:12px 22px; text-decoration:none;">← বাতিল</a>
+      </div>`;
+
+    livePriceCalc();
+  } catch(e) {
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>তথ্য লোড হয়নি</h3></div>`;
+  }
+}
+
+function esc(s) { return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function setStatus(active) {
+  bookStatus = active;
+  document.getElementById('st-active')?.classList.toggle('sel-active',   active);
+  document.getElementById('st-inactive')?.classList.toggle('sel-inactive', !active);
+  document.getElementById('st-active')?.classList.toggle('sel-inactive',  false);
+  document.getElementById('st-inactive')?.classList.toggle('sel-active',  false);
+}
+
+function previewImg(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prev = document.getElementById('img-prev');
+    prev.src = e.target.result; prev.style.display = 'block';
+    document.getElementById('img-ph').style.display = 'none';
+    document.getElementById('img-zone').classList.add('has-img');
+    document.getElementById('hero-cover').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function livePriceCalc() {
+  const mrp   = parseFloat(document.getElementById('b-mrp')?.value)   || 0;
+  const cost  = parseFloat(document.getElementById('b-cost')?.value)  || 0;
+  const price = parseFloat(document.getElementById('b-price')?.value) || 0;
+  const live  = document.getElementById('price-live');
+  if (!live) return;
+
+  if (mrp > 0 && cost > 0 && price > 0) {
+    const discPct = ((mrp - price) / mrp * 100).toFixed(1);
+    const profit  = price - cost;
+    const margin  = (profit / cost * 100).toFixed(1);
+    live.style.display = 'flex';
+    document.getElementById('pl-disc').textContent   = `${discPct}% কম`;
+    document.getElementById('pl-profit').textContent = `৳${profit.toFixed(0)} / কপি`;
+    document.getElementById('pl-margin').textContent = `${margin}%`;
+    document.getElementById('pl-profit').className   = profit >= 0 ? '' : 'loss';
+    document.getElementById('pl-margin').className   = profit >= 0 ? '' : 'loss';
+  } else {
+    live.style.display = 'none';
+  }
+}
+
+async function doUpdate() {
+  const title = document.getElementById('b-title')?.value.trim();
+  if (!title) { shake('b-title'); toast('বইয়ের নাম দিতে হবে!','error'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '⏳ আপডেট হচ্ছে...';
+
+  const fd = new FormData();
+  fd.append('title',          title);
+  fd.append('author',         document.getElementById('b-author')?.value || '');
+  fd.append('publisher',      document.getElementById('b-pub')?.value    || '');
+  fd.append('isbn',           document.getElementById('b-isbn')?.value   || '');
+  fd.append('edition',        document.getElementById('b-edition')?.value|| '');
+  fd.append('product_code',   document.getElementById('b-code')?.value   || '');
+  fd.append('book_type',      document.getElementById('b-type')?.value   || 'single');
+  fd.append('mrp',            document.getElementById('b-mrp')?.value    || 0);
+  fd.append('purchase_price', document.getElementById('b-cost')?.value   || 0);
+  fd.append('selling_price',  document.getElementById('b-price')?.value  || 0);
+  fd.append('commission',     document.getElementById('b-commission')?.value || 0);
+  fd.append('is_active',      bookStatus);
+  fd.append('notes',          document.getElementById('b-note')?.value   || '');
+
+  const img = document.getElementById('b-image');
+  if (img?.files.length > 0) fd.append('image', img.files[0]);
+
+  try {
+    const r = await fetch(`${API}/books/${bookId}/`, {
+      method: 'PATCH',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: fd
+    });
+    if (!r.ok) throw await r.json();
+    toast('বইয়ের তথ্য আপডেট করা হয়েছে ✓');
+    setTimeout(() => { window.location.href = '/books/'; }, 900);
+  } catch(e) {
+    toast('আপডেট করতে সমস্যা: ' + (e?.detail || JSON.stringify(e)), 'error');
+    btn.disabled = false; btn.innerHTML = '✅ আপডেট করুন';
+  }
+}
+
+function shake(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor = 'var(--danger)';
+  el.style.animation = 'none'; void el.offsetWidth;
+  el.style.animation = 'shake .3s ease'; el.focus();
+  setTimeout(() => { el.style.borderColor=''; el.style.animation=''; }, 1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', initEdit);
+</script>
+{% endblock %}

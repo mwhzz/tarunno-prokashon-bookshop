@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% block page_title %}খরচের হিসাব{% endblock %}
+
+{% block extra_css %}
+<style>
+.exp-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── TOP SUMMARY ─── */
+.exp-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.es-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 110px; position: relative; overflow: hidden;
+  transition: box-shadow .2s, transform .18s;
+}
+
+.es-card:hover { box-shadow: 0 6px 22px rgba(13,51,38,.09); transform: translateY(-2px); }
+
+.es-card.total {
+  background: linear-gradient(140deg, #7f1d1d, #991b1b);
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(229,62,62,.2);
+}
+
+.es-card.total::after {
+  content:''; position:absolute; top:-25px; right:-25px;
+  width:90px; height:90px; border-radius:50%;
+  background: rgba(255,255,255,.08);
+}
+
+.es-card::before {
+  content:''; position:absolute; left:0; top:18%; bottom:18%;
+  width:3px; border-radius:99px; background: var(--danger);
+}
+
+.es-card.total::before { display:none; }
+.es-card.today::before { background: var(--warning); }
+
+.es-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.es-card.total .es-label { color: rgba(255,255,255,.55); }
+
+.es-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 700; color: var(--danger);
+  margin: 6px 0 4px; line-height: 1;
+}
+
+.es-card.total .es-val { color: #fff; font-size: 28px; }
+.es-card.today .es-val { color: var(--warning); }
+
+.es-sub { font-size:12px; color:var(--muted); font-weight:600; }
+.es-card.total .es-sub { color: rgba(255,255,255,.5); }
+
+/* ─── SHELL ─── */
+.exp-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0,1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* ─── ENTRY FORM ─── */
+.entry-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  position: sticky; top: 16px;
+}
+
+.ec-head {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  padding: 18px 20px;
+}
+
+.ec-head-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:800; color:#fff; }
+.ec-head-sub   { font-size:12px; color:rgba(255,255,255,.55); margin-top:4px; }
+
+.ec-body { padding: 20px; }
+
+/* category pills */
+.cat-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  max-height: 160px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  margin-bottom: 14px;
+}
+
+.cat-pill {
+  padding: 6px 12px; border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-size: 13px; font-weight: 700;
+  color: var(--text2); cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+
+.cat-pill:hover   { border-color: var(--danger); color: var(--danger); background: #fef2f2; }
+.cat-pill.active  { border-color: var(--danger); background: #fef2f2; color: var(--danger); }
+
+.cat-pills-empty { font-size:12px; color:var(--muted); padding:8px 0; }
+
+/* amount input */
+.amount-wrap { position: relative; margin-bottom: 14px; }
+
+.amount-sym {
+  position: absolute; left:16px; top:50%;
+  transform: translateY(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:22px; font-weight:700; color:var(--muted);
+  pointer-events:none;
+}
+
+.amount-inp {
+  width:100%; height:60px;
+  padding: 0 16px 0 44px;
+  border: 2px solid var(--border); border-radius:12px;
+  background: var(--surface2);
+  font-family:'JetBrains Mono',monospace;
+  font-size:26px; font-weight:700; color:var(--g900);
+  outline:none; transition:all .18s;
+}
+
+.amount-inp:focus {
+  border-color: var(--danger); background:#fff;
+  box-shadow: 0 0 0 4px rgba(229,62,62,.1);
+  color: var(--danger);
+}
+
+.ec-field { margin-bottom:14px; }
+
+.ec-field label {
+  display:block; font-size:12px; font-weight:800;
+  color:var(--text2); margin-bottom:6px;
+}
+
+.ec-field textarea {
+  width:100%; min-height:80px;
+  padding:10px 14px; border:2px solid var(--border);
+  border-radius:10px; background:var(--surface2);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:14px; color:var(--text); outline:none; resize:vertical;
+  transition:all .18s;
+}
+
+.ec-field textarea:focus {
+  border-color:var(--accent); background:#fff;
+  box-shadow:0 0 0 4px rgba(27,122,85,.1);
+}
+
+.save-exp-btn {
+  width:100%; min-height:50px;
+  border-radius:12px; background:var(--danger);
+  color:#fff; border:none; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:16px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 6px 20px rgba(229,62,62,.28);
+  transition:all .18s;
+}
+
+.save-exp-btn:hover { background:#b91c1c; transform:translateY(-1px); box-shadow:0 8px 28px rgba(229,62,62,.38); }
+.save-exp-btn:disabled { background:var(--muted); box-shadow:none; cursor:not-allowed; transform:none; }
+
+/* ─── RECORDS LIST ─── */
+.records-panel {
+  background:#fff; border:1px solid var(--border);
+  border-radius:18px; overflow:hidden;
+  box-shadow:0 2px 12px rgba(13,51,38,.05);
+}
+
+.rp-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px; border-bottom:1px solid var(--border); gap:12px;
+}
+
+.rp-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:800; color:var(--g900); }
+
+.rp-total {
+  font-family:'JetBrains Mono',monospace;
+  font-size:17px; font-weight:800; color:var(--danger);
+}
+
+/* expense row */
+.exp-row {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 20px; border-bottom:1px solid #f0f7f3;
+  transition:background .12s;
+}
+
+.exp-row:last-child { border-bottom:none; }
+.exp-row:hover { background:#fff5f5; }
+
+.exp-cat-icon {
+  width:38px; height:38px; border-radius:10px;
+  background:#fee2e2; display:grid; place-items:center;
+  font-size:17px; flex-shrink:0;
+}
+
+.exp-info { flex:1; min-width:0; }
+.exp-info strong { display:block; font-size:13px; font-weight:800; color:var(--g900); }
+.exp-info small  { font-size:11px; color:var(--muted); }
+
+.exp-amount {
+  font-family:'JetBrains Mono',monospace;
+  font-size:15px; font-weight:800; color:var(--danger);
+  flex-shrink:0;
+}
+
+.del-btn {
+  width:30px; height:30px; border-radius:7px;
+  background:rgba(229,62,62,.08); border:none; cursor:pointer;
+  font-size:14px; color:var(--danger);
+  display:grid; place-items:center; flex-shrink:0;
+  transition:background .15s;
+}
+
+.del-btn:hover { background:rgba(229,62,62,.2); }
+
+/* ─── Responsive ─── */
+@media (max-width:900px) {
+  .exp-shell { grid-template-columns:1fr; }
+  .entry-card { position:static; }
+  .exp-summary { grid-template-columns:1fr 1fr; }
+}
+
+@media (max-width:560px) {
+  .exp-summary { grid-template-columns:1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="exp-page">
+
+  <!-- ─── SUMMARY ─── -->
+  <div class="exp-summary" id="exp-summary">
+    <div class="es-card total">
+      <div class="es-label">মোট খরচ (আজ)</div>
+      <div class="es-val" id="es-today">৳০</div>
+      <div class="es-sub" id="es-today-count">০টি রেকর্ড</div>
+    </div>
+    <div class="es-card today">
+      <div class="es-label">সবচেয়ে বড় খাত</div>
+      <div class="es-val" id="es-top-cat" style="font-size:16px; color:var(--warning)">—</div>
+      <div class="es-sub" id="es-top-amt">—</div>
+    </div>
+    <div class="es-card">
+      <div class="es-label">মোট রেকর্ড</div>
+      <div class="es-val" id="es-total-count" style="color:var(--text)">০</div>
+      <div class="es-sub">সব সময়ের</div>
+    </div>
+  </div>
+
+  <!-- ─── SHELL ─── -->
+  <div class="exp-shell">
+
+    <!-- FORM -->
+    <div class="entry-card">
+      <div class="ec-head">
+        <div class="ec-head-title">💸 নতুন খরচ রেকর্ড করুন</div>
+        <div class="ec-head-sub">খাত বেছে নিন, পরিমাণ লিখুন</div>
+      </div>
+      <div class="ec-body">
+
+        <div class="ec-field">
+          <label>খাত বেছে নিন <span style="color:var(--danger)">*</span></label>
+          <div class="cat-pills" id="cat-pills">
+            <div class="loading" style="padding:4px"><div class="spinner"></div></div>
+          </div>
+          <input type="hidden" id="exp-category">
+          <a href="/expenses/categories/" style="font-size:12px; color:var(--accent); font-weight:700; text-decoration:none;">
+            ➕ নতুন খাত তৈরি করুন
+          </a>
+        </div>
+
+        <div class="ec-field">
+          <label>টাকার পরিমাণ <span style="color:var(--danger)">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-sym">৳</span>
+            <input class="amount-inp" id="exp-amount" type="number" min="0" placeholder="০">
+          </div>
+        </div>
+
+        <div class="ec-field">
+          <label>নোট / বিবরণ</label>
+          <textarea id="exp-note" placeholder="খরচের কারণ বা বিস্তারিত লিখুন..."></textarea>
+        </div>
+
+        <button class="save-exp-btn" id="save-exp-btn" onclick="addExpense()">
+          💸 খরচ সেভ করুন
+        </button>
+
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="records-panel">
+      <div class="rp-header">
+        <div class="rp-title">📜 খরচের ইতিহাস</div>
+        <div class="rp-total" id="rp-total">—</div>
+      </div>
+      <div id="exp-list">
+        <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const catIconMap = ['🏠','💡','🚌','📦','🧑‍💼','📞','🖥️','🔧','🍽️','📝','💰','🏥','🎓','🚗','🌐'];
+function iconFor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h*31 + name.charCodeAt(i)) & 0xff;
+  return catIconMap[h % catIconMap.length];
+}
+
+let categories = [];
+let selectedCatId = null;
+
+/* ══════════════════════════
+   INIT
+══════════════════════════ */
+async function init() {
+  await Promise.all([loadCategories(), loadExpenses()]);
+}
+
+/* ══════════════════════════
+   CATEGORIES (pills)
+══════════════════════════ */
+async function loadCategories() {
+  const pillsEl = document.getElementById('cat-pills');
+  try {
+    const data  = await api('/expenses/categories/');
+    categories  = data.results || [];
+
+    if (!categories.length) {
+      pillsEl.innerHTML = `<div class="cat-pills-empty">কোনো খাত নেই — উপরের লিঙ্কে খাত তৈরি করুন।</div>`;
+      return;
+    }
+
+    pillsEl.innerHTML = categories.map(c => `
+      <div class="cat-pill" id="pill-${c.id}" onclick="selectCat(${c.id})">
+        ${iconFor(c.name)} ${c.name}
+      </div>`).join('');
+  } catch(e) {
+    pillsEl.innerHTML = `<div class="cat-pills-empty">লোড হয়নি।</div>`;
+  }
+}
+
+function selectCat(id) {
+  selectedCatId = id;
+  document.getElementById('exp-category').value = id;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById(`pill-${id}`)?.classList.add('active');
+}
+
+/* ══════════════════════════
+   LOAD EXPENSES
+══════════════════════════ */
+async function loadExpenses() {
+  const list = document.getElementById('exp-list');
+  try {
+    const data   = await api('/expenses/records/');
+    const records = data.results || [];
+
+    /* summary */
+    const today = new Date().toISOString().split('T')[0];
+    const todayRecs = records.filter(e => (e.date||'').startsWith(today));
+    const todayTotal = todayRecs.reduce((s,e) => s + parseFloat(e.amount), 0);
+
+    /* top category */
+    const byCat = {};
+    records.forEach(e => {
+      byCat[e.category_name] = (byCat[e.category_name]||0) + parseFloat(e.amount);
+    });
+    const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
+
+    /* all-time total */
+    const grandTotal = records.reduce((s,e) => s + parseFloat(e.amount), 0);
+
+    setText('es-today',       `৳${num(todayTotal)}`);
+    setText('es-today-count', `${todayRecs.length}টি আজকে`);
+    setText('es-top-cat',     topCat ? topCat[0] : '—');
+    setText('es-top-amt',     topCat ? `৳${num(topCat[1])}` : '—');
+    setText('es-total-count', `${records.length}`);
+    setText('rp-total',       `মোট: ৳${num(grandTotal)}`);
+
+    if (!records.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:50px 20px;">
+          <div class="empty-icon">💸</div>
+          <h3>কোনো খরচ নেই</h3>
+          <p>বাম দিকের ফর্ম থেকে খরচ রেকর্ড করুন।</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = records.map(e => {
+      const dt = new Date(e.date).toLocaleString('bn-BD', {
+        day:'numeric', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit'
+      });
+      const icon = iconFor(e.category_name || '');
+      return `
+        <div class="exp-row">
+          <div class="exp-cat-icon">${icon}</div>
+          <div class="exp-info">
+            <strong>${e.category_name}</strong>
+            <small>${e.note || '—'} &nbsp;•&nbsp; ${dt}</small>
+          </div>
+          <div class="exp-amount">৳${num(e.amount)}</div>
+          <button class="del-btn" onclick="deleteExp(${e.id})">🗑️</button>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px;">
+        <div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3>
+      </div>`;
+    toast('খরচ লোড করা যায়নি।','error');
+  }
+}
+
+/* ══════════════════════════
+   ADD EXPENSE
+══════════════════════════ */
+async function addExpense() {
+  if (!selectedCatId) { toast('খাত বেছে নিন!','error'); return; }
+
+  const amount = document.getElementById('exp-amount').value;
+  if (!amount || Number(amount) <= 0) {
+    shakeEl('exp-amount');
+    toast('টাকার পরিমাণ লিখুন!','error');
+    return;
+  }
+
+  const btn = document.getElementById('save-exp-btn');
+  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+
+  try {
+    await api('/expenses/records/', 'POST', {
+      category: selectedCatId,
+      amount,
+      note: document.getElementById('exp-note').value
+    });
+    toast('খরচ রেকর্ড সেভ হয়েছে ✓');
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-note').value   = '';
+    selectedCatId = null;
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('exp-category').value = '';
+    loadExpenses();
+  } catch(e) {
+    toast(e?.error || 'সেভ করা যায়নি। ক্যাশ ব্যালেন্স পর্যাপ্ত কিনা দেখুন।','error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '💸 খরচ সেভ করুন';
+  }
+}
+
+/* ══════════════════════════
+   DELETE
+══════════════════════════ */
+async function deleteExp(id) {
+  if (!confirm('এই খরচের রেকর্ড ডিলিট করবেন?')) return;
+  try {
+    await api(`/expenses/records/${id}/`, 'DELETE');
+    toast('রেকর্ড ডিলিট হয়েছে।');
+    loadExpenses();
+  } catch(e) { toast('ডিলিট হয়নি।','error'); }
+}
+
+function setText(id, v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+
+function shakeEl(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor='var(--danger)'; el.style.animation='none';
+  void el.offsetWidth; el.style.animation='shake .3s ease'; el.focus();
+  setTimeout(()=>{ el.style.borderColor=''; el.style.animation=''; },1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent=`@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

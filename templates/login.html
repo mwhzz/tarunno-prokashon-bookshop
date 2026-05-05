@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>লগইন — পাঠশালা</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #1a6fc4;
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+}
+body {
+  font-family: 'Hind Siliguri', sans-serif;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+.login-card {
+  background: var(--surface);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 400px;
+}
+.brand { text-align: center; margin-bottom: 30px; }
+.brand h1 { font-size: 28px; margin: 0; color: var(--accent); }
+.brand p { color: var(--muted); margin: 5px 0 0; font-size: 14px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.form-group input {
+  width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+  box-sizing: border-box; font-size: 15px; transition: border 0.2s;
+}
+.form-group input:focus { outline: none; border-color: var(--accent); }
+
+.remember-me { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+
+.btn {
+  width: 100%; padding: 12px; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s; margin-top: 10px;
+}
+.btn:hover { opacity: 0.9; }
+
+.messages { list-style: none; padding: 0; margin-bottom: 20px; }
+.message { padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; }
+.message.error { background: #fee2e2; color: #b91c1c; }
+.message.success { background: #dcfce7; color: #15803d; }
+
+.footer-links { text-align: center; margin-top: 20px; font-size: 14px; color: var(--muted); }
+.footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+:root {
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --bg: #eef2f6;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #64748b;
+  --border: #dbe3ec;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  height: auto;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, .12), transparent 34%),
+    linear-gradient(135deg, #f8fafc 0%, #eef2f6 52%, #e2e8f0 100%);
+  color: var(--text);
+}
+
+.login-card {
+  max-width: 420px;
+  padding: 34px;
+  border: 1px solid rgba(255,255,255,.82);
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .14);
+}
+
+.brand {
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.brand h1 {
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.brand p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-group input {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, .13);
+}
+
+.remember-me input {
+  min-height: auto;
+}
+
+.btn {
+  min-height: 46px;
+  background: var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, .22);
+}
+
+.btn:hover {
+  background: var(--accent-dark);
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="brand">
+    <h1>📚 পাঠশালা</h1>
+    <p>বই ব্যবস্থাপনা সিস্টেমে লগইন করুন</p>
+  </div>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>ইউজারনেম</label>
+      <input type="text" name="username" placeholder="Username" required autofocus>
+    </div>
+    <div class="form-group">
+      <label>পাসওয়ার্ড</label>
+      <input type="password" name="password" placeholder="Password" required>
+    </div>
+    
+    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+      <label class="remember-me">
+        <input type="checkbox" name="remember"> আমাকে মনে রাখুন
+      </label>
+    </div>
+
+    <button type="submit" class="btn">লগইন করুন</button>
+  </form>
+
+  <div class="footer-links">
+    একাউন্ট নেই? <a href="/register/">নতুন একাউন্ট খুলুন</a>
+  </div>
+</div>
+
+</body>
+</html>

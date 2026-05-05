@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>রেজিস্ট্রেশন — পাঠশালা</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #16a34a; /* রেজিস্ট্রেশনের জন্য সবুজ থিম */
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+}
+body {
+  font-family: 'Hind Siliguri', sans-serif;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+.register-card {
+  background: var(--surface);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 450px;
+}
+.brand { text-align: center; margin-bottom: 30px; }
+.brand h1 { font-size: 28px; margin: 0; color: var(--accent); }
+.brand p { color: var(--muted); margin: 5px 0 0; font-size: 14px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.form-group input {
+  width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+  box-sizing: border-box; font-size: 14px; transition: border 0.2s;
+}
+.form-group input:focus { outline: none; border-color: var(--accent); }
+
+.btn {
+  width: 100%; padding: 12px; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s; margin-top: 10px;
+}
+.btn:hover { opacity: 0.9; }
+
+.messages { list-style: none; padding: 0; margin-bottom: 20px; }
+.message { padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; }
+.message.error { background: #fee2e2; color: #b91c1c; }
+
+.footer-links { text-align: center; margin-top: 20px; font-size: 14px; color: var(--muted); }
+.footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+:root {
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --bg: #eef2f6;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #64748b;
+  --border: #dbe3ec;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, .11), transparent 34%),
+    linear-gradient(135deg, #f8fafc 0%, #eef2f6 54%, #e2e8f0 100%);
+  color: var(--text);
+}
+
+.register-card {
+  max-width: 500px;
+  padding: 34px;
+  border: 1px solid rgba(255,255,255,.82);
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .14);
+}
+
+.brand {
+  text-align: left;
+  margin-bottom: 26px;
+}
+
+.brand h1 {
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.brand p {
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.form-group label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-group input,
+select {
+  min-height: 44px;
+  border-color: var(--border) !important;
+  border-radius: 8px !important;
+}
+
+.form-group input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, .13);
+}
+
+.btn {
+  min-height: 46px;
+  background: var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, .22);
+}
+
+.btn:hover {
+  background: var(--accent-dark);
+  opacity: 1;
+}
+
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; gap: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="register-card">
+  <div class="brand">
+    <h1>📚 পাঠশালা</h1>
+    <p>নতুন স্টাফ একাউন্ট তৈরি করুন</p>
+  </div>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>নামের প্রথম অংশ</label>
+        <input type="text" name="first_name" placeholder="First Name" required>
+      </div>
+      <div class="form-group">
+        <label>শেষ অংশ</label>
+        <input type="text" name="last_name" placeholder="Last Name" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ইউজারনেম *</label>
+      <input type="text" name="username" placeholder="Username" required>
+    </div>
+
+    <div class="form-group">
+      <label>ইমেইল (ঐচ্ছিক)</label>
+      <input type="email" name="email" placeholder="Email Address">
+    </div>
+
+    <div class="form-group">
+      <label>পাসওয়ার্ড *</label>
+      <input type="password" name="password" placeholder="Choose a Password" required>
+    </div>
+
+    <div class="form-group">
+      <label>পদমর্যাদা (Role) *</label>
+      <select name="role" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px;" required>
+        <option value="staff">Staff (স্টাফ)</option>
+        <option value="manager">Manager (ম্যানেজার)</option>
+        <option value="admin">Admin (অ্যাডমিন)</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn">রেজিস্ট্রেশন করুন</button>
+  </form>
+
+  <div class="footer-links">
+    অলরেডি একাউন্ট আছে? <a href="/login/">লগইন করুন</a>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block page_title %}বইয়ের তালিকা{% endblock %}
+
+{% block content %}
+<!-- 
+=============================================================================
+* বইয়ের তালিকা পেজ (Books List)
+* এখানে দোকানে থাকা সব বই, তাদের দাম এবং স্টকের অবস্থা দেখা যাবে।
+=============================================================================
+-->
+
+<div id="books-wrapper">
+    <div class="loading"><div class="spinner"></div> বই লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allBooksList = [];
+
+async function initBooks() {
+  const w = document.getElementById('books-wrapper');
+  try {
+    // API থেকে সব বই আনা হচ্ছে
+    const r = await api('/books/?page_size=200');
+    allBooksList = r.results;
+    
+    // টেবিল তৈরি করে ডাটা দেখানো
+    w.innerHTML = `
+      <div class="table-wrap">
+        <!-- টেবিলের হেডার এবং সার্চ অপশন -->
+        <div class="table-header">
+          <span class="table-title">📗 বইয়ের তালিকা (${r.count}টি)</span>
+          <input type="text" placeholder="বই বা লেখক খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
+          <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
+        </div>
+        
+        <!-- বইয়ের লিস্ট টেবিল -->
+        <table id="books-table" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th>ছবি</th>
+              <th>কোড</th>
+              <th>বইয়ের নাম</th>
+              <th>লেখক</th>
+              <th>MRP</th>
+              <th>বিক্রয়মূল্য</th>
+              <th>স্টক</th>
+              <th>স্ট্যাটাস</th>
+              <th style="text-align:right">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allBooksList.map(b => bookRowHtml(b)).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    w.innerHTML = '<div class="empty">সার্ভার থেকে ডাটা পাওয়া যায়নি।</div>';
+  }
+}
+
+// প্রতিটি বইয়ের জন্য টেবিলের একটা সারি (Row) তৈরি করার ফাংশন
+function bookRowHtml(b) {
+  // স্টকের পরিমাণ অনুযায়ী ব্যাজ (Badge) ঠিক করা
+  const stockBadge = b.current_stock <= 0
+    ? '<span class="badge badge-red">স্টক নেই</span>'
+    : b.current_stock <= 5
+    ? `<span class="badge badge-yellow">${b.current_stock} pcs</span>`
+    : `<span class="badge badge-green">${b.current_stock} pcs</span>`;
+    
+  return `<tr>
+    <td style="width: 50px; text-align: center;">
+      <img src="${b.image || '/static/img/no-book.png'}" 
+           style="width:40px; height:60px; object-fit:contain; border-radius:4px; border:1px solid var(--border); background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.1)"
+           onerror="this.src='https://via.placeholder.com/40x60?text=No+Img'">
+    </td>
+    <td style="font-family:monospace">${b.product_code || '—'}</td>
+    <td><strong>${b.title}</strong></td>
+    <td>${b.author || '—'}</td>
+    <td style="font-family:monospace">৳${b.mrp || 0}</td>
+    <td style="font-family:monospace;color:var(--accent)">৳${b.selling_price}</td>
+    <td>${stockBadge}</td>
+    <td>${b.is_active ? '<span class="badge badge-green">সক্রিয়</span>' : '<span class="badge badge-red">বন্ধ</span>'}</td>
+    <td style="text-align:right">
+      <a href="/books/edit/${b.id}/" class="btn btn-ghost btn-sm" style="text-decoration:none">✎ এডিট</a>
+    </td>
+  </tr>`;
+}
+
+// সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন
+function filterBookList() {
+  const q = document.getElementById('book-search-list')?.value.toLowerCase();
+  
+  // নাম অথবা লেখকের নামের সাথে মিলিয়ে ফিল্টার
+  const filteredRows = allBooksList.filter(b =>
+    b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)
+  );
+  
+  const tbody = document.querySelector('#books-table tbody');
+  if (tbody) {
+    tbody.innerHTML = filteredRows.map(bookRowHtml).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initBooks);
+</script>
+{% endblock %}

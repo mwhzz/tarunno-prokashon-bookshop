@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block page_title %}সব ইনভয়েস{% endblock %}
+
+{% block content %}
+<!-- 
+=============================================================================
+* সব ইনভয়েস (All Invoices)
+* এখানে বিক্রয় হওয়া সব ইনভয়েসের তালিকা দেখা যাবে।
+=============================================================================
+-->
+
+<div id="invoices-wrapper">
+    <div class="loading"><div class="spinner"></div> ইনভয়েস লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function initInvoices() {
+  const w = document.getElementById('invoices-wrapper');
+  try {
+    // API থেকে সব সেলস ডাটা (ইনভয়েস) আনা হচ্ছে
+    const r = await api('/sales/?page_size=100');
+    
+    w.innerHTML = `
+      <div class="table-wrap">
+        <div class="table-header">
+            <span class="table-title">🧾 সব ইনভয়েসের তালিকা (${r.count}টি)</span>
+        </div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+                <th>ইনভয়েস নম্বর</th>
+                <th>গ্রাহক</th>
+                <th>মোট বিল</th>
+                <th>পেমেন্ট পেয়েছি</th>
+                <th>বাকি</th>
+                <th>স্ট্যাটাস</th>
+                <th>তারিখ</th>
+                <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${r.results.map(s => `<tr>
+              <td style="font-family:monospace"><strong>${s.invoice_number}</strong></td>
+              <td>${s.customer_name}</td>
+              <td style="font-family:monospace">৳${num(s.total)}</td>
+              <td style="font-family:monospace;color:var(--accent2)">৳${num(s.paid_amount)}</td>
+              <td style="font-family:monospace;color:var(--danger)">৳${num(s.due_amount)}</td>
+              <td>${statusBadge(s.status)}</td>
+              <td style="color:var(--muted);font-size:12px">${fmtDate(s.created_at)}</td>
+              <td>
+                <div style="display:flex; gap:5px;">
+                  <a href="/api/sales/${s.id}/print_invoice/" class="btn btn-ghost btn-sm" target="_blank" style="text-decoration:none; color:var(--accent)">
+                    📄 প্রিন্ট
+                  </a>
+                  <button class="btn btn-ghost btn-sm" onclick="showReturnUI(${s.id}, '${s.invoice_number}')">
+                    ↺ ফেরত
+                  </button>
+                </div>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) { 
+      w.innerHTML = '<div class="empty">ডাটা লোড করতে সমস্যা হয়েছে।</div>'; 
+  }
+}
+
+async function showReturnUI(saleId, invNum) {
+  try {
+    const s = await api(`/sales/${saleId}/`);
+    let html = `
+      <div id="return-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+        <div class="form-card" style="width:450px; padding:20px">
+          <h3 style="margin-bottom:15px">বই ফেরত নিন (#${invNum})</h3>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:15px">যে বইটি ফেরত আসছে তার পরিমাণ লিখুন:</p>
+          <div id="return-items-list">
+            ${s.items.map(item => `
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border)">
+                <div style="flex:1">
+                  <div style="font-size:14px; font-weight:600">${item.book_title}</div>
+                  <div style="font-size:11px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
+                </div>
+                <input type="number" class="return-qty" data-id="${item.book}" value="0" min="0" max="${item.quantity}" style="width:60px; padding:4px">
+              </div>
+            `).join('')}
+          </div>
+          <div class="form-group" style="margin-top:15px">
+            <label>ফেরত নেওয়ার কারণ (Reason)</label>
+            <input id="return-reason" placeholder="যেমন: কাস্টমার বদলে অন্য বই নিয়েছে">
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px">
+            <button class="btn btn-ghost" onclick="document.getElementById('return-modal').remove()">বাতিল</button>
+            <button class="btn btn-primary" onclick="processReturn(${saleId})">রিটার্ন কনফার্ম করুন</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) { toast('ডাটা লোড করা যায়নি', 'error'); }
+}
+
+async function processReturn(saleId) {
+  const inputs = document.querySelectorAll('.return-qty');
+  const items = [];
+  inputs.forEach(input => {
+    const qty = parseInt(input.value);
+    if (qty > 0) {
+      items.push({ book_id: input.dataset.id, quantity: qty });
+    }
+  });
+  
+  if (!items.length) { toast('অন্তত একটি বইয়ের পরিমাণ লিখুন', 'error'); return; }
+  
+  const reason = document.getElementById('return-reason').value;
+  
+  try {
+    await api(`/sales/${saleId}/return_items/`, 'POST', { items, reason });
+    toast('বই ফেরত নেওয়া হয়েছে এবং স্টক আপডেট হয়েছে ✓');
+    document.getElementById('return-modal').remove();
+    initInvoices();
+  } catch(e) {
+    toast(e.error || 'রিটার্ন প্রসেস করা যায়নি', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initInvoices);
+</script>
+{% endblock %}

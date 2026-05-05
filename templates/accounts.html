@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+{% block page_title %}ক্যাশ লেজার ও হিসাব{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── page ─── */
+.ledger-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── HERO SUMMARY ROW ─── */
+.ledger-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1.3fr;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.lh-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .2s, transform .18s;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lh-card:hover { box-shadow: 0 6px 22px rgba(13,51,38,.09); transform: translateY(-2px); }
+
+/* dark hero card (opening balance) */
+.lh-card.dark {
+  background: linear-gradient(140deg, #0d3a28, #1a5c3e);
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(13,51,38,.25);
+}
+
+.lh-card.dark::after {
+  content:'';
+  position:absolute; top:-30px; right:-30px;
+  width:110px; height:110px; border-radius:50%;
+  background: rgba(39,169,110,.15);
+}
+
+/* closing balance card */
+.lh-card.accent {
+  background: linear-gradient(135deg, var(--g700), var(--g600));
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(27,122,85,.25);
+}
+
+.lh-card.accent::after {
+  content:'';
+  position:absolute; top:-20px; right:-20px;
+  width:90px; height:90px; border-radius:50%;
+  background: rgba(255,255,255,.1);
+}
+
+/* left accent bar */
+.lh-card::before {
+  content:'';
+  position:absolute; left:0; top:18%; bottom:18%;
+  width:3px; border-radius:99px;
+  background: var(--accent);
+}
+
+.lh-card.dark::before,
+.lh-card.accent::before { display: none; }
+
+.lh-card.in::before    { background: var(--g500); }
+.lh-card.out::before   { background: var(--danger); }
+.lh-card.sales::before { background: var(--info); }
+
+.lhc-label {
+  font-size: 11px; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lh-card.dark   .lhc-label { color: rgba(255,255,255,.55); }
+.lh-card.accent .lhc-label { color: rgba(255,255,255,.65); }
+
+.lhc-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 700;
+  color: var(--g900);
+  margin: 8px 0 4px;
+  line-height: 1;
+}
+
+.lh-card.dark   .lhc-val { color: #fff; font-size: 30px; }
+.lh-card.accent .lhc-val { color: #fff; font-size: 28px; }
+.lh-card.in     .lhc-val { color: var(--g600); }
+.lh-card.out    .lhc-val { color: var(--danger); }
+.lh-card.sales  .lhc-val { color: var(--info); }
+
+.lhc-sub {
+  font-size: 12px; color: var(--muted); font-weight: 600;
+}
+.lh-card.dark   .lhc-sub { color: rgba(255,255,255,.55); }
+.lh-card.accent .lhc-sub { color: rgba(255,255,255,.65); }
+
+/* ─── MAIN BODY ─── */
+.ledger-body {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+/* ─── TRANSACTION LIST ─── */
+.ledger-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  overflow: hidden;
+}
+
+.lp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.lp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: var(--g900);
+}
+
+.close-day-btn {
+  display: inline-flex;
+  align-items: center; gap: 6px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: #fee2e2;
+  color: var(--danger);
+  border: 1px solid #fca5a5;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 13px; font-weight: 800;
+  cursor: pointer;
+  transition: all .18s;
+}
+
+.close-day-btn:hover { background: var(--danger); color: #fff; }
+.close-day-btn:disabled {
+  background: var(--surface2);
+  color: var(--muted);
+  border-color: var(--border);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* closed banner */
+.closed-banner {
+  display: none;
+  align-items: center; gap: 10px;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+  padding: 10px 20px;
+  font-size: 13px; font-weight: 700;
+  color: #92400e;
+}
+.closed-banner.show { display: flex; }
+
+/* transaction rows */
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 20px;
+  border-bottom: 1px solid #f0f7f3;
+  transition: background .12s;
+}
+
+.tx-row:last-child { border-bottom: none; }
+.tx-row:hover { background: var(--g100); }
+
+.tx-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.tx-icon.sale    { background: #dbeafe; }
+.tx-icon.in      { background: var(--g100); }
+.tx-icon.out     { background: #fee2e2; }
+.tx-icon.expense { background: #fee2e2; }
+
+.tx-info { flex: 1; min-width: 0; }
+
+.tx-type {
+  font-size: 13px; font-weight: 800;
+  color: var(--g900); display: block;
+}
+
+.tx-note {
+  font-size: 12px; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.tx-time {
+  font-size: 11px; color: var(--muted);
+  font-weight: 600; flex-shrink: 0;
+}
+
+.tx-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 800;
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: right;
+}
+
+.tx-amount.plus  { color: var(--g600); }
+.tx-amount.minus { color: var(--danger); }
+
+/* ─── ENTRY FORM ─── */
+.entry-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  overflow: hidden;
+}
+
+.ep-header {
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ep-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: var(--g900);
+}
+
+.ep-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
+
+.ep-body { padding: 18px 20px; }
+
+/* type selector cards */
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.type-card {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .18s;
+}
+
+.type-card:hover { border-color: var(--accent); background: var(--g100); }
+
+.type-card.selected-in {
+  border-color: var(--g500);
+  background: #f0fdf4;
+}
+
+.type-card.selected-out {
+  border-color: var(--danger);
+  background: #fef2f2;
+}
+
+.tc-icon  { font-size: 22px; margin-bottom: 5px; }
+.tc-title { font-size: 13px; font-weight: 800; color: var(--g900); }
+.tc-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* amount input — big */
+.amount-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.amount-symbol {
+  position: absolute;
+  left: 18px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.amount-input {
+  width: 100%;
+  height: 64px;
+  padding: 0 18px 0 46px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; font-weight: 700;
+  color: var(--g900);
+  outline: none;
+  transition: all .18s;
+}
+
+.amount-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.amount-input.in-focus  { border-color: var(--g500); color: var(--g700); }
+.amount-input.out-focus { border-color: var(--danger); color: var(--danger); }
+
+/* note input */
+.ep-field { margin-bottom: 14px; }
+
+.ep-field label {
+  display: block; font-size: 12px; font-weight: 800;
+  color: var(--text2); margin-bottom: 6px;
+  letter-spacing: .02em;
+}
+
+.ep-field input,
+.ep-field textarea,
+.ep-field select {
+  width: 100%; min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 14px; color: var(--text);
+  outline: none;
+  transition: all .18s;
+}
+
+.ep-field input:focus,
+.ep-field textarea:focus,
+.ep-field select:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(27,122,85,.1);
+}
+
+.ep-field textarea { min-height: 72px; resize: vertical; }
+
+/* save button */
+.save-tx-btn {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 16px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 6px 20px rgba(27,122,85,.28);
+  transition: all .18s;
+}
+
+.save-tx-btn:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(27,122,85,.38);
+}
+
+.save-tx-btn:disabled { background: var(--muted); box-shadow: none; cursor:not-allowed; transform:none; }
+
+/* info note */
+.ep-info {
+  background: var(--g100);
+  border: 1px solid var(--g200);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 12px; color: var(--g700);
+  font-weight: 600; line-height: 1.5;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .ledger-hero { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  .ledger-body { grid-template-columns: 1fr; }
+  .ledger-hero { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .ledger-hero { grid-template-columns: 1fr; }
+  .type-grid   { grid-template-columns: 1fr 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ledger-page">
+
+  <!-- ── HERO SUMMARY ── -->
+  <div class="ledger-hero">
+    <div class="lh-card dark">
+      <div class="lhc-label">ওপেনিং ব্যালেন্স</div>
+      <div class="lhc-val" id="val-opening">৳০</div>
+      <div class="lhc-sub">দিন শুরুর ক্যাশ</div>
+    </div>
+    <div class="lh-card sales">
+      <div class="lhc-label">মোট বিক্রয় (নগদ)</div>
+      <div class="lhc-val" id="val-sales">৳০</div>
+      <div class="lhc-sub" id="val-sales-count">০টি ইনভয়েস</div>
+    </div>
+    <div class="lh-card in">
+      <div class="lhc-label">অন্যান্য জমা (+)</div>
+      <div class="lhc-val" id="val-in">৳০</div>
+      <div class="lhc-sub">Cash In</div>
+    </div>
+    <div class="lh-card out">
+      <div class="lhc-label">মোট খরচ / উত্তোলন (−)</div>
+      <div class="lhc-val" id="val-expense">৳০</div>
+      <div class="lhc-sub">Cash Out + Expense</div>
+    </div>
+    <div class="lh-card accent">
+      <div class="lhc-label">বর্তমান / ক্লোজিং ব্যালেন্স</div>
+      <div class="lhc-val" id="val-closing">৳০</div>
+      <div class="lhc-sub">এখন হাতে আছে</div>
+    </div>
+  </div>
+
+  <!-- ── MAIN BODY ── -->
+  <div class="ledger-body">
+
+    <!-- LEFT: transaction list -->
+    <div class="ledger-panel">
+      <div class="lp-header">
+        <div class="lp-title">📜 আজকের লেনদেন সমূহ</div>
+        <button class="close-day-btn" id="close-day-btn" onclick="closeDay()">
+          🔒 দিন ক্লোজ করুন
+        </button>
+      </div>
+
+      <!-- closed day banner -->
+      <div class="closed-banner" id="closed-banner">
+        🔒 আজকের হিসাব ক্লোজ করা হয়েছে — আর কোনো এন্ট্রি দেওয়া যাবে না।
+      </div>
+
+      <!-- list -->
+      <div id="tx-list">
+        <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: entry form -->
+    <div class="entry-panel">
+      <div class="ep-header">
+        <div class="ep-title">📥 ক্যাশ ইন / আউট</div>
+        <div class="ep-sub">বিক্রয় ও খরচ অটো আসে — শুধু ব্যক্তিগত জমা/উত্তোলনের জন্য এটি ব্যবহার করুন।</div>
+      </div>
+
+      <div class="ep-body">
+
+        <!-- type selector -->
+        <div class="ep-field">
+          <label>লেনদেনের ধরন বেছে নিন</label>
+          <div class="type-grid">
+            <div class="type-card" id="tc-cash_in" onclick="selectType('cash_in')">
+              <div class="tc-icon">💵</div>
+              <div class="tc-title">Cash In</div>
+              <div class="tc-sub">মালিকের জমা</div>
+            </div>
+            <div class="type-card" id="tc-cash_out" onclick="selectType('cash_out')">
+              <div class="tc-icon">💸</div>
+              <div class="tc-title">Cash Out</div>
+              <div class="tc-sub">টাকা উত্তোলন</div>
+            </div>
+            <div class="type-card" id="tc-adjustment_in" onclick="selectType('adjustment_in')">
+              <div class="tc-icon">➕</div>
+              <div class="tc-title">সমন্বয় (+)</div>
+              <div class="tc-sub">Adjustment In</div>
+            </div>
+            <div class="type-card" id="tc-adjustment_out" onclick="selectType('adjustment_out')">
+              <div class="tc-icon">➖</div>
+              <div class="tc-title">সমন্বয় (−)</div>
+              <div class="tc-sub">Adjustment Out</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- amount -->
+        <div class="ep-field">
+          <label>টাকার পরিমাণ <span style="color:var(--danger)">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-symbol">৳</span>
+            <input class="amount-input" id="trans-amount" type="number" placeholder="০" min="0">
+          </div>
+        </div>
+
+        <!-- note -->
+        <div class="ep-field">
+          <label>নোট / বিবরণ</label>
+          <textarea id="trans-note" placeholder="কেন এই লেনদেন? সংক্ষেপে লিখুন..."></textarea>
+        </div>
+
+        <!-- save -->
+        <button class="save-tx-btn" id="save-tx-btn" onclick="addTransaction()">
+          ✅ ট্রানজেকশন সেভ করুন
+        </button>
+
+        <div class="ep-info">
+          ℹ️ বিক্রয় (POS) এবং খরচের এন্ট্রি অটোমেটিক এই লেজারে চলে আসে। এই ফর্মটি শুধুমাত্র মালিকের ব্যক্তিগত জমা বা উত্তোলনের জন্য ব্যবহার করুন।
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentDay   = null;
+let selectedType = 'cash_in';
+
+/* init */
+document.addEventListener('DOMContentLoaded', () => {
+  selectType('cash_in');
+  fetchTodayCash();
+});
+
+/* ══════════════════════════
+   TYPE SELECTOR
+══════════════════════════ */
+function selectType(type) {
+  selectedType = type;
+  const isIn = type.includes('in');
+
+  ['cash_in','cash_out','adjustment_in','adjustment_out'].forEach(t => {
+    const card = document.getElementById(`tc-${t}`);
+    card.classList.remove('selected-in','selected-out');
+    if (t === type) card.classList.add(isIn ? 'selected-in' : 'selected-out');
+  });
+
+  const input = document.getElementById('trans-amount');
+  input.className = `amount-input ${isIn ? 'in-focus' : 'out-focus'}`;
+}
+
+/* ══════════════════════════
+   FETCH DATA
+══════════════════════════ */
+async function fetchTodayCash() {
+  const txList = document.getElementById('tx-list');
+  txList.innerHTML = `<div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>`;
+
+  try {
+    const data = await api('/accounts/daily/today/');
+    currentDay = data;
+
+    /* summary numbers */
+    let sales = 0, ins = 0, outs = 0, salesCount = 0;
+    (data.transactions || []).forEach(t => {
+      const amt = parseFloat(t.amount);
+      if (t.transaction_type === 'sale') { sales += amt; salesCount++; }
+      else if (['cash_in','adjustment_in'].includes(t.transaction_type)) ins += amt;
+      else outs += amt;
+    });
+
+    setText('val-opening',     `৳${num(data.opening_balance)}`);
+    setText('val-sales',       `৳${num(sales)}`);
+    setText('val-sales-count', `${salesCount}টি ইনভয়েস`);
+    setText('val-in',          `৳${num(ins)}`);
+    setText('val-expense',     `৳${num(outs)}`);
+    setText('val-closing',     `৳${num(data.closing_balance)}`);
+
+    /* closed state */
+    const closedBanner = document.getElementById('closed-banner');
+    const closeBtn     = document.getElementById('close-day-btn');
+    const saveBtn      = document.getElementById('save-tx-btn');
+
+    if (data.is_closed) {
+      closedBanner.classList.add('show');
+      closeBtn.disabled   = true;
+      closeBtn.innerHTML  = '🔒 ক্লোজড';
+      saveBtn.disabled    = true;
+    }
+
+    /* render transactions */
+    if (!data.transactions || !data.transactions.length) {
+      txList.innerHTML = `
+        <div class="empty-state" style="padding:50px 20px;">
+          <div class="empty-icon">📋</div>
+          <h3>এখনো কোনো লেনদেন হয়নি</h3>
+          <p>বিক্রয় বা খরচ হলে এখানে দেখাবে।</p>
+        </div>`;
+      return;
+    }
+
+    const txns = [...data.transactions].reverse();
+
+    txList.innerHTML = txns.map(t => {
+      const isPlus  = ['sale','cash_in','adjustment_in'].includes(t.transaction_type);
+      const iconMap = {
+        sale:           { icon:'🛒', cls:'sale' },
+        cash_in:        { icon:'💵', cls:'in'   },
+        adjustment_in:  { icon:'➕', cls:'in'   },
+        cash_out:       { icon:'💸', cls:'out'  },
+        expense:        { icon:'🧾', cls:'expense'},
+        adjustment_out: { icon:'➖', cls:'out'  },
+      };
+      const { icon, cls } = iconMap[t.transaction_type] || { icon:'💰', cls:'in' };
+      const time = new Date(t.timestamp).toLocaleTimeString('bn-BD', { hour:'2-digit', minute:'2-digit' });
+
+      return `
+        <div class="tx-row">
+          <div class="tx-icon ${cls}">${icon}</div>
+          <div class="tx-info">
+            <span class="tx-type">${t.type_display || t.transaction_type}</span>
+            <span class="tx-note">${t.note || '—'}</span>
+          </div>
+          <div class="tx-time">${time}</div>
+          <div class="tx-amount ${isPlus ? 'plus' : 'minus'}">
+            ${isPlus ? '+' : '−'} ৳${num(t.amount)}
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    txList.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px;">
+        <div class="empty-icon">⚠️</div>
+        <h3>ডাটা লোড হয়নি</h3>
+        <p>সার্ভার চালু আছে কিনা দেখুন।</p>
+      </div>`;
+    toast('ক্যাশ ডাটা লোড করা যায়নি।','error');
+  }
+}
+
+/* ══════════════════════════
+   ADD TRANSACTION
+══════════════════════════ */
+async function addTransaction() {
+  if (currentDay?.is_closed) {
+    toast('আজকের দিন ক্লোজ করা হয়েছে। নতুন এন্ট্রি সম্ভব নয়।','error');
+    return;
+  }
+
+  const amount = document.getElementById('trans-amount').value;
+  const note   = document.getElementById('trans-note').value;
+
+  if (!amount || Number(amount) <= 0) {
+    shake('trans-amount');
+    toast('টাকার পরিমাণ লিখতে হবে!','error');
+    return;
+  }
+
+  const btn = document.getElementById('save-tx-btn');
+  btn.disabled     = true;
+  btn.textContent  = '⏳ সেভ হচ্ছে...';
+
+  try {
+    await api('/accounts/transactions/', 'POST', {
+      transaction_type: selectedType,
+      amount,
+      note
+    });
+
+    toast('ট্রানজেকশন সফলভাবে সেভ হয়েছে ✓');
+    document.getElementById('trans-amount').value = '';
+    document.getElementById('trans-note').value   = '';
+    fetchTodayCash();
+  } catch(e) {
+    toast(e?.error || 'সেভ করা যায়নি।','error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '✅ ট্রানজেকশন সেভ করুন';
+  }
+}
+
+/* ══════════════════════════
+   CLOSE DAY
+══════════════════════════ */
+async function closeDay() {
+  if (!confirm('আপনি কি নিশ্চিত?\n\nআজকের ক্যাশ হিসাব ক্লোজ করলে আর কোনো এন্ট্রি দেওয়া যাবে না।')) return;
+
+  try {
+    await api(`/accounts/daily/${currentDay.id}/close_day/`, 'POST');
+    toast('আজকের হিসাব সফলভাবে ক্লোজ করা হয়েছে 🔒');
+    fetchTodayCash();
+  } catch(e) {
+    toast('ক্লোজ করা যায়নি।','error');
+  }
+}
+
+/* ══════════════════════════
+   HELPERS
+══════════════════════════ */
+function setText(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+
+function shake(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--danger)';
+  el.style.animation   = 'none';
+  void el.offsetWidth;
+  el.style.animation   = 'shake .3s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor=''; el.style.animation=''; }, 1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+</script>
+{% endblock %}

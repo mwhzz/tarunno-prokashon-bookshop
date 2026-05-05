@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block page_title %}বাকি বিল{% endblock %}
+
+{% block content %}
+<!-- 
+=============================================================================
+* বাকি বিলের তালিকা (Due Invoices)
+* যেসব ইনভয়েসে কাস্টমার পুরো টাকা দেয়নি (বাকি আছে), সেগুলো এখানে দেখা যাবে।
+=============================================================================
+-->
+
+<div id="due-wrapper">
+    <div class="loading"><div class="spinner"></div> লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function initDue() {
+  const w = document.getElementById('due-wrapper');
+  try {
+    // API থেকে শুধু due (বাকি) আছে এমন লিস্ট আনা হচ্ছে
+    const r = await api('/sales/due_list/');
+    
+    // মোট কত টাকা বাকি আছে তার হিসাব
+    const totalDue = r.reduce((sum, item) => sum + parseFloat(item.due_amount), 0);
+    
+    w.innerHTML = `
+      <div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card red">
+            <div class="stat-label">মোট বাকি বিল (Total Due Invoices)</div>
+            <div class="stat-value">${r.length}টি</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-label">মোট বাকি পরিমাণ (Total Due Amount)</div>
+            <div class="stat-value">৳${num(totalDue)}</div>
+        </div>
+      </div>
+      
+      <div class="table-wrap">
+        <div class="table-header">
+            <span class="table-title">⚠ বাকি ইনভয়েসের তালিকা</span>
+        </div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+                <th>ইনভয়েস নম্বর</th>
+                <th>গ্রাহক</th>
+                <th>ফোন</th>
+                <th>মোট বিল</th>
+                <th>বাকি পরিমাণ</th>
+                <th>স্ট্যাটাস</th>
+                <th>তারিখ</th>
+                <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${r.map(s => `<tr>
+              <td style="font-family:monospace"><strong>${s.invoice_number}</strong></td>
+              <td><strong>${s.customer_name}</strong></td>
+              <td style="color:var(--muted)">${s.customer_phone || '—'}</td>
+              <td style="font-family:monospace">৳${num(s.total)}</td>
+              <td style="font-family:monospace;color:var(--danger);font-weight:700">৳${num(s.due_amount)}</td>
+              <td>${statusBadge(s.status)}</td>
+              <td style="color:var(--muted);font-size:12px">${fmtDate(s.created_at)}</td>
+              <td>
+                <button class="btn btn-success btn-sm" onclick="collectPayment(${s.id}, ${s.due_amount})">
+                  ৳ পেমেন্ট নিন
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) { 
+      w.innerHTML = '<div class="empty">ডাটা লোড করতে সমস্যা হয়েছে।</div>'; 
+  }
+}
+
+async function collectPayment(saleId, maxAmount) {
+  let html = `
+    <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+      <div class="form-card" style="width:400px; padding:24px">
+        <h3 style="margin-bottom:12px">💰 বকেয়া পেমেন্ট নিন</h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+        
+        <div class="form-group">
+          <label>জমার পরিমাণ (Amount)</label>
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+        </div>
+        
+        <div class="form-group" style="margin-top:12px">
+          <label>পেমেন্ট মেথড</label>
+          <select id="pay-method" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border)">
+            <option value="cash">Cash (নগদ)</option>
+            <option value="bkash">bKash (বিকাশ)</option>
+            <option value="nagad">Nagad (নগদ)</option>
+            <option value="bank">Bank (ব্যাংক)</option>
+          </select>
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
+          <button class="btn btn-ghost" onclick="document.getElementById('payment-modal').remove()">বাতিল</button>
+          <button class="btn btn-success" id="confirm-pay-btn">পেমেন্ট কনফার্ম</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('confirm-pay-btn').onclick = async () => {
+    const amount = document.getElementById('pay-amount').value;
+    const method = document.getElementById('pay-method').value;
+    
+    if (!amount || amount <= 0 || amount > maxAmount) {
+      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+      return;
+    }
+    
+    try {
+      await api(`/sales/${saleId}/add_payment/`, 'POST', { amount, method });
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      document.getElementById('payment-modal').remove();
+      initDue();
+    } catch(e) {
+      toast('পেমেন্ট জমা নেওয়া যায়নি', 'error');
+    }
+  };
+}
+
+document.addEventListener('DOMContentLoaded', initDue);
+</script>
+{% endblock %}

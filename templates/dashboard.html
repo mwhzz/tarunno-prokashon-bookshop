@@ -1,0 +1,614 @@
+{% extends 'base.html' %}
+{% block page_title %}ড্যাশবোর্ড{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── page fade-in ─── */
+#dash { animation: fadeUp .35s ease both; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── TOP HERO ROW ─── */
+.hero-row {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* big dark card */
+.hero-card {
+  background: linear-gradient(140deg, #0d3a28 0%, #1a5c3e 55%, #1f7a55 100%);
+  border-radius: 18px;
+  padding: 28px 26px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(13,51,38,.3);
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* decorative circles */
+.hero-card::before,
+.hero-card::after {
+  content:'';
+  position:absolute;
+  border-radius:50%;
+  background: rgba(144,230,107,.12);
+}
+.hero-card::before { width:200px; height:200px; top:-60px; right:-50px; }
+.hero-card::after  { width:120px; height:120px; bottom:-40px; right:60px; }
+
+.hero-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 8px;
+}
+
+.hero-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.hero-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(255,255,255,.62);
+  font-weight: 600;
+}
+
+.hero-foot-tag {
+  background: rgba(255,255,255,.12);
+  border-radius: 99px;
+  padding: 4px 10px;
+  color: rgba(255,255,255,.8);
+}
+
+/* small metric cards */
+.metric-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 170px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .2s, transform .18s;
+}
+
+.metric-card:hover {
+  box-shadow: 0 8px 28px rgba(13,51,38,.1);
+  transform: translateY(-2px);
+}
+
+/* left accent line */
+.metric-card::before {
+  content:'';
+  position: absolute;
+  left:0; top:20%; bottom:20%;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.metric-card.red::before  { background: var(--danger); }
+.metric-card.blue::before { background: var(--info); }
+.metric-card.teal::before { background: #0891b2; }
+
+.m-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.m-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--g900);
+  margin: 8px 0 4px;
+  line-height: 1;
+}
+
+.metric-card.red .m-value  { color: var(--danger); }
+.metric-card.blue .m-value { color: var(--info); }
+.metric-card.teal .m-value { color: #0891b2; }
+
+.m-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.m-icon {
+  position: absolute;
+  top: 16px; right: 18px;
+  font-size: 32px;
+  opacity: .1;
+}
+
+/* ─── QUICK ACTIONS ─── */
+.quick-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.q-action {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 14px 18px;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all .2s;
+  box-shadow: 0 1px 6px rgba(13,51,38,.04);
+}
+
+.q-action:hover {
+  border-color: var(--accent);
+  background: var(--g100);
+  color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(27,122,85,.15);
+}
+
+.q-action .qa-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--g100);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  transition: background .2s;
+}
+.q-action:hover .qa-icon { background: var(--g200); }
+
+/* ─── BODY: chart + side ─── */
+.dash-body {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 300px;
+  gap: 18px;
+}
+
+.dash-col { display: grid; gap: 18px; }
+
+/* ─── Panel base ─── */
+.d-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+
+.panel-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.panel-hd h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--g900);
+}
+
+/* ─── Bar chart ─── */
+.bar-chart {
+  display: grid;
+  grid-template-columns: repeat(7,1fr);
+  align-items: end;
+  gap: 10px;
+  height: 160px;
+}
+
+.bc-col {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 7px;
+  height: 100%;
+  text-align: center;
+}
+
+.bc-stack {
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.bc-bar {
+  border-radius: 6px 6px 2px 2px;
+  min-height: 6px;
+  background: var(--g600);
+  transition: height .5s ease;
+}
+.bc-bar.b2 { background: var(--g300); }
+
+.bc-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ─── Collection donut ─── */
+.donut-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 0;
+}
+
+.donut-ring {
+  width: 148px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.donut-hole {
+  width: 94px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.donut-hole strong {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--g900);
+}
+
+.donut-hole small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.donut-legs {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dleg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+.dleg-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+/* ─── Side panels ─── */
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f7f3;
+  gap: 10px;
+}
+.list-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.lr-left strong { display: block; font-size: 14px; color: var(--g900); font-weight: 700; }
+.lr-left small  { font-size: 12px; color: var(--muted); }
+
+/* Next moves */
+.move-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f7f3;
+  gap: 12px;
+}
+.move-row:last-child { border-bottom: none; }
+
+.move-icon-box {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--g100);
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.move-text { flex: 1; min-width: 0; }
+.move-text strong { font-size: 13px; font-weight: 700; color: var(--g900); display: block; }
+.move-text small  { font-size: 12px; color: var(--muted); }
+
+/* Progress */
+.prog-bar {
+  height: 7px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 8px 0 14px;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width .5s ease;
+}
+.prog-fill.red { background: var(--danger); }
+
+/* ─── Responsive ─── */
+@media (max-width:1280px) {
+  .dash-body { grid-template-columns: 1fr; }
+  .dash-col.side { display: grid; grid-template-columns: repeat(2,1fr); }
+}
+
+@media (max-width:1000px) {
+  .hero-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width:720px) {
+  .hero-row { grid-template-columns: 1fr; }
+  .quick-row { grid-template-columns: repeat(2,1fr); }
+  .dash-col.side { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="dash">
+  <div class="loading"><div class="spinner"></div>&nbsp; লোড হচ্ছে...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadDash() {
+  const root = document.getElementById('dash');
+  try {
+    const [d, s] = await Promise.all([api('/sales/dashboard/'), api('/stock/summary/report/')]);
+    const t = d.today || {}, m = d.this_month || {};
+
+    const paidPct  = t.total_revenue ? Math.min(100, Math.round(t.total_paid    / t.total_revenue * 100)) : 0;
+    const duePct   = t.total_revenue ? Math.min(100, Math.round(t.total_due     / t.total_revenue * 100)) : 0;
+    const sh       = s.total_book_types ? Math.max(0, Math.round((s.total_book_types - s.out_of_stock_count) / s.total_book_types * 100)) : 0;
+    const pDeg     = Math.round(paidPct / 100 * 360);
+
+    const bars = [
+      { l:'বিক্রয়',  a:t.total_revenue,       b:t.total_paid },
+      { l:'আদায়',    a:t.total_paid,           b:t.realized_profit },
+      { l:'লাভ',     a:t.realized_profit,      b:null },
+      { l:'বাকি',    a:t.total_due,            b:null },
+      { l:'স্টক৳',   a:s.total_stock_value,   b:null },
+      { l:'ধরন',     a:s.total_book_types,     b:s.out_of_stock_count },
+      { l:'কপি',     a:s.total_quantity,       b:null },
+    ];
+    const maxB = Math.max(1, ...bars.flatMap(b => [Number(b.a)||0, Number(b.b)||0]));
+
+    root.innerHTML = `
+      <!-- HERO ROW -->
+      <div class="hero-row">
+        <div class="hero-card">
+          <div>
+            <div class="hero-kicker">আজকের মোট বিক্রয়</div>
+            <div class="hero-amount">৳${num(t.total_revenue)}</div>
+          </div>
+          <div class="hero-foot">
+            <span class="hero-foot-tag">${t.total_invoices||0}টি ইনভয়েস</span>
+            <span>আদায় ৳${num(t.total_paid)}</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <span class="m-icon">💹</span>
+          <div class="m-kicker">আজকের লাভ</div>
+          <div class="m-value">৳${num(t.realized_profit)}</div>
+          <div class="m-sub">আদায়কৃত অংশ</div>
+        </div>
+        <div class="metric-card red">
+          <span class="m-icon">⚠️</span>
+          <div class="m-kicker">মোট বাকি</div>
+          <div class="m-value">৳${num(t.total_due)}</div>
+          <div class="m-sub">${d.due_invoices||0}টি মেমো বাকি</div>
+        </div>
+        <div class="metric-card teal">
+          <span class="m-icon">📦</span>
+          <div class="m-kicker">স্টক মূল্য</div>
+          <div class="m-value">৳${num(s.total_stock_value)}</div>
+          <div class="m-sub">${num(s.total_quantity)} কপি স্টকে</div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-row">
+        <a href="/pos/" class="q-action">
+          <div class="qa-icon">🛒</div>নতুন বিক্রয়
+        </a>
+        <a href="/books/add/" class="q-action">
+          <div class="qa-icon">📗</div>নতুন বই যোগ
+        </a>
+        <a href="/stock/add/" class="q-action">
+          <div class="qa-icon">📦</div>স্টক বাড়ান
+        </a>
+        <a href="/reports/" class="q-action">
+          <div class="qa-icon">📊</div>রিপোর্ট দেখুন
+        </a>
+      </div>
+
+      <!-- BODY -->
+      <div class="dash-body">
+        <!-- LEFT col -->
+        <div class="dash-col main">
+
+          <!-- bar + donut -->
+          <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:18px;">
+            <div class="d-panel">
+              <div class="panel-hd">
+                <h3>আজকের বিক্রয় চিত্র</h3>
+                <span class="badge badge-green">আজ</span>
+              </div>
+              <div class="bar-chart">
+                ${bars.map(({l,a,b})=>`
+                  <div class="bc-col">
+                    <div class="bc-stack">
+                      <div class="bc-bar" style="height:${Math.max(6,(Number(a)||0)/maxB*130)}px"></div>
+                      ${Number(b)>0?`<div class="bc-bar b2" style="height:${Math.max(4,(Number(b)||0)/maxB*65)}px"></div>`:''}
+                    </div>
+                    <div class="bc-lbl">${l}</div>
+                  </div>`).join('')}
+              </div>
+            </div>
+
+            <div class="d-panel">
+              <div class="panel-hd">
+                <h3>আদায় হার</h3>
+                <span class="badge badge-blue">${paidPct}%</span>
+              </div>
+              <div class="donut-wrap">
+                <div class="donut-ring" style="background:conic-gradient(var(--g600) 0 ${pDeg}deg,var(--g300) ${pDeg}deg 360deg)">
+                  <div class="donut-hole">
+                    <div><strong>${paidPct}%</strong><small>আদায়</small></div>
+                  </div>
+                </div>
+                <div class="donut-legs">
+                  <div class="dleg"><div class="dleg-dot" style="background:var(--g600)"></div>আদায় ${paidPct}%</div>
+                  <div class="dleg"><div class="dleg-dot" style="background:var(--g300)"></div>বাকি ${100-paidPct}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- this-month summary -->
+          <div class="d-panel">
+            <div class="panel-hd">
+              <h3>এই মাসের সংক্ষিপ্ত হিসাব</h3>
+              <span class="badge badge-gray">মাস</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+              ${[
+                ['মোট বিক্রয়',  m.total_revenue,  'var(--g600)'],
+                ['মোট আদায়',    m.total_paid,     'var(--info)'],
+                ['মোট বাকি',    m.total_due,      'var(--danger)'],
+              ].map(([l,v,c])=>`
+                <div style="text-align:center; padding:16px 10px; background:var(--surface2); border-radius:12px; border:1px solid var(--border);">
+                  <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${l}</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${c}">৳${num(v||0)}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+
+        </div><!-- /main col -->
+
+        <!-- RIGHT col (sidebar) -->
+        <div class="dash-col side">
+
+          <!-- stock health -->
+          <div class="d-panel">
+            <div class="panel-hd">
+              <h3>📦 স্টক অবস্থা</h3>
+              <span class="badge badge-green">${sh}%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${sh}%"></div></div>
+            <div class="list-row">
+              <div class="lr-left"><strong>${num(s.total_book_types)}</strong><small>বইয়ের ধরন</small></div>
+              <span class="badge badge-green">চালু</span>
+            </div>
+            <div class="list-row">
+              <div class="lr-left"><strong>${num(s.out_of_stock_count)}</strong><small>স্টক শেষ</small></div>
+              <span class="badge badge-red">দরকার</span>
+            </div>
+            <div class="list-row">
+              <div class="lr-left"><strong>${num(s.total_quantity)}</strong><small>মোট কপি</small></div>
+              <span class="badge badge-blue">স্টকে</span>
+            </div>
+          </div>
+
+          <!-- payment risk -->
+          <div class="d-panel">
+            <div class="panel-hd">
+              <h3>⚠️ বাকির অবস্থা</h3>
+              <span class="badge badge-yellow">${duePct}%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill red" style="width:${duePct}%"></div></div>
+            <div class="list-row">
+              <div class="lr-left"><strong>৳${num(t.total_due)}</strong><small>আজকের বাকি</small></div>
+              <span class="badge badge-yellow">${d.due_invoices||0}টি বিল</span>
+            </div>
+            <div class="list-row">
+              <div class="lr-left"><strong>৳${num(m.total_revenue||0)}</strong><small>এই মাসের বিক্রয়</small></div>
+              <span class="badge badge-blue">মাস</span>
+            </div>
+          </div>
+
+          <!-- next moves -->
+          <div class="d-panel">
+            <div class="panel-hd"><h3>🚀 এখন কী করবেন?</h3></div>
+            <div class="move-row">
+              <div class="move-icon-box">🛒</div>
+              <div class="move-text"><strong>বিক্রয় শুরু করুন</strong><small>POS খুলুন</small></div>
+              <a href="/pos/" class="btn btn-primary btn-sm">খুলুন</a>
+            </div>
+            <div class="move-row">
+              <div class="move-icon-box">⚠️</div>
+              <div class="move-text"><strong>বাকি আদায় করুন</strong><small>পেমেন্ট নিন</small></div>
+              <a href="/sales/due/" class="btn btn-ghost btn-sm">দেখুন</a>
+            </div>
+            <div class="move-row">
+              <div class="move-icon-box">📊</div>
+              <div class="move-text"><strong>রিপোর্ট দেখুন</strong><small>লাভ-ক্ষতি</small></div>
+              <a href="/reports/" class="btn btn-ghost btn-sm">দেখুন</a>
+            </div>
+          </div>
+
+        </div><!-- /side col -->
+      </div>`;
+
+  } catch(e) {
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>ডাটা লোড হয়নি</h3><p>সার্ভার চালু আছে কিনা দেখুন।</p></div>`;
+    console.error(e);
+  }
+}
+document.addEventListener('DOMContentLoaded', loadDash);
+</script>
+{% endblock %}

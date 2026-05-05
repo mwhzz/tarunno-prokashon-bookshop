@@ -1,0 +1,1005 @@
+{% extends 'base.html' %}
+{% block page_title %}নতুন বই যুক্ত করুন{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── page wrapper ─── */
+.wizard-page {
+  max-width: 720px;
+  margin: 0 auto;
+  animation: fadeUp .3s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── PROGRESS STEPPER ─── */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+/* connector line between steps */
+.step-connector {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  margin-top: 19px;
+  border-radius: 99px;
+  transition: background .4s ease;
+  max-width: 80px;
+}
+
+.step-connector.done { background: var(--accent); }
+
+.step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2.5px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--muted);
+  transition: all .3s ease;
+  position: relative;
+}
+
+.step-node.active .step-circle {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(27,122,85,.35);
+  transform: scale(1.1);
+}
+
+.step-node.done .step-circle {
+  background: var(--g200);
+  border-color: var(--accent);
+  color: var(--g700);
+}
+
+.step-node.done .step-circle::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.step-node.done .step-circle span { opacity: 0; }
+
+.step-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  transition: color .2s;
+}
+
+.step-node.active .step-name { color: var(--accent); }
+.step-node.done  .step-name  { color: var(--g600); }
+
+/* ─── STEP CARD ─── */
+.step-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 36px;
+  box-shadow: 0 4px 24px rgba(13,51,38,.07);
+  display: none;
+  animation: stepIn .25s ease both;
+}
+
+@keyframes stepIn {
+  from { opacity:0; transform:translateX(18px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.step-card.active { display: block; }
+
+/* step header inside card */
+.sc-header {
+  margin-bottom: 28px;
+}
+
+.sc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--g100);
+  color: var(--g700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 99px;
+  margin-bottom: 10px;
+}
+
+.sc-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--g900);
+  margin-bottom: 6px;
+}
+
+.sc-desc {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ─── FORM FIELDS ─── */
+.wiz-group {
+  margin-bottom: 20px;
+}
+
+.wiz-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.req-star { color: var(--danger); font-size: 15px; line-height: 1; }
+
+.wiz-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+.wiz-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  transition: all .18s;
+}
+
+.wiz-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.wiz-input.big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: right;
+  padding-right: 18px;
+}
+
+.wiz-input.big:focus { color: var(--accent); }
+
+textarea.wiz-input {
+  min-height: 100px;
+  resize: vertical;
+  text-align: left;
+}
+
+select.wiz-input { cursor: pointer; }
+
+.wiz-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.wiz-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* price helper */
+.price-helper {
+  background: var(--g100);
+  border: 1px solid var(--g200);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 8px;
+  display: none;
+}
+
+.price-helper.visible { display: block; }
+
+.ph-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+  color: var(--text2);
+  border-bottom: 1px solid var(--g200);
+}
+
+.ph-row:last-child { border-bottom: none; }
+
+.ph-row .ph-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--g700);
+}
+
+.ph-row.profit .ph-val { color: var(--g600); }
+.ph-row.loss   .ph-val { color: var(--danger); }
+
+/* image upload */
+.img-upload-area {
+  border: 2.5px dashed var(--border-hard);
+  border-radius: 14px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--surface2);
+  position: relative;
+}
+
+.img-upload-area:hover {
+  border-color: var(--accent);
+  background: var(--g100);
+}
+
+.img-upload-area.has-image {
+  border-style: solid;
+  border-color: var(--accent);
+  padding: 12px;
+}
+
+.upload-icon { font-size: 40px; margin-bottom: 10px; opacity: .5; }
+.upload-title { font-size: 15px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
+.upload-sub   { font-size: 12px; color: var(--muted); }
+.upload-btn   { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 8px; display: inline-block; }
+
+#img-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 10px;
+  display: none;
+}
+
+#b-image { display: none; }
+
+/* ─── REVIEW STEP ─── */
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.rv-row {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+
+.rv-row:nth-child(even) { background: var(--surface2); }
+.rv-row:hover { background: var(--g100); }
+.rv-row:last-child, .rv-row:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+
+.rv-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+.rv-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--g900);
+}
+
+.rv-value.mono {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.rv-empty { color: var(--muted); font-style: italic; font-weight: 500; }
+
+/* review image */
+.review-img-wrap {
+  text-align: center;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.review-img-wrap img {
+  max-height: 140px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* ─── NAV BUTTONS ─── */
+.step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+
+.btn-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(27,122,85,.28);
+  transition: all .18s;
+}
+
+.btn-next:hover {
+  background: var(--accent-dark);
+  transform: translateX(3px);
+  box-shadow: 0 8px 28px rgba(27,122,85,.4);
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 99px;
+  background: var(--surface);
+  color: var(--text2);
+  border: 1.5px solid var(--border-hard);
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all .18s;
+}
+
+.btn-back:hover {
+  background: var(--g100);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 34px;
+  border-radius: 99px;
+  background: var(--g500);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 8px 28px rgba(27,122,85,.35);
+  transition: all .2s;
+}
+
+.btn-save:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(27,122,85,.45);
+}
+
+.btn-save:disabled {
+  background: var(--muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* skip link */
+.skip-lbl {
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+  transition: color .15s;
+}
+
+.skip-lbl:hover { color: var(--accent); }
+
+/* ─── Success screen ─── */
+.success-screen {
+  text-align: center;
+  padding: 40px 20px;
+  display: none;
+}
+
+.success-screen.show { display: block; }
+
+.success-anim {
+  width: 80px; height: 80px;
+  background: var(--g100);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 40px;
+  margin: 0 auto 20px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes popIn {
+  from { transform: scale(0); opacity:0; }
+  to   { transform: scale(1); opacity:1; }
+}
+
+.success-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 24px; font-weight: 800;
+  color: var(--g900); margin-bottom: 8px;
+}
+
+.success-sub { font-size: 15px; color: var(--muted); margin-bottom: 28px; }
+
+.success-actions {
+  display: flex; gap: 12px;
+  justify-content: center; flex-wrap: wrap;
+}
+
+/* responsive */
+@media (max-width:600px) {
+  .step-card { padding: 22px 18px; }
+  .wiz-row, .wiz-row.three, .review-grid { grid-template-columns: 1fr; }
+  .stepper { gap: 0; }
+  .step-name { display: none; }
+  .step-connector { max-width: 30px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-page">
+
+  <!-- ── STEPPER ── -->
+  <div class="stepper" id="stepper">
+    <div class="step-node active" onclick="goStep(1)" id="sn-1">
+      <div class="step-circle"><span>১</span></div>
+      <div class="step-name">বইয়ের পরিচয়</div>
+    </div>
+    <div class="step-connector" id="sc-1"></div>
+    <div class="step-node" onclick="goStep(2)" id="sn-2">
+      <div class="step-circle"><span>২</span></div>
+      <div class="step-name">দামের হিসাব</div>
+    </div>
+    <div class="step-connector" id="sc-2"></div>
+    <div class="step-node" onclick="goStep(3)" id="sn-3">
+      <div class="step-circle"><span>৩</span></div>
+      <div class="step-name">ছাড় ও কমিশন</div>
+    </div>
+    <div class="step-connector" id="sc-3"></div>
+    <div class="step-node" onclick="goStep(4)" id="sn-4">
+      <div class="step-circle"><span>৪</span></div>
+      <div class="step-name">ছবি ও নোট</div>
+    </div>
+    <div class="step-connector" id="sc-4"></div>
+    <div class="step-node" onclick="goStep(5)" id="sn-5">
+      <div class="step-circle"><span>৫</span></div>
+      <div class="step-name">রিভিউ করুন</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 1 — বইয়ের পরিচয়
+  ══════════════════════════════════ -->
+  <div class="step-card active" id="step-1">
+    <div class="sc-header">
+      <div class="sc-badge">ধাপ ১ / ৫</div>
+      <div class="sc-title">📗 বইয়ের পরিচয়</div>
+      <div class="sc-desc">বইটি সম্পর্কে মূল তথ্য দিন — নাম, লেখক ও প্রকাশক।</div>
+    </div>
+
+    <div class="wiz-group">
+      <div class="wiz-label">বইয়ের নাম <span class="req-star">*</span></div>
+      <input class="wiz-input" id="b-title" placeholder="যেমন: হাজার বছর ধরে" autocomplete="off">
+      <div class="wiz-hint">এটি অবশ্যই দিতে হবে।</div>
+    </div>
+
+    <div class="wiz-row">
+      <div class="wiz-group">
+        <div class="wiz-label">লেখকের নাম</div>
+        <input class="wiz-input" id="b-author" placeholder="যেমন: জহির রায়হান">
+      </div>
+      <div class="wiz-group">
+        <div class="wiz-label">প্রকাশনীর নাম</div>
+        <input class="wiz-input" id="b-pub" placeholder="যেমন: অনন্যা প্রকাশনী">
+      </div>
+    </div>
+
+    <div class="wiz-row">
+      <div class="wiz-group">
+        <div class="wiz-label">সংস্করণ</div>
+        <input class="wiz-input" id="b-edition" placeholder="যেমন: ১ম সংস্করণ">
+      </div>
+      <div class="wiz-group">
+        <div class="wiz-label">ISBN কোড</div>
+        <input class="wiz-input" id="b-isbn" placeholder="বইয়ের পিছনে থাকে">
+      </div>
+    </div>
+
+    <div class="wiz-row">
+      <div class="wiz-group">
+        <div class="wiz-label">প্রোডাক্ট কোড</div>
+        <input class="wiz-input" id="b-code" placeholder="যেমন: BK-1001">
+        <div class="wiz-hint">না থাকলে খালি রাখুন।</div>
+      </div>
+      <div class="wiz-group">
+        <div class="wiz-label">বইয়ের ধরন</div>
+        <select class="wiz-input" id="b-type">
+          <option value="single">📖 Single — একটি বই</option>
+          <option value="series">📚 Series — সেট বা সিরিজ</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <a href="/books/" class="btn-back" style="text-decoration:none">← বাতিল</a>
+      <button class="btn-next" onclick="nextStep(1)">পরের ধাপ → দামের হিসাব</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 2 — দামের হিসাব
+  ══════════════════════════════════ -->
+  <div class="step-card" id="step-2">
+    <div class="sc-header">
+      <div class="sc-badge">ধাপ ২ / ৫</div>
+      <div class="sc-title">💰 দামের হিসাব</div>
+      <div class="sc-desc">বইটির গায়ের দাম, কেনার দাম এবং আপনার বিক্রয় মূল্য লিখুন।</div>
+    </div>
+
+    <div class="wiz-row">
+      <div class="wiz-group">
+        <div class="wiz-label">MRP (বইয়ের গায়ে থাকা দাম) ৳ <span class="req-star">*</span></div>
+        <input class="wiz-input big" id="b-mrp" type="number" placeholder="০" oninput="updatePriceHelper()">
+        <div class="wiz-hint">বইয়ের মলাটে যে দাম লেখা।</div>
+      </div>
+      <div class="wiz-group">
+        <div class="wiz-label">ক্রয় মূল্য (আপনার কেনার দাম) ৳ <span class="req-star">*</span></div>
+        <input class="wiz-input big" id="b-cost" type="number" placeholder="০" oninput="updatePriceHelper()">
+        <div class="wiz-hint">আপনি যত টাকায় কিনেছেন।</div>
+      </div>
+    </div>
+
+    <div class="wiz-group">
+      <div class="wiz-label">বিক্রয় মূল্য (আপনি যত টাকায় বেচবেন) ৳ <span class="req-star">*</span></div>
+      <input class="wiz-input big" id="b-price" type="number" placeholder="০" oninput="updatePriceHelper()" style="max-width:320px">
+      <div class="wiz-hint">গ্রাহকের কাছে এই দামে বিক্রি হবে।</div>
+    </div>
+
+    <!-- Live profit helper -->
+    <div class="price-helper" id="price-helper">
+      <div class="ph-row">
+        <span>MRP থেকে ছাড়</span>
+        <span class="ph-val" id="ph-disc-pct">—</span>
+      </div>
+      <div class="ph-row">
+        <span>প্রতি কপিতে লাভ</span>
+        <span class="ph-val profit" id="ph-profit">—</span>
+      </div>
+      <div class="ph-row">
+        <span>লাভের হার</span>
+        <span class="ph-val profit" id="ph-margin">—</span>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="btn-back" onclick="goStep(1)">← পেছনে</button>
+      <button class="btn-next" onclick="nextStep(2)">পরের ধাপ → ছাড় ও কমিশন</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 3 — ছাড় ও কমিশন
+  ══════════════════════════════════ -->
+  <div class="step-card" id="step-3">
+    <div class="sc-header">
+      <div class="sc-badge">ধাপ ৩ / ৫</div>
+      <div class="sc-title">🏷️ ছাড় ও কমিশন</div>
+      <div class="sc-desc">পাইকারি বা বিশেষ ছাড়ের তথ্য দিন। না থাকলে এড়িয়ে যান।</div>
+    </div>
+
+    <div class="wiz-row">
+      <div class="wiz-group">
+        <div class="wiz-label">ডিফল্ট কমিশন</div>
+        <input class="wiz-input big" id="b-commission" type="number" placeholder="০" min="0">
+        <div class="wiz-hint">পাইকারি গ্রাহকদের জন্য ডিফল্ট কমিশন।</div>
+      </div>
+      <div class="wiz-group">
+        <div class="wiz-label">ডিসকাউন্ট</div>
+        <div style="display:flex; gap:8px; align-items:stretch;">
+          <input class="wiz-input big" id="b-discount" type="number" placeholder="০" min="0" style="flex:1">
+          <select class="wiz-input" id="b-discount-type" style="width:100px; text-align:center; font-size:13px; font-weight:700;">
+            <option value="amount">৳ টাকা</option>
+            <option value="percentage">% শতাংশ</option>
+          </select>
+        </div>
+        <div class="wiz-hint">না থাকলে ০ রাখুন।</div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="btn-back" onclick="goStep(2)">← পেছনে</button>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <button class="btn-next" onclick="nextStep(3)">পরের ধাপ → ছবি ও নোট</button>
+        <span class="skip-lbl" onclick="nextStep(3)">এড়িয়ে যান (পরে যোগ করা যাবে)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 4 — ছবি ও নোট
+  ══════════════════════════════════ -->
+  <div class="step-card" id="step-4">
+    <div class="sc-header">
+      <div class="sc-badge">ধাপ ৪ / ৫</div>
+      <div class="sc-title">🖼️ ছবি ও অতিরিক্ত নোট</div>
+      <div class="sc-desc">বইয়ের কভার ছবি এবং কোনো বিশেষ নোট থাকলে যোগ করুন।</div>
+    </div>
+
+    <div class="wiz-group">
+      <div class="wiz-label">বইয়ের কভার ছবি</div>
+      <div class="img-upload-area" id="upload-area" onclick="document.getElementById('b-image').click()">
+        <img id="img-preview" src="" alt="preview">
+        <div id="upload-placeholder">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-title">ছবি যোগ করতে এখানে ক্লিক করুন</div>
+          <div class="upload-sub">JPG, PNG, WEBP — সর্বোচ্চ ৫ MB</div>
+          <div class="upload-btn">ফাইল বেছে নিন →</div>
+        </div>
+      </div>
+      <input type="file" id="b-image" accept="image/*" onchange="previewImage(this)">
+      <div class="wiz-hint">না থাকলে এড়িয়ে যান।</div>
+    </div>
+
+    <div class="wiz-group">
+      <div class="wiz-label">অতিরিক্ত নোট</div>
+      <textarea class="wiz-input" id="b-note" placeholder="বই সম্পর্কে কোনো বিশেষ তথ্য থাকলে এখানে লিখুন..."></textarea>
+    </div>
+
+    <div class="step-nav">
+      <button class="btn-back" onclick="goStep(3)">← পেছনে</button>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <button class="btn-next" onclick="nextStep(4)">সব দেখুন ও সংরক্ষণ করুন →</button>
+        <span class="skip-lbl" onclick="nextStep(4)">এড়িয়ে যান</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 5 — রিভিউ ও সেভ
+  ══════════════════════════════════ -->
+  <div class="step-card" id="step-5">
+    <div class="sc-header">
+      <div class="sc-badge">ধাপ ৫ / ৫</div>
+      <div class="sc-title">✅ রিভিউ করুন</div>
+      <div class="sc-desc">সব তথ্য ঠিক আছে কিনা দেখুন — তারপর সংরক্ষণ করুন।</div>
+    </div>
+
+    <!-- image preview -->
+    <div class="review-img-wrap" id="rv-img-wrap" style="display:none">
+      <img id="rv-img" src="" alt="book cover" style="max-height:140px; object-fit:contain; border-radius:8px;">
+    </div>
+
+    <div class="review-grid" id="review-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="step-nav">
+      <button class="btn-back" onclick="goStep(4)">← পেছনে, আরো এডিট করুন</button>
+      <button class="btn-save" id="save-btn" onclick="submitBook()">
+        ✅ বই সংরক্ষণ করুন
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SUCCESS SCREEN
+  ══════════════════════════════════ -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-anim">✅</div>
+    <div class="success-title">বই সংরক্ষিত হয়েছে!</div>
+    <div class="success-sub" id="success-msg">নতুন বই সফলভাবে যোগ করা হয়েছে।</div>
+    <div class="success-actions">
+      <a href="/books/add/" class="btn btn-primary" style="text-decoration:none; border-radius:99px; padding:12px 24px;">
+        ➕ আরেকটি বই যোগ করুন
+      </a>
+      <a href="/books/" class="btn btn-ghost" style="text-decoration:none; border-radius:99px; padding:12px 24px;">
+        📗 বইয়ের তালিকা দেখুন
+      </a>
+      <a href="/stock/add/" class="btn btn-success" style="text-decoration:none; border-radius:99px; padding:12px 24px; color:var(--g900);">
+        📦 স্টক যোগ করুন
+      </a>
+    </div>
+  </div>
+
+</div><!-- /wizard-page -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+const TOTAL_STEPS = 5;
+
+/* ══════════════════════════════
+   STEPPER NAVIGATION
+══════════════════════════════ */
+function goStep(n) {
+  // hide current, show target
+  document.getElementById(`step-${currentStep}`)?.classList.remove('active');
+  document.getElementById(`step-${n}`)?.classList.add('active');
+
+  // update step nodes
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const node = document.getElementById(`sn-${i}`);
+    node.classList.remove('active','done');
+    if (i < n)  node.classList.add('done');
+    if (i === n) node.classList.add('active');
+  }
+
+  // update connectors
+  for (let i = 1; i < TOTAL_STEPS; i++) {
+    const conn = document.getElementById(`sc-${i}`);
+    conn.classList.toggle('done', i < n);
+  }
+
+  currentStep = n;
+
+  // if moving to review, populate it
+  if (n === 5) buildReview();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep(from) {
+  // validate required fields
+  if (from === 1) {
+    const t = document.getElementById('b-title').value.trim();
+    if (!t) {
+      shake('b-title');
+      toast('বইয়ের নাম দিতে হবে!', 'error');
+      return;
+    }
+  }
+
+  if (from === 2) {
+    const price = document.getElementById('b-price').value;
+    if (!price || Number(price) <= 0) {
+      shake('b-price');
+      toast('বিক্রয় মূল্য দিতে হবে!', 'error');
+      return;
+    }
+  }
+
+  goStep(from + 1);
+}
+
+/* ══════════════════════════
+   PRICE HELPER
+══════════════════════════ */
+function updatePriceHelper() {
+  const mrp   = parseFloat(document.getElementById('b-mrp').value)   || 0;
+  const cost  = parseFloat(document.getElementById('b-cost').value)  || 0;
+  const price = parseFloat(document.getElementById('b-price').value) || 0;
+  const helper = document.getElementById('price-helper');
+
+  if (mrp > 0 && price > 0 && cost > 0) {
+    const discPct = mrp > 0 ? ((mrp - price) / mrp * 100).toFixed(1) : 0;
+    const profit  = price - cost;
+    const margin  = cost > 0 ? (profit / cost * 100).toFixed(1) : 0;
+
+    document.getElementById('ph-disc-pct').textContent = `${discPct}% কম`;
+    document.getElementById('ph-profit').textContent   = `৳${profit.toFixed(0)} / কপি`;
+    document.getElementById('ph-margin').textContent   = `${margin}%`;
+
+    const profEl = document.getElementById('ph-profit');
+    const margEl = document.getElementById('ph-margin');
+    profEl.className = `ph-val ${profit >= 0 ? 'profit' : 'loss'}`;
+    margEl.className = `ph-val ${profit >= 0 ? 'profit' : 'loss'}`;
+
+    helper.classList.add('visible');
+  } else {
+    helper.classList.remove('visible');
+  }
+}
+
+/* ══════════════════════════
+   IMAGE PREVIEW
+══════════════════════════ */
+function previewImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('img-preview');
+    const ph      = document.getElementById('upload-placeholder');
+    const area    = document.getElementById('upload-area');
+    preview.src   = e.target.result;
+    preview.style.display = 'block';
+    ph.style.display = 'none';
+    area.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════
+   BUILD REVIEW
+══════════════════════════ */
+function buildReview() {
+  const fields = [
+    ['বইয়ের নাম',      document.getElementById('b-title').value],
+    ['লেখক',           document.getElementById('b-author').value],
+    ['প্রকাশনী',       document.getElementById('b-pub').value],
+    ['সংস্করণ',        document.getElementById('b-edition').value],
+    ['ISBN',           document.getElementById('b-isbn').value],
+    ['প্রোডাক্ট কোড', document.getElementById('b-code').value],
+    ['ধরন',            document.getElementById('b-type').value === 'series' ? 'Series (সিরিজ)' : 'Single (একটি বই)'],
+    ['MRP',            document.getElementById('b-mrp').value   ? `৳${document.getElementById('b-mrp').value}`   : null],
+    ['ক্রয় মূল্য',    document.getElementById('b-cost').value  ? `৳${document.getElementById('b-cost').value}`  : null],
+    ['বিক্রয় মূল্য',  document.getElementById('b-price').value ? `৳${document.getElementById('b-price').value}` : null],
+    ['কমিশন',          document.getElementById('b-commission').value || null],
+    ['ডিসকাউন্ট',      document.getElementById('b-discount').value
+                         ? `${document.getElementById('b-discount').value} ${document.getElementById('b-discount-type').value === 'percentage' ? '%' : '৳'}`
+                         : null],
+    ['নোট',            document.getElementById('b-note').value],
+  ];
+
+  const grid = document.getElementById('review-grid');
+  grid.innerHTML = fields.map(([label, val]) => {
+    const isMoney = ['MRP','ক্রয় মূল্য','বিক্রয় মূল্য'].includes(label);
+    return `
+      <div class="rv-row">
+        <div class="rv-label">${label}</div>
+        <div class="rv-value ${isMoney ? 'mono' : ''} ${!val ? 'rv-empty' : ''}">
+          ${val || 'দেওয়া হয়নি'}
+        </div>
+      </div>`;
+  }).join('');
+
+  // image
+  const preview = document.getElementById('img-preview');
+  const rvImg   = document.getElementById('rv-img');
+  const rvWrap  = document.getElementById('rv-img-wrap');
+  if (preview.style.display !== 'none' && preview.src) {
+    rvImg.src = preview.src;
+    rvWrap.style.display = 'block';
+  } else {
+    rvWrap.style.display = 'none';
+  }
+}
+
+/* ══════════════════════════
+   SUBMIT
+══════════════════════════ */
+async function submitBook() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ সংরক্ষণ হচ্ছে...';
+
+  const title = document.getElementById('b-title').value.trim();
+  if (!title) { toast('বইয়ের নাম দিতে হবে!','error'); btn.disabled=false; btn.textContent='✅ বই সংরক্ষণ করুন'; return; }
+
+  const fd = new FormData();
+  fd.append('title',         title);
+  fd.append('author',        document.getElementById('b-author').value);
+  fd.append('publisher',     document.getElementById('b-pub').value);
+  fd.append('edition',       document.getElementById('b-edition').value);
+  fd.append('isbn',          document.getElementById('b-isbn').value);
+  fd.append('product_code',  document.getElementById('b-code').value);
+  fd.append('book_type',     document.getElementById('b-type').value);
+  fd.append('mrp',           document.getElementById('b-mrp').value        || 0);
+  fd.append('purchase_price',document.getElementById('b-cost').value       || 0);
+  fd.append('selling_price', document.getElementById('b-price').value      || 0);
+  fd.append('commission',    document.getElementById('b-commission').value  || 0);
+  fd.append('discount',      document.getElementById('b-discount').value    || 0);
+  fd.append('discount_type', document.getElementById('b-discount-type').value);
+  fd.append('notes',         document.getElementById('b-note').value);
+
+  const imgInput = document.getElementById('b-image');
+  if (imgInput.files.length > 0) fd.append('image', imgInput.files[0]);
+
+  try {
+    const r = await fetch(API + '/books/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: fd
+    });
+    const data = await r.json();
+    if (!r.ok) throw data;
+
+    // hide wizard, show success
+    document.getElementById('stepper').style.display = 'none';
+    for (let i = 1; i <= 5; i++) document.getElementById(`step-${i}`).style.display = 'none';
+    const sc = document.getElementById('success-screen');
+    document.getElementById('success-msg').textContent = `"${data.title}" সফলভাবে যোগ করা হয়েছে!`;
+    sc.classList.add('show');
+
+  } catch (e) {
+    toast('সেভ করতে সমস্যা হয়েছে: ' + (e.detail || JSON.stringify(e)), 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ বই সংরক্ষণ করুন';
+  }
+}
+
+/* ══════════════════════════
+   HELPER: shake invalid field
+══════════════════════════ */
+function shake(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--danger)';
+  el.style.animation = 'none';
+  void el.offsetWidth; // reflow
+  el.style.animation = 'shake .3s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 1200);
+}
+
+/* inject shake keyframes */
+const sKF = document.createElement('style');
+sKF.textContent = `
+  @keyframes shake {
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-6px); }
+    40%{ transform:translateX(6px); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(4px); }
+  }`;
+document.head.appendChild(sKF);
+</script>
+{% endblock %}

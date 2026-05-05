@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block page_title %}পাইকারি গ্রাহক ব্যবস্থাপনা (Wholesale Customers){% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns: 350px 1fr; gap:24px; align-items: start;">
+    
+    <!-- নতুন গ্রাহক যোগ করার ফর্ম -->
+    <div class="form-card" style="padding:20px;">
+        <h3 style="margin-bottom:16px; font-size:16px; color:var(--accent);">➕ নতুন পাইকারি গ্রাহক</h3>
+        
+        <div class="form-group section-gap">
+            <label>গ্রাহকের নাম (Customer Name) *</label>
+            <input type="text" id="name" placeholder="যেমন: ভাই ভাই লাইব্রেরি" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
+        </div>
+        
+        <div class="form-group section-gap">
+            <label>ফোন নম্বর (Phone) *</label>
+            <input type="text" id="phone" placeholder="017XXXXXXXX" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
+        </div>
+        
+        <div class="form-group section-gap">
+            <label>ঠিকানা (Address)</label>
+            <textarea id="address" rows="2" placeholder="পূর্ণ ঠিকানা..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px; font-family:inherit;"></textarea>
+        </div>
+        
+        <div class="form-group section-gap">
+            <label>কমিশন (Default Commission %)</label>
+            <input type="number" id="commission" value="0" min="0" max="100" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
+        </div>
+        
+        <div class="form-group section-gap">
+            <label>পূর্বের বাকি / ওপেনিং ব্যালেন্স (Opening Due)</label>
+            <input type="number" id="opening_due" value="0" min="0" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px; border-color:var(--danger);">
+            <p style="font-size:11px; color:var(--muted); margin-top:4px;">সফটওয়্যার ব্যবহারের আগে যদি গ্রাহকের কাছে পাওনা থাকে তা এখানে লিখুন।</p>
+        </div>
+        
+        <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="addCustomer()">
+            ✓ গ্রাহক সেভ করুন
+        </button>
+    </div>
+    
+    <!-- গ্রাহকদের তালিকা -->
+    <div class="table-wrap" style="padding:20px;">
+        <h3 style="margin-bottom:16px; font-size:16px; color:var(--accent);">👥 পাইকারি গ্রাহক তালিকা</h3>
+        
+        <table style="width:100%; border-collapse: collapse; font-size:14px;">
+            <thead>
+                <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                    <th style="padding:12px 8px;">কোড</th>
+                    <th style="padding:12px 8px;">নাম</th>
+                    <th style="padding:12px 8px;">ফোন</th>
+                    <th style="padding:12px 8px;">কমিশন (%)</th>
+                    <th style="padding:12px 8px; text-align:right;">মোট বাকি (Due)</th>
+                </tr>
+            </thead>
+            <tbody id="customer-list">
+                <!-- ডাটা এখানে লোড হবে -->
+            </tbody>
+        </table>
+        <div id="loading" class="loading" style="display:none;"><div class="spinner"></div> লোড হচ্ছে...</div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// পেজ লোড হলে তালিকা দেখাবে
+document.addEventListener('DOMContentLoaded', fetchCustomers);
+
+async function fetchCustomers() {
+    const list = document.getElementById('customer-list');
+    const loader = document.getElementById('loading');
+    list.innerHTML = '';
+    loader.style.display = 'flex';
+    
+    try {
+        const data = await api('/sales/customers/?page_size=1000&customer_type=wholesale');
+        loader.style.display = 'none';
+        
+        if (data.results.length === 0) {
+            list.innerHTML = '<tr><td colspan="5" class="empty">কোনো পাইকারি গ্রাহক পাওয়া যায়নি।</td></tr>';
+            return;
+        }
+        
+        list.innerHTML = data.results.map(c => `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:12px 8px; font-family:'JetBrains Mono'; font-weight:600; color:var(--accent);">${c.customer_code || '-'}</td>
+                <td style="padding:12px 8px; font-weight:600;">${c.name}</td>
+                <td style="padding:12px 8px;">${c.phone}</td>
+                <td style="padding:12px 8px;">${c.default_commission}%</td>
+                <td style="padding:12px 8px; text-align:right; font-weight:700; color:var(--danger);">৳${num(c.total_due)}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        loader.style.display = 'none';
+        toast('গ্রাহক তালিকা লোড করা যায়নি।', 'error');
+    }
+}
+
+async function addCustomer() {
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const address = document.getElementById('address').value;
+    const commission = document.getElementById('commission').value;
+    const openingDue = document.getElementById('opening_due').value;
+    
+    if (!name || !phone) {
+        toast('নাম এবং ফোন নম্বর অবশ্যই দিতে হবে!', 'error');
+        return;
+    }
+    
+    try {
+        await api('/sales/customers/', 'POST', {
+            name,
+            phone,
+            address,
+            customer_type: 'wholesale',
+            default_commission: commission,
+            total_due: openingDue
+        });
+        
+        toast('গ্রাহক সফলভাবে যোগ করা হয়েছে।');
+        // ফর্ম রিসেট
+        document.getElementById('name').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('commission').value = 0;
+        document.getElementById('opening_due').value = 0;
+        
+        fetchCustomers();
+    } catch (e) {
+        console.error(e);
+        let errorMsg = 'গ্রাহক যোগ করা যায়নি।';
+        if (e.phone) errorMsg = 'এই ফোন নম্বরটি অলরেডি ব্যবহার করা হয়েছে!';
+        else if (e.name) errorMsg = 'নামের ক্ষেত্রে সমস্যা: ' + e.name[0];
+        else if (typeof e === 'object') errorMsg = Object.values(e).flat()[0];
+        
+        toast(errorMsg, 'error');
+    }
+}
+</script>
+{% endblock %}

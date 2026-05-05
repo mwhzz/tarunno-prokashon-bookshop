@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @font-face {
+            font-family: 'Kalpurush';
+            src: url('{{ font_path }}');
+        }
+        body {
+            font-family: 'Kalpurush', sans-serif;
+            font-size: 12px;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 70px;
+            height: auto;
+        }
+        .company-name {
+            font-size: 26px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 5px 0;
+        }
+        .company-info {
+            font-size: 11px;
+            color: #555;
+        }
+        .invoice-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .details-table {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .details-table td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+        }
+        .items-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .summary-wrapper {
+            width: 100%;
+            overflow: hidden;
+        }
+        .summary-table {
+            width: 45%;
+            float: right;
+            border-collapse: collapse;
+        }
+        .summary-table td {
+            padding: 4px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-row {
+            font-weight: bold;
+            font-size: 13px;
+            background-color: #f0f0f0;
+        }
+        .footer {
+            margin-top: 60px;
+            width: 100%;
+        }
+        .signature-section {
+            width: 100%;
+        }
+        .signature-line {
+            width: 200px;
+            border-top: 1px solid #333;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 11px;
+        }
+        .note {
+            margin-top: 25px;
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        .text-danger { color: red; }
+        .text-success { color: green; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ logo_path }}" class="logo">
+        <div class="company-name">তারুণ্য প্রকাশন</div>
+        <div class="company-info">
+            ৩৮ বাংলাবাজার (৩য় তলা), ঢাকা-১১০০ | ফোন: ০১৭৬১-৮০৪৫১১ | ইমেইল: tarunyaprokashon@gmail.com
+        </div>
+    </div>
+
+    <div class="invoice-title">বিক্রয় রশিদ (Invoice)</div>
+
+    <table class="details-table">
+        <tr>
+            <td style="width: 55%;">
+                <strong>গ্রাহকের নাম:</strong> {{ sale.customer_name }}<br>
+                <strong>ঠিকানা:</strong> {{ sale.customer.address|default:"-" }}<br>
+                <strong>ফোন:</strong> {{ sale.customer_phone }}
+            </td>
+            <td style="width: 45%; text-align: right;">
+                <strong>ইনভয়েস নং:</strong> #{{ sale.invoice_number }}<br>
+                <strong>তারিখ:</strong> {{ sale.created_at|date:"d F, Y" }}<br>
+                <strong>পেমেন্ট:</strong> {{ sale.get_payment_method_display }} ({{ sale.get_status_display }})
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">নং</th>
+                <th>বইয়ের নাম</th>
+                <th class="text-right" style="width: 12%;">মূল্য</th>
+                <th class="text-right" style="width: 10%;">পরিমাণ</th>
+                <th class="text-right" style="width: 12%;">ডিসকাউন্ট</th>
+                <th class="text-right" style="width: 15%;">মোট</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.book.title }}</td>
+                <td class="text-right">{{ item.unit_price }}</td>
+                <td class="text-right">{{ item.quantity }}</td>
+                <td class="text-right">{{ item.discount }}</td>
+                <td class="text-right">{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-wrapper">
+        <table class="summary-table">
+            <tr>
+                <td>উপ-মোট:</td>
+                <td class="text-right">৳{{ sale.subtotal }}</td>
+            </tr>
+            <tr>
+                <td>ডিসকাউন্ট:</td>
+                <td class="text-right">- ৳{{ sale.discount }}</td>
+            </tr>
+            {% if sale.packaging_charge > 0 %}
+            <tr>
+                <td>প্যাকিং চার্জ:</td>
+                <td class="text-right">৳{{ sale.packaging_charge }}</td>
+            </tr>
+            {% endif %}
+            {% if sale.courier_charge > 0 %}
+            <tr>
+                <td>কুরিয়ার চার্জ:</td>
+                <td class="text-right">৳{{ sale.courier_charge }}</td>
+            </tr>
+            {% endif %}
+            {% if sale.transaction_fee > 0 %}
+            <tr>
+                <td>বিকাশ/নগদ ফি:</td>
+                <td class="text-right">৳{{ sale.transaction_fee }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td>সর্বমোট:</td>
+                <td class="text-right">৳{{ sale.total }}</td>
+            </tr>
+            <tr>
+                <td>পরিশোধিত:</td>
+                <td class="text-right">৳{{ sale.paid_amount }}</td>
+            </tr>
+            <tr>
+                <td>বকেয়া:</td>
+                <td class="text-right {% if sale.due_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+                    ৳{{ sale.due_amount }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="note">
+        বি:দ্র: বিক্রিত মাল ফেরত নেওয়া হয় না। আপনার পাঠাভ্যাস সমৃদ্ধ হোক।
+    </div>
+
+    <div class="footer">
+        <div style="float: left;" class="signature-line">
+            ক্রেতার স্বাক্ষর
+        </div>
+        <div style="float: right;" class="signature-line">
+            তারুণ্য প্রকাশন-এর পক্ষে
+        </div>
+    </div>
+</body>
+</html>

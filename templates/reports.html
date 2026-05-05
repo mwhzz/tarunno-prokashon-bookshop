@@ -1,0 +1,675 @@
+{% extends 'base.html' %}
+{% block page_title %}লাভ-ক্ষতি রিপোর্ট{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── page ─── */
+.report-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── PERIOD FILTER BAR ─── */
+.filter-bar {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.period-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  transition: all .18s;
+  white-space: nowrap;
+}
+
+.period-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--g100);
+}
+
+.period-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(27,122,85,.28);
+}
+
+.filter-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.date-input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  transition: all .18s;
+}
+
+.date-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(27,122,85,.1);
+}
+
+.date-sep {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.view-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: 99px;
+  background: var(--g500);
+  color: #fff; border: none;
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 13px; font-weight: 800;
+  box-shadow: 0 4px 12px rgba(27,122,85,.25);
+  transition: all .18s;
+}
+
+.view-btn:hover { background: var(--accent); transform: translateY(-1px); }
+
+/* ─── REPORT CONTENT ─── */
+#report-content { min-height: 300px; }
+
+/* ─── HERO METRICS ─── */
+.rpt-hero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.rh-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  position: relative; overflow: hidden;
+  transition: box-shadow .2s, transform .18s;
+  min-height: 130px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+
+.rh-card:hover { box-shadow: 0 6px 22px rgba(13,51,38,.09); transform: translateY(-2px); }
+
+.rh-card.dark {
+  background: linear-gradient(140deg, #0d3a28, #1a5c3e);
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(13,51,38,.25);
+}
+
+.rh-card.dark::after {
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:110px; height:110px; border-radius:50%;
+  background: rgba(39,169,110,.15);
+}
+
+.rh-card::before {
+  content:''; position:absolute;
+  left:0; top:20%; bottom:20%;
+  width:3px; border-radius:99px;
+  background: var(--accent);
+}
+
+.rh-card.dark::before   { display:none; }
+.rh-card.green::before  { background: var(--g500); }
+.rh-card.blue::before   { background: var(--info); }
+.rh-card.red::before    { background: var(--danger); }
+
+.rhc-label {
+  font-size: 11px; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rh-card.dark .rhc-label { color: rgba(255,255,255,.55); }
+
+.rhc-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; font-weight: 700;
+  color: var(--g900); margin: 8px 0 4px; line-height: 1;
+}
+
+.rh-card.dark  .rhc-val { color: #fff; font-size: 32px; }
+.rh-card.green .rhc-val { color: var(--g600); }
+.rh-card.blue  .rhc-val { color: var(--info); }
+.rh-card.red   .rhc-val { color: var(--danger); }
+
+.rhc-sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+.rh-card.dark .rhc-sub { color: rgba(255,255,255,.5); }
+
+.rhc-icon {
+  position: absolute; top: 16px; right: 16px;
+  font-size: 30px; opacity: .1;
+}
+
+/* ─── PERIOD BADGE ─── */
+.period-info {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--g100); color: var(--g700);
+  font-size: 12px; font-weight: 800;
+  padding: 5px 14px; border-radius: 99px;
+  margin-bottom: 18px;
+}
+
+/* ─── CHARTS ROW ─── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.chart-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+
+.cp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 800;
+  color: var(--g900);
+  margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* bar chart */
+.rpt-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 150px;
+  padding-top: 10px;
+}
+
+.rbc-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+}
+
+.rbc-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 2px;
+}
+
+.rbc-bar {
+  border-radius: 5px 5px 2px 2px;
+  min-height: 4px;
+  transition: height .5s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.rbc-bar.revenue { background: linear-gradient(180deg, var(--g400), var(--g600)); }
+.rbc-bar.profit  { background: linear-gradient(180deg, #67e8f9, #0891b2); }
+
+.rbc-bar:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 110%; left: 50%;
+  transform: translateX(-50%);
+  background: var(--g900);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.rbc-lbl {
+  font-size: 9px; font-weight: 700;
+  color: var(--muted); text-align: center;
+  white-space: nowrap; overflow: hidden;
+  max-width: 100%;
+}
+
+/* chart legend */
+.chart-legend {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.cl-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--text2);
+}
+
+.cl-dot {
+  width: 10px; height: 10px; border-radius: 3px;
+}
+
+/* margin donut */
+.margin-wrap {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; min-height: 170px;
+}
+
+.margin-donut {
+  width: 140px; aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center;
+}
+
+.margin-hole {
+  width: 88px; aspect-ratio: 1; border-radius: 50%;
+  background: #fff; display: grid; place-items: center; text-align: center;
+}
+
+.margin-hole strong {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700; color: var(--g900);
+}
+
+.margin-hole small { font-size: 11px; color: var(--muted); font-weight: 700; }
+
+/* ─── BOTTOM GRID ─── */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.data-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+
+.dp-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.dp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 800; color: var(--g900);
+}
+
+/* top books rows */
+.tb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f7f3;
+  transition: background .12s;
+}
+
+.tb-row:last-child { border-bottom: none; }
+.tb-row:hover { background: var(--g100); }
+
+.tb-rank {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--g100);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+  color: var(--g700); flex-shrink: 0;
+}
+
+.tb-rank.gold   { background: #fef3c7; color: #92400e; }
+.tb-rank.silver { background: #f1f5f9; color: #475569; }
+.tb-rank.bronze { background: #ffedd5; color: #9a3412; }
+
+.tb-info { flex: 1; min-width: 0; }
+.tb-info strong { display: block; font-size: 13px; font-weight: 700; color: var(--g900);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-info small  { font-size: 11px; color: var(--muted); }
+
+.tb-stats { text-align: right; flex-shrink: 0; }
+.tb-stats strong {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; font-weight: 700; color: var(--accent);
+}
+.tb-stats small { font-size: 11px; color: var(--muted); font-weight: 700; }
+
+/* stock value rows */
+.sv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 20px;
+  border-bottom: 1px solid #f0f7f3;
+}
+
+.sv-row:last-child { border-bottom: none; }
+
+.sv-label { font-size: 13px; color: var(--text2); font-weight: 600; }
+.sv-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 700; color: var(--g900);
+}
+
+.sv-value.green  { color: var(--g600); }
+.sv-value.blue   { color: var(--info); }
+.sv-value.teal   { color: #0891b2; }
+.sv-value.orange { color: var(--warning); }
+
+/* ─── Responsive ─── */
+@media (max-width: 1150px) {
+  .rpt-hero    { grid-template-columns: 1fr 1fr; }
+  .charts-row  { grid-template-columns: 1fr; }
+  .bottom-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .rpt-hero  { grid-template-columns: 1fr; }
+  .filter-bar { gap: 8px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-page">
+
+  <!-- ─── FILTER BAR ─── -->
+  <div class="filter-bar">
+    <span class="filter-label">সময়কাল:</span>
+
+    <button class="period-btn" id="pb-today" onclick="load('today')">
+      📅 আজকে
+    </button>
+    <button class="period-btn" id="pb-week" onclick="load('week')">
+      📆 এই সপ্তাহ
+    </button>
+    <button class="period-btn active" id="pb-month" onclick="load('month')">
+      🗓️ এই মাস
+    </button>
+
+    <div class="filter-divider"></div>
+
+    <span class="date-sep">কাস্টম:</span>
+    <input type="date" class="date-input" id="r-from">
+    <span class="date-sep">→</span>
+    <input type="date" class="date-input" id="r-to">
+    <button class="view-btn" onclick="load('custom')">🔍 দেখুন</button>
+  </div>
+
+  <!-- ─── DYNAMIC CONTENT ─── -->
+  <div id="report-content">
+    <div class="loading"><div class="spinner"></div>&nbsp;রিপোর্ট তৈরি হচ্ছে...</div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let activePeriod = 'month';
+
+/* ══════════════════════════
+   LOAD REPORT
+══════════════════════════ */
+async function load(period) {
+  activePeriod = period;
+
+  /* update active button */
+  ['today','week','month'].forEach(p => {
+    document.getElementById(`pb-${p}`)?.classList.toggle('active', p === period);
+  });
+
+  const el = document.getElementById('report-content');
+  el.innerHTML = `<div class="loading" style="padding:60px"><div class="spinner"></div>&nbsp;রিপোর্ট তৈরি হচ্ছে...</div>`;
+
+  try {
+    let url = `/sales/reports/summary/?period=${period}`;
+
+    if (period === 'custom') {
+      const from = document.getElementById('r-from')?.value;
+      const to   = document.getElementById('r-to')?.value;
+      if (!from || !to) { toast('শুরুর ও শেষের তারিখ দিন!','error'); return; }
+      url += `&date_from=${from}&date_to=${to}`;
+    }
+
+    const d  = await api(url);
+    const s  = d.summary;
+    const st = d.stock;
+
+    renderReport(el, d, s, st);
+  } catch(e) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <h3>রিপোর্ট লোড হয়নি</h3>
+        <p>সার্ভার চালু আছে কিনা দেখুন।</p>
+      </div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════
+   RENDER
+══════════════════════════ */
+function renderReport(el, d, s, st) {
+  const daily   = d.daily_breakdown || [];
+  const maxRev  = Math.max(1, ...daily.map(x => Number(x.revenue)||0));
+  const maxProf = Math.max(1, ...daily.map(x => Number(x.profit)||0));
+
+  const margin = s.total_revenue > 0
+    ? Math.min(100, Math.round(s.total_profit / s.total_revenue * 100))
+    : 0;
+
+  const mDeg = Math.round(margin / 100 * 360);
+
+  /* rank decoration */
+  const rankClass = i => i===0 ? 'gold' : i===1 ? 'silver' : i===2 ? 'bronze' : '';
+
+  /* period label */
+  const periodLabels = { today:'আজকে', week:'এই সপ্তাহ', month:'এই মাস', custom:'কাস্টম সময়' };
+
+  el.innerHTML = `
+    <!-- period badge -->
+    <div class="period-info">
+      📅 ${periodLabels[activePeriod] || ''} &nbsp;|&nbsp; ${d.period?.from || ''} → ${d.period?.to || ''}
+    </div>
+
+    <!-- HERO METRICS -->
+    <div class="rpt-hero">
+      <div class="rh-card dark">
+        <div class="rhc-label">মোট বিক্রয়</div>
+        <div class="rhc-val">৳${num(s.total_revenue)}</div>
+        <div class="rhc-sub">${s.total_invoices}টি ইনভয়েস</div>
+      </div>
+      <div class="rh-card green">
+        <span class="rhc-icon">💹</span>
+        <div class="rhc-label">মোট লাভ</div>
+        <div class="rhc-val">৳${num(s.total_profit)}</div>
+        <div class="rhc-sub">মার্জিন ${s.profit_margin || margin}%</div>
+      </div>
+      <div class="rh-card blue">
+        <span class="rhc-icon">💵</span>
+        <div class="rhc-label">নগদ আদায়</div>
+        <div class="rhc-val">৳${num(s.total_paid)}</div>
+        <div class="rhc-sub">Cash Received</div>
+      </div>
+      <div class="rh-card red">
+        <span class="rhc-icon">⚠️</span>
+        <div class="rhc-label">মোট বাকি</div>
+        <div class="rhc-val">৳${num(s.total_due)}</div>
+        <div class="rhc-sub">Due Amount</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+
+      <!-- bar chart -->
+      <div class="chart-panel">
+        <div class="cp-title">
+          📈 দৈনিক বিক্রয় ও লাভ গ্রাফ
+          <span class="badge badge-green">${daily.length} দিন</span>
+        </div>
+        <div class="rpt-bar-chart">
+          ${daily.length ? daily.map(day => `
+            <div class="rbc-col">
+              <div class="rbc-stack">
+                <div class="rbc-bar revenue"
+                     style="height:${Math.max(4,(Number(day.revenue)||0)/maxRev*120)}px"
+                     data-tip="বিক্রয় ৳${num(day.revenue)}"></div>
+                <div class="rbc-bar profit"
+                     style="height:${Math.max(4,(Number(day.profit)||0)/maxProf*60)}px"
+                     data-tip="লাভ ৳${num(day.profit)}"></div>
+              </div>
+              <div class="rbc-lbl">${(day.date||'').slice(5)}</div>
+            </div>`).join('')
+          : `<div style="width:100%;text-align:center;color:var(--muted);font-size:13px;align-self:center;">ডাটা নেই</div>`}
+        </div>
+        <div class="chart-legend">
+          <div class="cl-item"><div class="cl-dot" style="background:var(--g500)"></div>বিক্রয়</div>
+          <div class="cl-item"><div class="cl-dot" style="background:#0891b2"></div>লাভ</div>
+        </div>
+      </div>
+
+      <!-- margin donut -->
+      <div class="chart-panel">
+        <div class="cp-title">লাভের মার্জিন</div>
+        <div class="margin-wrap">
+          <div class="margin-donut"
+               style="background:conic-gradient(var(--g600) 0 ${mDeg}deg, var(--border) ${mDeg}deg 360deg)">
+            <div class="margin-hole">
+              <div>
+                <strong>${margin}%</strong>
+                <small>মার্জিন</small>
+              </div>
+            </div>
+          </div>
+          <div class="chart-legend" style="justify-content:center">
+            <div class="cl-item">
+              <div class="cl-dot" style="background:var(--g600)"></div>লাভ ${margin}%
+            </div>
+            <div class="cl-item">
+              <div class="cl-dot" style="background:var(--border)"></div>খরচ ${100-margin}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM: top books + stock -->
+    <div class="bottom-grid">
+
+      <!-- top selling books -->
+      <div class="data-panel">
+        <div class="dp-header">
+          <div class="dp-title">🏆 সর্বাধিক বিক্রিত বই</div>
+          <span class="badge badge-yellow">Top ${(d.top_books||[]).length}</span>
+        </div>
+        ${(d.top_books||[]).length ? d.top_books.map((b, i) => `
+          <div class="tb-row">
+            <div class="tb-rank ${rankClass(i)}">${i+1}</div>
+            <div class="tb-info">
+              <strong>${b.book__title}</strong>
+              <small>${b.book__author || '—'}</small>
+            </div>
+            <div class="tb-stats">
+              <strong>৳${num(b.total_revenue)}</strong>
+              <small>${b.total_qty} কপি</small>
+            </div>
+          </div>`).join('')
+        : `<div class="empty-state" style="padding:30px 20px;"><div class="empty-icon" style="font-size:32px">📚</div><p>কোনো বিক্রয় নেই</p></div>`}
+      </div>
+
+      <!-- stock value -->
+      <div class="data-panel">
+        <div class="dp-header">
+          <div class="dp-title">📦 বর্তমান স্টক মূল্য</div>
+          <span class="badge badge-blue">এখন</span>
+        </div>
+        <div class="sv-row">
+          <span class="sv-label">বইয়ের ধরন</span>
+          <span class="sv-value">${st.total_book_types} ধরন</span>
+        </div>
+        <div class="sv-row">
+          <span class="sv-label">মোট কপি</span>
+          <span class="sv-value">${num(st.total_quantity)} কপি</span>
+        </div>
+        <div class="sv-row">
+          <span class="sv-label">বিক্রয় মূল্যে (Retail)</span>
+          <span class="sv-value green">৳${num(st.retail_value)}</span>
+        </div>
+        <div class="sv-row">
+          <span class="sv-label">ক্রয় মূল্যে (Cost)</span>
+          <span class="sv-value blue">৳${num(st.cost_value)}</span>
+        </div>
+        <div class="sv-row" style="background:var(--g100); border-radius:0 0 16px 16px;">
+          <span class="sv-label" style="font-weight:800; color:var(--g800)">সম্ভাব্য লাভ</span>
+          <span class="sv-value teal">৳${num(st.potential_profit)}</span>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+/* set today as default max for date inputs */
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('r-to').value  = today;
+  document.getElementById('r-from').value = today;
+  load('month');
+});
+</script>
+{% endblock %}

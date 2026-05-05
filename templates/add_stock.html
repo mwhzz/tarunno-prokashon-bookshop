@@ -1,0 +1,1272 @@
+{% extends 'base.html' %}
+{% block page_title %}স্টক ব্যবস্থাপনা{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── page ─── */
+.stock-page {
+  max-width: 780px;
+  margin: 0 auto;
+  animation: fadeUp .3s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── MODE TOGGLE ─── */
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.mode-btn {
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+.mode-btn:hover {
+  border-color: var(--accent);
+  background: var(--g100);
+}
+
+.mode-btn.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--g100), #fff);
+  box-shadow: 0 6px 24px rgba(27,122,85,.12);
+}
+
+.mode-icon {
+  width: 54px; height: 54px;
+  border-radius: 14px;
+  background: var(--g100);
+  display: grid; place-items: center;
+  font-size: 26px;
+  transition: background .2s;
+}
+
+.mode-btn.active .mode-icon { background: var(--g200); }
+
+.mode-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--g900);
+}
+
+.mode-sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+.mode-tag {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--g200);
+  color: var(--g700);
+  padding: 3px 10px;
+  border-radius: 99px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.mode-btn.active .mode-tag { opacity: 1; }
+
+/* ─── STEPPER ─── */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+.step-conn {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  margin-top: 19px;
+  border-radius: 99px;
+  max-width: 100px;
+  transition: background .4s;
+}
+.step-conn.done { background: var(--accent); }
+
+.snode {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 7px;
+  cursor: default; flex-shrink: 0;
+}
+
+.snode-circle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2.5px solid var(--border);
+  display: grid; place-items: center;
+  font-size: 15px; font-weight: 800;
+  color: var(--muted);
+  transition: all .3s;
+  position: relative;
+}
+
+.snode.active .snode-circle {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(27,122,85,.35);
+  transform: scale(1.1);
+}
+
+.snode.done .snode-circle {
+  background: var(--g200);
+  border-color: var(--accent);
+}
+
+.snode.done .snode-circle .sn-num { display: none; }
+.snode.done .snode-circle::after { content:'✓'; color: var(--accent); font-size:16px; font-weight:800; }
+
+.snode-lbl {
+  font-size: 11px; font-weight: 700;
+  color: var(--muted); text-align: center;
+  white-space: nowrap; transition: color .2s;
+}
+.snode.active .snode-lbl { color: var(--accent); }
+.snode.done  .snode-lbl  { color: var(--g600); }
+
+/* ─── STEP CARD ─── */
+.step-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 34px;
+  box-shadow: 0 4px 24px rgba(13,51,38,.07);
+  display: none;
+  animation: stepIn .22s ease both;
+}
+
+@keyframes stepIn {
+  from { opacity:0; transform:translateX(16px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.step-card.active { display: block; }
+
+.sc-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--g100); color: var(--g700);
+  font-size: 11px; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 99px; margin-bottom: 10px;
+}
+
+.sc-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px; font-weight: 800;
+  color: var(--g900); margin-bottom: 6px;
+}
+
+.sc-desc { font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 26px; }
+
+/* ─── BOOK SEARCH (Step 1) ─── */
+.book-search-wrap { position: relative; margin-bottom: 14px; }
+
+.bs-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 18px 0 50px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 16px; color: var(--text);
+  outline: none;
+  transition: all .18s;
+}
+
+.bs-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.bs-icon {
+  position: absolute; left: 17px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px; color: var(--muted);
+}
+
+.book-list {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.book-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .14s;
+}
+
+.book-row:last-child { border-bottom: none; }
+
+.book-row:hover { background: var(--g100); }
+
+.book-row.selected {
+  background: var(--g100);
+  border-left: 4px solid var(--accent);
+}
+
+.br-thumb {
+  width: 42px; height: 42px;
+  border-radius: 8px;
+  background: var(--g100);
+  display: grid; place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.br-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.br-info { flex: 1; min-width: 0; }
+.br-info strong { display: block; font-size: 14px; font-weight: 700; color: var(--g900); }
+.br-info small  { font-size: 12px; color: var(--muted); }
+
+.br-stock {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.br-stock strong {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 700;
+  color: var(--g600);
+}
+
+.br-stock small { font-size: 11px; color: var(--muted); font-weight: 700; }
+
+.selected-book-preview {
+  display: none;
+  background: var(--g100);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  align-items: center;
+  gap: 14px;
+}
+
+.selected-book-preview.show { display: flex; }
+
+.sbp-img {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: #fff;
+  display: grid; place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sbp-img img { width:100%; height:100%; object-fit:cover; }
+
+.sbp-info { flex: 1; min-width: 0; }
+.sbp-info strong { display: block; font-size: 15px; font-weight: 800; color: var(--g900); }
+.sbp-info small  { font-size: 12px; color: var(--g700); font-weight: 600; }
+
+.sbp-change {
+  font-size: 12px; color: var(--accent);
+  font-weight: 700; cursor: pointer;
+  border: 1px solid var(--accent);
+  border-radius: 99px;
+  padding: 4px 12px;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.sbp-change:hover { background: var(--accent); color: #fff; }
+
+/* ─── FORM FIELDS (shared) ─── */
+.wiz-group { margin-bottom: 20px; }
+
+.wiz-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--text2); margin-bottom: 7px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.req { color: var(--danger); font-size: 15px; line-height: 1; }
+.wiz-hint { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 5px; }
+
+.wiz-input {
+  width: 100%; min-height: 48px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px; font-weight: 500;
+  color: var(--text); outline: none;
+  transition: all .18s;
+}
+
+.wiz-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.wiz-input.big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 700;
+  text-align: center;
+}
+
+.wiz-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* location selector */
+.location-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.loc-card {
+  border: 2.5px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.loc-card:hover {
+  border-color: var(--accent);
+  background: var(--g100);
+}
+
+.loc-card.selected {
+  border-color: var(--accent);
+  background: var(--g100);
+  box-shadow: 0 4px 16px rgba(27,122,85,.15);
+}
+
+.loc-icon { font-size: 32px; }
+
+.loc-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 800;
+  color: var(--g900);
+}
+
+.loc-sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+.loc-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--border);
+  display: grid; place-items: center;
+  font-size: 11px;
+  color: transparent;
+  transition: all .18s;
+}
+
+.loc-card.selected .loc-check {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* source cards */
+.source-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.src-card {
+  border: 2.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .18s;
+}
+
+.src-card:hover {
+  border-color: var(--accent);
+  background: var(--g100);
+}
+
+.src-card.selected {
+  border-color: var(--accent);
+  background: var(--g100);
+}
+
+.src-icon  { font-size: 24px; margin-bottom: 6px; }
+.src-title { font-size: 13px; font-weight: 800; color: var(--g900); }
+.src-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* supplier fields */
+.purchase-extra {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  display: none;
+}
+
+.purchase-extra.show { display: block; }
+
+/* ─── REVIEW ─── */
+.review-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.rv-book {
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rv-book-img {
+  width: 46px; height: 46px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.15);
+  display: grid; place-items: center;
+  font-size: 22px; flex-shrink: 0;
+  overflow: hidden;
+}
+
+.rv-book-img img { width:100%; height:100%; object-fit:cover; }
+
+.rv-book-info strong { display: block; font-size: 15px; font-weight: 800; color: #fff; }
+.rv-book-info small  { font-size: 12px; color: rgba(255,255,255,.6); }
+
+.rv-rows { padding: 6px 0; }
+
+.rv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rv-row:last-child { border-bottom: none; }
+
+.rv-row span:first-child { font-size: 13px; color: var(--muted); font-weight: 700; }
+
+.rv-row span:last-child {
+  font-size: 14px; font-weight: 800;
+  color: var(--g900);
+}
+
+.rv-row .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; color: var(--accent);
+}
+
+/* ─── TRANSFER PANEL ─── */
+.transfer-panel {
+  display: none;
+}
+.transfer-panel.active { display: block; }
+
+.transfer-visual {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.tv-box {
+  border: 2.5px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.tv-box.from-sel { border-color: var(--danger); background: #fff5f5; }
+.tv-box.to-sel   { border-color: var(--accent); background: var(--g100); }
+
+.tv-box .tv-icon  { font-size: 34px; margin-bottom: 8px; }
+.tv-box .tv-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:800; color:var(--g900); }
+.tv-box .tv-sub   { font-size:12px; color:var(--muted); margin-top:4px; }
+
+.tv-arrow {
+  font-size: 32px;
+  color: var(--accent);
+  text-align: center;
+  animation: arrowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%,100% { transform: translateX(0); opacity:1; }
+  50%     { transform: translateX(6px); opacity:.6; }
+}
+
+/* ─── NAV BUTTONS ─── */
+.step-nav {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-top: 28px; padding-top: 20px;
+  border-top: 1px solid var(--border); gap: 12px;
+}
+
+.btn-next {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 26px; border-radius: 99px;
+  background: var(--accent); color: #fff;
+  border: none; cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px; font-weight: 800;
+  box-shadow: 0 6px 20px rgba(27,122,85,.28);
+  transition: all .18s;
+}
+
+.btn-next:hover {
+  background: var(--accent-dark);
+  transform: translateX(3px);
+  box-shadow: 0 8px 28px rgba(27,122,85,.4);
+}
+
+.btn-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 20px; border-radius: 99px;
+  background: var(--surface); color: var(--text2);
+  border: 1.5px solid var(--border-hard);
+  cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 14px; font-weight: 700;
+  transition: all .18s;
+}
+
+.btn-back:hover {
+  background: var(--g100);
+  border-color: var(--accent); color: var(--accent);
+}
+
+.btn-save {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px; border-radius: 99px;
+  background: var(--g500); color: #fff;
+  border: none; cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 17px; font-weight: 800;
+  box-shadow: 0 8px 28px rgba(27,122,85,.35);
+  transition: all .2s;
+}
+
+.btn-save:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(27,122,85,.45);
+}
+
+.btn-save:disabled { background: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+.btn-transfer {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 30px; border-radius: 99px;
+  background: var(--info); color: #fff;
+  border: none; cursor: pointer;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 16px; font-weight: 800;
+  box-shadow: 0 6px 20px rgba(37,99,235,.28);
+  transition: all .2s;
+}
+
+.btn-transfer:hover { background: #1d4ed8; transform: translateY(-2px); }
+.btn-transfer:disabled { background: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+/* ─── SUCCESS ─── */
+.success-screen { text-align:center; padding:40px 20px; display:none; }
+.success-screen.show { display:block; }
+
+.success-anim {
+  width:80px; height:80px;
+  background: var(--g100); border-radius:50%;
+  display:grid; place-items:center; font-size:40px;
+  margin: 0 auto 20px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes popIn {
+  from { transform:scale(0); opacity:0; }
+  to   { transform:scale(1); opacity:1; }
+}
+
+.success-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:24px; font-weight:800; color:var(--g900); margin-bottom:8px; }
+.success-sub   { font-size:15px; color:var(--muted); margin-bottom:28px; }
+.success-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+/* responsive */
+@media (max-width:580px) {
+  .mode-toggle, .wiz-row, .location-grid { grid-template-columns:1fr; }
+  .source-grid { grid-template-columns:1fr; }
+  .transfer-visual { grid-template-columns:1fr; }
+  .tv-arrow { transform:rotate(90deg); display:inline-block; }
+  .step-card { padding:20px 16px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stock-page" id="stock-page">
+
+  <!-- ─── MODE SELECTOR ─── -->
+  <div class="mode-toggle" id="mode-toggle">
+    <button class="mode-btn active" id="mode-add" onclick="setMode('add')">
+      <div class="mode-icon">📦</div>
+      <div class="mode-title">নতুন স্টক যোগ</div>
+      <div class="mode-sub">নতুন বই কিনে এনেছেন বা ফেরত পেয়েছেন</div>
+      <div class="mode-tag">সিলেক্টেড ✓</div>
+    </button>
+    <button class="mode-btn" id="mode-tr" onclick="setMode('transfer')">
+      <div class="mode-icon">🔄</div>
+      <div class="mode-title">স্টক ট্রান্সফার</div>
+      <div class="mode-sub">গোডাউন থেকে দোকানে বই পাঠান</div>
+      <div class="mode-tag">সিলেক্টেড ✓</div>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════
+       ADD STOCK WIZARD
+  ════════════════════════════════ -->
+  <div id="add-panel">
+
+    <!-- stepper -->
+    <div class="stepper" id="add-stepper">
+      <div class="snode active" id="asn-1">
+        <div class="snode-circle"><span class="sn-num">১</span></div>
+        <div class="snode-lbl">কোন বই?</div>
+      </div>
+      <div class="step-conn" id="asc-1"></div>
+      <div class="snode" id="asn-2">
+        <div class="snode-circle"><span class="sn-num">২</span></div>
+        <div class="snode-lbl">কত পিস?</div>
+      </div>
+      <div class="step-conn" id="asc-2"></div>
+      <div class="snode" id="asn-3">
+        <div class="snode-circle"><span class="sn-num">৩</span></div>
+        <div class="snode-lbl">উৎস ও তথ্য</div>
+      </div>
+      <div class="step-conn" id="asc-3"></div>
+      <div class="snode" id="asn-4">
+        <div class="snode-circle"><span class="sn-num">৪</span></div>
+        <div class="snode-lbl">রিভিউ</div>
+      </div>
+    </div>
+
+    <!-- STEP A1: বই বেছে নিন -->
+    <div class="step-card active" id="as-1">
+      <div class="sc-badge">ধাপ ১ / ৪</div>
+      <div class="sc-title">📗 কোন বইয়ের স্টক যোগ করবেন?</div>
+      <div class="sc-desc">তালিকা থেকে বইটি বেছে নিন অথবা নাম লিখে খুঁজুন।</div>
+
+      <!-- selected book preview -->
+      <div class="selected-book-preview" id="sel-book-preview">
+        <div class="sbp-img" id="sbp-img">📗</div>
+        <div class="sbp-info">
+          <strong id="sbp-title">—</strong>
+          <small id="sbp-stock">—</small>
+        </div>
+        <div class="sbp-change" onclick="clearBookSelection()">বই বদলান</div>
+      </div>
+
+      <div id="book-search-area">
+        <div class="book-search-wrap">
+          <span class="bs-icon">🔍</span>
+          <input class="bs-input" id="book-search" placeholder="বইয়ের নাম লিখে খুঁজুন..." oninput="filterBookList()" autocomplete="off">
+        </div>
+        <div class="book-list" id="book-list">
+          <div class="loading" style="padding:20px"><div class="spinner"></div>&nbsp;বই লোড হচ্ছে...</div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <a href="/stock/" class="btn-back" style="text-decoration:none">← বাতিল</a>
+        <button class="btn-next" onclick="nextAddStep(1)">পরের ধাপ → কত পিস?</button>
+      </div>
+    </div>
+
+    <!-- STEP A2: পরিমাণ ও লোকেশন -->
+    <div class="step-card" id="as-2">
+      <div class="sc-badge">ধাপ ২ / ৪</div>
+      <div class="sc-title">🔢 কত পিস যোগ করবেন?</div>
+      <div class="sc-desc">পরিমাণ লিখুন এবং কোথায় রাখবেন তা বেছে নিন।</div>
+
+      <div class="wiz-group">
+        <div class="wiz-label">পরিমাণ (কপি) <span class="req">*</span></div>
+        <input class="wiz-input big" id="s-qty" type="number" min="1" placeholder="০" oninput="validateQty()">
+        <div class="wiz-hint">কতটি বই যোগ হবে সেই সংখ্যা।</div>
+      </div>
+
+      <div class="wiz-group">
+        <div class="wiz-label">কোথায় রাখবেন? <span class="req">*</span></div>
+        <div class="location-grid">
+          <div class="loc-card selected" id="loc-godown" onclick="selectLocation('godown')">
+            <div class="loc-icon">🏭</div>
+            <div class="loc-title">গোডাউন</div>
+            <div class="loc-sub">মূল গুদামঘর</div>
+            <div class="loc-check">✓</div>
+          </div>
+          <div class="loc-card" id="loc-shop" onclick="selectLocation('shop')">
+            <div class="loc-icon">🏪</div>
+            <div class="loc-title">দোকান</div>
+            <div class="loc-sub">বিক্রয়ের শেলফ</div>
+            <div class="loc-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goAddStep(1)">← পেছনে</button>
+        <button class="btn-next" onclick="nextAddStep(2)">পরের ধাপ → উৎস</button>
+      </div>
+    </div>
+
+    <!-- STEP A3: উৎস ও অতিরিক্ত তথ্য -->
+    <div class="step-card" id="as-3">
+      <div class="sc-badge">ধাপ ৩ / ৪</div>
+      <div class="sc-title">📋 কোথা থেকে এলো?</div>
+      <div class="sc-desc">স্টক কোথা থেকে আসছে তা বেছে নিন।</div>
+
+      <div class="wiz-group">
+        <div class="wiz-label">উৎস (Source)</div>
+        <div class="source-grid">
+          <div class="src-card selected" id="src-purchase" onclick="selectSource('purchase')">
+            <div class="src-icon">🛍️</div>
+            <div class="src-title">নতুন কেনা</div>
+            <div class="src-sub">Purchase</div>
+          </div>
+          <div class="src-card" id="src-return" onclick="selectSource('return')">
+            <div class="src-icon">↩️</div>
+            <div class="src-title">ফেরত</div>
+            <div class="src-sub">Return</div>
+          </div>
+          <div class="src-card" id="src-adjustment" onclick="selectSource('adjustment')">
+            <div class="src-icon">⚙️</div>
+            <div class="src-title">হিসাব মেলানো</div>
+            <div class="src-sub">Adjustment</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- purchase extra fields -->
+      <div class="purchase-extra show" id="purchase-extra">
+        <div class="wiz-row">
+          <div class="wiz-group" style="margin-bottom:0">
+            <div class="wiz-label">সাপ্লায়ারের নাম</div>
+            <input class="wiz-input" id="s-supplier" placeholder="যেমন: ইত্যাদি গ্রন্থ প্রকাশ">
+          </div>
+          <div class="wiz-group" style="margin-bottom:0">
+            <div class="wiz-label">নতুন ক্রয়মূল্য ৳</div>
+            <input class="wiz-input" id="s-purchase-price" type="number" placeholder="দাম বদলে থাকলে">
+            <div class="wiz-hint">না বদলালে খালি রাখুন।</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wiz-group">
+        <div class="wiz-label">নোট / রিমার্কস</div>
+        <input class="wiz-input" id="s-note" placeholder="বিশেষ কোনো তথ্য থাকলে লিখুন...">
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goAddStep(2)">← পেছনে</button>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:7px;">
+          <button class="btn-next" onclick="nextAddStep(3)">রিভিউ করুন →</button>
+          <span style="font-size:12px; color:var(--muted); font-weight:600; cursor:pointer; text-decoration:underline; text-decoration-style:dashed;" onclick="nextAddStep(3)">এড়িয়ে যান</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP A4: রিভিউ ও সেভ -->
+    <div class="step-card" id="as-4">
+      <div class="sc-badge">ধাপ ৪ / ৪</div>
+      <div class="sc-title">✅ রিভিউ করুন</div>
+      <div class="sc-desc">সব তথ্য ঠিক আছে? তাহলে স্টক যোগ করুন।</div>
+
+      <div class="review-card" id="add-review"><!-- filled by JS --></div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goAddStep(3)">← পেছনে, এডিট করুন</button>
+        <button class="btn-save" id="save-btn" onclick="submitStock()">✅ স্টক যোগ করুন</button>
+      </div>
+    </div>
+
+  </div><!-- /add-panel -->
+
+
+  <!-- ════════════════════════════════
+       TRANSFER PANEL
+  ════════════════════════════════ -->
+  <div class="transfer-panel" id="transfer-panel">
+    <div class="step-card active">
+      <div class="sc-badge">স্টক ট্রান্সফার</div>
+      <div class="sc-title">🔄 এক জায়গা থেকে অন্য জায়গায় পাঠান</div>
+      <div class="sc-desc">গোডাউন থেকে দোকানে অথবা দোকান থেকে গোডাউনে বই সরান।</div>
+
+      <!-- book select -->
+      <div class="wiz-group">
+        <div class="wiz-label">কোন বই? <span class="req">*</span></div>
+        <div class="book-search-wrap">
+          <span class="bs-icon">🔍</span>
+          <input class="bs-input" id="t-book-search" placeholder="বইয়ের নাম খুঁজুন..." oninput="filterTrBookList()" autocomplete="off">
+        </div>
+        <div class="book-list" id="t-book-list" style="display:none; max-height:200px;"></div>
+        <div class="selected-book-preview" id="t-sel-preview">
+          <div class="sbp-img" id="t-sbp-img">📗</div>
+          <div class="sbp-info">
+            <strong id="t-sbp-title">—</strong>
+            <small id="t-sbp-stock">—</small>
+          </div>
+          <div class="sbp-change" onclick="clearTrBook()">বদলান</div>
+        </div>
+      </div>
+
+      <!-- quantity -->
+      <div class="wiz-group">
+        <div class="wiz-label">কত পিস পাঠাবেন? <span class="req">*</span></div>
+        <input class="wiz-input big" id="t-qty" type="number" min="1" placeholder="০" style="max-width:200px">
+      </div>
+
+      <!-- visual from → to -->
+      <div class="wiz-label">কোথা থেকে → কোথায়?</div>
+      <div class="transfer-visual">
+        <div class="tv-box" id="tv-godown" onclick="setTrFrom('godown')" style="cursor:pointer;">
+          <div class="tv-icon">🏭</div>
+          <div class="tv-title">গোডাউন</div>
+          <div class="tv-sub" id="tv-godown-role">ক্লিক করুন</div>
+        </div>
+        <div class="tv-arrow">→</div>
+        <div class="tv-box" id="tv-shop" onclick="setTrFrom('shop')" style="cursor:pointer;">
+          <div class="tv-icon">🏪</div>
+          <div class="tv-title">দোকান</div>
+          <div class="tv-sub" id="tv-shop-role">ক্লিক করুন</div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:var(--muted); text-align:center; margin-top:-8px; margin-bottom:14px;">
+        🟡 যেটাতে ক্লিক করবেন সেটা হবে <strong>উৎস (From)</strong>, বাকিটা গন্তব্য (To)
+      </p>
+
+      <!-- note -->
+      <div class="wiz-group">
+        <div class="wiz-label">নোট</div>
+        <input class="wiz-input" id="t-note" placeholder="কার মাধ্যমে পাঠানো হলো ইত্যাদি...">
+      </div>
+
+      <div class="step-nav">
+        <a href="/stock/" class="btn-back" style="text-decoration:none">← বাতিল</a>
+        <button class="btn-transfer" id="tr-btn" onclick="submitTransfer()">🔄 ট্রান্সফার করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SUCCESS SCREEN ─── -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-anim" id="success-icon">✅</div>
+    <div class="success-title" id="success-title">স্টক যোগ হয়েছে!</div>
+    <div class="success-sub" id="success-msg">সফলভাবে স্টক আপডেট করা হয়েছে।</div>
+    <div class="success-actions">
+      <a href="/stock/add/" class="btn btn-primary" style="text-decoration:none; border-radius:99px; padding:12px 22px;">
+        ➕ আরো স্টক যোগ করুন
+      </a>
+      <a href="/stock/" class="btn btn-ghost" style="text-decoration:none; border-radius:99px; padding:12px 22px;">
+        📦 স্টক তালিকা দেখুন
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════
+   STATE
+══════════════════════════════ */
+let allBooks     = [];
+let selectedBook = null;   // for add
+let trBook       = null;   // for transfer
+let addLocation  = 'godown';
+let addSource    = 'purchase';
+let trFrom       = null;
+let addStep      = 1;
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+async function initPage() {
+  try {
+    let page = 1;
+    while (true) {
+      const r = await api(`/books/?page=${page}&page_size=100`);
+      allBooks = allBooks.concat(r.results);
+      if (!r.next) break; page++;
+    }
+    renderBookList('book-list', 'book-search', b => selectBook(b));
+    renderBookList('t-book-list', 't-book-search', b => selectTrBook(b), true);
+  } catch(e) {
+    toast('বই লোড হয়নি। সার্ভার চালু আছে কিনা দেখুন।', 'error');
+  }
+}
+
+/* ══════════════════════════════
+   MODE TOGGLE
+══════════════════════════════ */
+function setMode(m) {
+  document.getElementById('mode-add').classList.toggle('active', m==='add');
+  document.getElementById('mode-tr').classList.toggle('active',  m==='transfer');
+  document.getElementById('add-panel').style.display      = m==='add'      ? 'block' : 'none';
+  document.getElementById('transfer-panel').classList.toggle('active', m==='transfer');
+  document.getElementById('add-panel').style.display = m==='add' ? '' : 'none';
+}
+
+/* ══════════════════════════════
+   BOOK LIST
+══════════════════════════════ */
+function renderBookList(listId, searchId, onSelect, hiddenDefault=false) {
+  const q    = (document.getElementById(searchId)?.value || '').toLowerCase();
+  const list = document.getElementById(listId);
+  if (!list) return;
+
+  const filtered = q
+    ? allBooks.filter(b => b.is_active &&
+        (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)))
+    : allBooks.filter(b => b.is_active);
+
+  if (hiddenDefault && !q) { list.style.display = 'none'; return; }
+  list.style.display = 'block';
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">কোনো বই পাওয়া যায়নি</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(b => `
+    <div class="book-row ${selectedBook?.id===b.id || trBook?.id===b.id ? 'selected':''}" onclick='(${onSelect.toString()})( ${JSON.stringify({id:b.id,title:b.title,author:b.author||'',godown_quantity:b.godown_quantity||0,shop_quantity:b.shop_quantity||0,image:b.image||''})})'>
+      <div class="br-thumb">
+        ${b.image ? `<img src="${b.image}" onerror="this.parentNode.textContent='📗'">` : '📗'}
+      </div>
+      <div class="br-info">
+        <strong>${b.title}</strong>
+        <small>${b.author || '—'}</small>
+      </div>
+      <div class="br-stock">
+        <strong>${(b.shop_quantity||0)+(b.godown_quantity||0)}</strong>
+        <small>মোট কপি</small>
+      </div>
+    </div>`).join('');
+}
+
+function filterBookList()   { renderBookList('book-list',   'book-search',   b => selectBook(b)); }
+function filterTrBookList() { renderBookList('t-book-list', 't-book-search', b => selectTrBook(b), true); }
+
+/* ══════════════════════════════
+   BOOK SELECTION (ADD)
+══════════════════════════════ */
+function selectBook(book) {
+  selectedBook = book;
+  document.getElementById('sel-book-preview').classList.add('show');
+  document.getElementById('book-search-area').style.display = 'none';
+  document.getElementById('sbp-title').textContent = book.title;
+  document.getElementById('sbp-stock').textContent = `গোডাউন: ${book.godown_quantity} • দোকান: ${book.shop_quantity}`;
+  const img = document.getElementById('sbp-img');
+  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentNode.textContent='📗'">`;
+  else img.textContent = '📗';
+}
+
+function clearBookSelection() {
+  selectedBook = null;
+  document.getElementById('sel-book-preview').classList.remove('show');
+  document.getElementById('book-search-area').style.display = 'block';
+  document.getElementById('book-search').value = '';
+  filterBookList();
+}
+
+/* ══════════════════════════════
+   BOOK SELECTION (TRANSFER)
+══════════════════════════════ */
+function selectTrBook(book) {
+  trBook = book;
+  document.getElementById('t-sel-preview').classList.add('show');
+  document.getElementById('t-book-list').style.display = 'none';
+  document.getElementById('t-book-search').style.display = 'none';
+  document.getElementById('t-sbp-title').textContent = book.title;
+  document.getElementById('t-sbp-stock').textContent = `গোডাউন: ${book.godown_quantity} • দোকান: ${book.shop_quantity}`;
+  const img = document.getElementById('t-sbp-img');
+  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentNode.textContent='📗'">`;
+  else img.textContent = '📗';
+}
+
+function clearTrBook() {
+  trBook = null;
+  document.getElementById('t-sel-preview').classList.remove('show');
+  document.getElementById('t-book-list').style.display = 'none';
+  document.getElementById('t-book-search').style.display = 'block';
+  document.getElementById('t-book-search').value = '';
+}
+
+/* ══════════════════════════════
+   LOCATION SELECT
+══════════════════════════════ */
+function selectLocation(loc) {
+  addLocation = loc;
+  ['godown','shop'].forEach(l => {
+    document.getElementById(`loc-${l}`)?.classList.toggle('selected', l===loc);
+  });
+}
+
+/* ══════════════════════════════
+   SOURCE SELECT
+══════════════════════════════ */
+function selectSource(src) {
+  addSource = src;
+  ['purchase','return','adjustment'].forEach(s => {
+    document.getElementById(`src-${s}`)?.classList.toggle('selected', s===src);
+  });
+  document.getElementById('purchase-extra').classList.toggle('show', src==='purchase');
+}
+
+/* ══════════════════════════════
+   TRANSFER FROM/TO
+══════════════════════════════ */
+function setTrFrom(loc) {
+  trFrom = loc;
+  const to = loc === 'godown' ? 'shop' : 'godown';
+  document.getElementById('tv-godown').classList.remove('from-sel','to-sel');
+  document.getElementById('tv-shop').classList.remove('from-sel','to-sel');
+  document.getElementById(`tv-${loc}`).classList.add('from-sel');
+  document.getElementById(`tv-${to}`).classList.add('to-sel');
+  document.getElementById('tv-godown-role').textContent = loc==='godown' ? '👈 এখান থেকে' : '👉 এখানে যাবে';
+  document.getElementById('tv-shop-role').textContent   = loc==='shop'   ? '👈 এখান থেকে' : '👉 এখানে যাবে';
+}
+
+/* ══════════════════════════════
+   ADD STEP NAVIGATION
+══════════════════════════════ */
+function goAddStep(n) {
+  document.getElementById(`as-${addStep}`)?.classList.remove('active');
+  document.getElementById(`as-${n}`)?.classList.add('active');
+
+  for (let i=1; i<=4; i++) {
+    const nd = document.getElementById(`asn-${i}`);
+    nd.classList.remove('active','done');
+    if (i < n) nd.classList.add('done');
+    if (i === n) nd.classList.add('active');
+  }
+
+  for (let i=1; i<=3; i++)
+    document.getElementById(`asc-${i}`)?.classList.toggle('done', i < n);
+
+  addStep = n;
+  if (n === 4) buildAddReview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextAddStep(from) {
+  if (from === 1 && !selectedBook) {
+    toast('আগে একটি বই বেছে নিন!', 'error');
+    return;
+  }
+  if (from === 2) {
+    const qty = parseInt(document.getElementById('s-qty').value);
+    if (!qty || qty < 1) {
+      shake('s-qty');
+      toast('পরিমাণ লিখতে হবে!', 'error');
+      return;
+    }
+  }
+  goAddStep(from + 1);
+}
+
+/* ══════════════════════════════
+   BUILD REVIEW
+══════════════════════════════ */
+function buildAddReview() {
+  const qty       = document.getElementById('s-qty').value;
+  const source    = addSource === 'purchase' ? 'নতুন কেনা (Purchase)'
+                  : addSource === 'return'   ? 'কাস্টমার ফেরত (Return)'
+                  : 'হিসাব মেলানো (Adjustment)';
+  const locLabel  = addLocation === 'godown' ? '🏭 গোডাউন' : '🏪 দোকান';
+  const supplier  = document.getElementById('s-supplier')?.value || '—';
+  const pPrice    = document.getElementById('s-purchase-price')?.value;
+  const note      = document.getElementById('s-note')?.value || '—';
+
+  document.getElementById('add-review').innerHTML = `
+    <div class="rv-book">
+      <div class="rv-book-img">
+        ${selectedBook?.image ? `<img src="${selectedBook.image}" onerror="this.parentNode.textContent='📗'">` : '📗'}
+      </div>
+      <div class="rv-book-info">
+        <strong>${selectedBook?.title || '—'}</strong>
+        <small>${selectedBook?.author || ''}</small>
+      </div>
+    </div>
+    <div class="rv-rows">
+      <div class="rv-row"><span>যোগ হবে</span><span class="mono">+${qty} কপি</span></div>
+      <div class="rv-row"><span>কোথায়</span><span>${locLabel}</span></div>
+      <div class="rv-row"><span>উৎস</span><span>${source}</span></div>
+      ${addSource==='purchase' ? `<div class="rv-row"><span>সাপ্লায়ার</span><span>${supplier}</span></div>` : ''}
+      ${pPrice ? `<div class="rv-row"><span>ক্রয়মূল্য</span><span class="mono">৳${pPrice}</span></div>` : ''}
+      <div class="rv-row"><span>নোট</span><span>${note}</span></div>
+    </div>`;
+}
+
+function validateQty() {} // placeholder for real-time feedback
+
+/* ══════════════════════════════
+   SUBMIT STOCK
+══════════════════════════════ */
+async function submitStock() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ যোগ হচ্ছে...';
+
+  const payload = {
+    book:     selectedBook.id,
+    quantity: parseInt(document.getElementById('s-qty').value),
+    source:   addSource,
+    location: addLocation,
+    note:     document.getElementById('s-note').value || ''
+  };
+
+  if (addSource === 'purchase') {
+    const sup = document.getElementById('s-supplier').value;
+    const pp  = document.getElementById('s-purchase-price').value;
+    if (sup) payload.supplier_name  = sup;
+    if (pp)  payload.purchase_price = pp;
+  }
+
+  try {
+    await api('/stock/entries/', 'POST', payload);
+    showSuccess(
+      '✅',
+      'স্টক যোগ হয়েছে!',
+      `"${selectedBook.title}" — ${payload.quantity}টি কপি ${addLocation === 'godown' ? 'গোডাউনে' : 'দোকানে'} যোগ হয়েছে।`
+    );
+  } catch(e) {
+    toast((e?.detail || JSON.stringify(e)), 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ স্টক যোগ করুন';
+  }
+}
+
+/* ══════════════════════════════
+   SUBMIT TRANSFER
+══════════════════════════════ */
+async function submitTransfer() {
+  if (!trBook)  { toast('বই বেছে নিন!', 'error'); return; }
+  if (!trFrom)  { toast('কোথা থেকে পাঠাবেন তা বেছে নিন!', 'error'); return; }
+
+  const qty = parseInt(document.getElementById('t-qty').value);
+  if (!qty || qty < 1) {
+    shake('t-qty');
+    toast('পরিমাণ লিখুন!', 'error');
+    return;
+  }
+
+  const to  = trFrom === 'godown' ? 'shop' : 'godown';
+  const btn = document.getElementById('tr-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ ট্রান্সফার হচ্ছে...';
+
+  try {
+    await api('/stock/transfers/', 'POST', {
+      book:          trBook.id,
+      quantity:      qty,
+      from_location: trFrom,
+      to_location:   to,
+      note:          document.getElementById('t-note').value || ''
+    });
+    const fromLbl = trFrom === 'godown' ? 'গোডাউন' : 'দোকান';
+    const toLbl   = to     === 'shop'   ? 'দোকান'  : 'গোডাউন';
+    showSuccess(
+      '🔄',
+      'ট্রান্সফার সম্পন্ন!',
+      `"${trBook.title}" — ${qty}টি কপি ${fromLbl} থেকে ${toLbl}-এ পাঠানো হয়েছে।`
+    );
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.detail || e[Object.keys(e)[0]] || JSON.stringify(e)) : String(e);
+    toast('ট্রান্সফার ব্যর্থ: ' + msg, 'error');
+    btn.disabled = false;
+    btn.textContent = '🔄 ট্রান্সফার করুন';
+  }
+}
+
+/* ══════════════════════════════
+   SUCCESS SCREEN
+══════════════════════════════ */
+function showSuccess(icon, title, msg) {
+  document.getElementById('mode-toggle').style.display  = 'none';
+  document.getElementById('add-panel').style.display    = 'none';
+  document.getElementById('transfer-panel').classList.remove('active');
+  document.getElementById('success-icon').textContent  = icon;
+  document.getElementById('success-title').textContent = title;
+  document.getElementById('success-msg').textContent   = msg;
+  document.getElementById('success-screen').classList.add('show');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* ══════════════════════════════
+   SHAKE
+══════════════════════════════ */
+function shake(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--danger)';
+  el.style.animation   = 'none';
+  void el.offsetWidth;
+  el.style.animation   = 'shake .3s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor=''; el.style.animation=''; }, 1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', initPage);
+</script>
+{% endblock %}

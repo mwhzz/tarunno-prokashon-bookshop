@@ -1,6 +1,7 @@
 Django
 djangorestframework
 django-cors-headers
+django-filter
 xhtml2pdf
 reportlab
 gunicorn

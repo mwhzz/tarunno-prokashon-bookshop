@@ -46,7 +46,7 @@ info "Installing DNS/SSL tools if needed..."
 apt-get update -qq
 apt-get install -y -qq curl dnsutils certbot python3-certbot-nginx
 
-SERVER_IP="$(curl -fsS ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
+SERVER_IP="$(curl -4fsS ifconfig.me 2>/dev/null || hostname -I | awk '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9.]+$/) {print $i; exit}}')"
 RESOLVED_IP="$(dig +short A "$DOMAIN" | tail -1)"
 
 if [[ "$RESOLVED_IP" != "$SERVER_IP" ]]; then

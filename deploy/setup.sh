@@ -54,9 +54,13 @@ read -r -p "Admin email: " ADMIN_EMAIL
 
 info "Installing system packages..."
 apt-get update -qq
-apt-get install -y -qq python3 python3-pip python3-venv nginx curl git rsync
+apt-get install -y -qq \
+  python3 python3-dev python3-pip python3-venv \
+  nginx curl git rsync \
+  build-essential pkg-config libcairo2-dev libpango1.0-dev \
+  libgdk-pixbuf-2.0-dev libffi-dev shared-mime-info
 
-SERVER_IP="$(curl -fsS ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
+SERVER_IP="$(curl -4fsS ifconfig.me 2>/dev/null || hostname -I | awk '{for (i=1; i<=NF; i++) if ($i ~ /^[0-9.]+$/) {print $i; exit}}')"
 SECRET_KEY="$(python3 - <<'PY'
 import secrets
 print(secrets.token_urlsafe(50))

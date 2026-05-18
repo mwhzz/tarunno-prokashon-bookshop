@@ -5,6 +5,7 @@ __pycache__/
 *.tmp
 
 .env
+.bookshop_env
 .venv/
 venv/
 env/
@@ -12,6 +13,7 @@ env/
 db.sqlite3
 staticfiles/
 media/
+logs/
 
 .DS_Store
 Thumbs.db

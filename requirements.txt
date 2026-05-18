@@ -4,3 +4,4 @@ django-cors-headers
 xhtml2pdf
 reportlab
 gunicorn
+Pillow

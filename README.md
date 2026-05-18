@@ -51,6 +51,17 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+For local development, edit `.env` before running the server:
+
+```env
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_SECURE_SSL_REDIRECT=False
+DJANGO_SESSION_COOKIE_SECURE=False
+DJANGO_CSRF_COOKIE_SECURE=False
+DJANGO_SECURE_HSTS_SECONDS=0
+```
+
 Then open:
 
 ```text
@@ -64,7 +75,11 @@ Create a `.env` file from `.env.example` and set production values:
 ```env
 DJANGO_SECRET_KEY=change-this-to-a-long-random-secret
 DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+DJANGO_ALLOWED_HOSTS=pos.tarunyaprokashon.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://pos.tarunyaprokashon.com
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_CSRF_COOKIE_SECURE=True
 ```
 
 For local development, you can temporarily set:
@@ -74,25 +89,100 @@ DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
+When `DJANGO_DEBUG=False`, `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS` are required.
+
 ## Production Checklist
 
 1. Set a strong `DJANGO_SECRET_KEY`.
 2. Set `DJANGO_DEBUG=False`.
 3. Set `DJANGO_ALLOWED_HOSTS` to the real domain.
-4. Run migrations:
+4. Set `DJANGO_CSRF_TRUSTED_ORIGINS` with the real `https://` origin.
+5. Run migrations:
 
 ```bash
 python manage.py migrate
 ```
 
-5. Collect static files:
+6. Collect static files:
 
 ```bash
 python manage.py collectstatic
 ```
 
-6. Serve `staticfiles/` and `media/` from the production web server.
-7. Back up the production database regularly.
+7. Serve `staticfiles/` and `media/` from the production web server.
+8. Back up the production database and `media/` regularly.
+
+## DigitalOcean Deployment
+
+This setup is designed for a droplet that already hosts another website. It does not use port `8000`; Gunicorn listens on a Unix socket:
+
+```text
+/run/bookshop-pos/gunicorn.sock
+```
+
+Default production values:
+
+| Item | Value |
+| --- | --- |
+| Project path | `/var/www/pos.tarunyaprokashon.com` |
+| Service | `bookshop-pos` |
+| App user | `bookshoppos` |
+| Env file | `/var/www/pos.tarunyaprokashon.com/.bookshop_env` |
+| Nginx site | `/etc/nginx/sites-available/bookshop-pos` |
+| Domain | `pos.tarunyaprokashon.com` |
+
+### First Deploy
+
+Point DNS first:
+
+```text
+Type: A
+Name: pos
+Value: YOUR_DROPLET_IP
+```
+
+Then SSH into the droplet:
+
+```bash
+ssh root@YOUR_DROPLET_IP
+apt-get update
+apt-get install -y git
+git clone https://github.com/YOUR_USERNAME/tarunno-prokashon-bookshop.git /var/www/pos.tarunyaprokashon.com
+cd /var/www/pos.tarunyaprokashon.com
+bash deploy/setup.sh
+bash deploy/add_domain.sh pos.tarunyaprokashon.com
+```
+
+The setup script creates the venv, environment file, database, static files, systemd service, and Nginx server block for only the POS subdomain. It does not remove or replace the droplet's existing main website config.
+
+### Update From GitHub
+
+Local PC:
+
+```bash
+git add .
+git commit -m "Update POS"
+git push
+```
+
+Droplet:
+
+```bash
+cd /var/www/pos.tarunyaprokashon.com
+bash deploy/update.sh
+```
+
+The update script fetches GitHub, resets tracked code to the selected branch, installs dependencies, runs `check`, `migrate`, `collectstatic`, and restarts `bookshop-pos`. It keeps `.bookshop_env`, `db.sqlite3`, `media/`, `staticfiles/`, `logs/`, and `venv/` outside Git.
+
+### Useful Commands
+
+```bash
+systemctl status bookshop-pos
+journalctl -u bookshop-pos -n 80 --no-pager
+tail -f /var/www/pos.tarunyaprokashon.com/logs/error.log
+nginx -t
+systemctl reload nginx
+```
 
 ## Main Pages
 

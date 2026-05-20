@@ -6,7 +6,9 @@ from django.utils import timezone
 
 from sales.daily_report import (
     build_daily_owner_summary,
+    build_telegram_daily_owner_summary,
     get_latest_telegram_chat,
+    set_telegram_bot_commands,
     send_telegram_owner_report,
 )
 
@@ -44,11 +46,27 @@ class Command(BaseCommand):
             action="store_true",
             help="Send a short Telegram test message instead of a report.",
         )
+        parser.add_argument(
+            "--set-menu",
+            action="store_true",
+            help="Configure the Telegram slash-command menu.",
+        )
 
     def handle(self, *args, **options):
+        if options["set_menu"]:
+            try:
+                set_telegram_bot_commands()
+            except Exception as exc:
+                raise CommandError(str(exc)) from exc
+
+            self.stdout.write(self.style.SUCCESS("Telegram command menu configured."))
+            return
+
         if options["test"]:
             try:
-                response = send_telegram_owner_report("Telegram test message from Tarunno Prokashon POS.")
+                response = send_telegram_owner_report(
+                    "<b>Telegram test message</b>\nTarunno Prokashon POS is connected."
+                )
             except Exception as exc:
                 raise CommandError(str(exc)) from exc
 
@@ -84,10 +102,10 @@ class Command(BaseCommand):
         else:
             report_date = timezone.localdate()
 
-        message = build_daily_owner_summary(report_date)
+        plain_message = build_daily_owner_summary(report_date)
 
         if options["dry_run"]:
-            self.stdout.write(message)
+            self.stdout.write(plain_message)
             return
 
         if not settings.TELEGRAM_REPORT_ENABLED and not options["force"]:
@@ -96,7 +114,7 @@ class Command(BaseCommand):
             )
 
         try:
-            response = send_telegram_owner_report(message)
+            response = send_telegram_owner_report(build_telegram_daily_owner_summary(report_date))
         except Exception as exc:
             raise CommandError(str(exc)) from exc
 

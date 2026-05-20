@@ -33,9 +33,9 @@ class DailyCashViewSet(viewsets.ModelViewSet):
         telegram_report = {'sent': False}
         if settings.TELEGRAM_REPORT_ENABLED:
             try:
-                from sales.daily_report import build_daily_owner_summary, send_telegram_owner_report
+                from sales.daily_report import build_telegram_daily_owner_summary, send_telegram_owner_report
 
-                send_telegram_owner_report(build_daily_owner_summary(obj.date))
+                send_telegram_owner_report(build_telegram_daily_owner_summary(obj.date))
                 telegram_report['sent'] = True
             except Exception as exc:
                 logger.exception("Failed to send Telegram report after closing day %s.", obj.date)

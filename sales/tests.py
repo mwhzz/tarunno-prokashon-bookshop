@@ -85,6 +85,9 @@ class DailyTelegramReportTests(TestCase):
     def test_report_text_classifier_accepts_owner_commands(self):
         self.assertEqual(classify_telegram_report_text("/report")["type"], "report")
         self.assertEqual(classify_telegram_report_text("hishab dao")["type"], "report")
+        self.assertEqual(classify_telegram_report_text("Today's Report")["type"], "report")
+        self.assertEqual(classify_telegram_report_text("Yesterday's Report")["type"], "report")
+        self.assertEqual(classify_telegram_report_text("Date Format")["type"], "date_help")
         self.assertEqual(classify_telegram_report_text("/start")["type"], "help")
 
     def test_poll_telegram_report_bot_replies_to_report_command(self):
@@ -122,6 +125,8 @@ class DailyTelegramReportTests(TestCase):
         self.assertEqual(result["processed"], 1)
         self.assertEqual(result["replied"], 1)
         self.assertEqual(sent_payloads[0]["chat_id"], 123)
+        self.assertEqual(sent_payloads[0]["parse_mode"], "HTML")
+        self.assertIn("reply_markup", sent_payloads[0])
         self.assertIn("Daily Summary", sent_payloads[0]["text"])
 
     def test_poll_telegram_report_bot_reports_wrong_chat(self):

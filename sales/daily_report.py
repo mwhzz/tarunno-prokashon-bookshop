@@ -5,6 +5,7 @@ import urllib.parse
 import urllib.request
 from decimal import Decimal
 from datetime import datetime, timedelta
+from html import escape
 from pathlib import Path
 
 from django.conf import settings
@@ -20,6 +21,15 @@ from sales.reports import sales_report
 IN_TRANSACTION_TYPES = ("sale", "cash_in", "adjustment_in")
 OUT_TRANSACTION_TYPES = ("expense", "cash_out", "adjustment_out")
 REPORT_KEYWORDS = ("report", "hisab", "hishab", "hiseb", "হিসাব", "রিপোর্ট")
+TELEGRAM_REPORT_KEYBOARD = {
+    "keyboard": [
+        [{"text": "Today's Report"}, {"text": "Yesterday's Report"}],
+        [{"text": "Help"}, {"text": "Date Format"}],
+    ],
+    "resize_keyboard": True,
+    "one_time_keyboard": False,
+    "input_field_placeholder": "Choose a report",
+}
 
 
 def money(value):
@@ -37,6 +47,18 @@ def _payment_method_summary(report_date):
     return {
         "total": _sum(payments, "amount"),
         "by_method": {item["method"]: item["total"] or Decimal("0") for item in by_method},
+    }
+
+
+def _daily_owner_summary_data(report_date=None):
+    report_date = report_date or timezone.localdate()
+    report = sales_report(report_date, report_date)
+    return {
+        "report_date": report_date,
+        "report": report,
+        "summary": report["summary"],
+        "payment_summary": _payment_method_summary(report_date),
+        "cash": _cash_summary(report_date),
     }
 
 
@@ -65,11 +87,12 @@ def _cash_summary(report_date):
 
 
 def build_daily_owner_summary(report_date=None):
-    report_date = report_date or timezone.localdate()
-    report = sales_report(report_date, report_date)
-    summary = report["summary"]
-    payment_summary = _payment_method_summary(report_date)
-    cash = _cash_summary(report_date)
+    data = _daily_owner_summary_data(report_date)
+    report_date = data["report_date"]
+    report = data["report"]
+    summary = data["summary"]
+    payment_summary = data["payment_summary"]
+    cash = data["cash"]
 
     lines = [
         "Tarunno Prokashon - Daily Summary",
@@ -123,6 +146,76 @@ def build_daily_owner_summary(report_date=None):
 
     if not cash["has_record"]:
         lines.extend(["", "Note: No cash record was found for this date."])
+
+    return "\n".join(lines)
+
+
+def build_telegram_daily_owner_summary(report_date=None):
+    data = _daily_owner_summary_data(report_date)
+    report_date = data["report_date"]
+    report = data["report"]
+    summary = data["summary"]
+    payment_summary = data["payment_summary"]
+    cash = data["cash"]
+
+    lines = [
+        "<b>Tarunno Prokashon</b>",
+        "<b>Daily Summary</b>",
+        f"<i>{report_date:%d %b %Y}</i>",
+        "",
+        "<b>Sales</b>",
+        f"Invoices: <b>{summary['total_invoices']}</b>",
+        f"Sales: <code>{money(summary['total_revenue'])}</code>",
+        f"Invoice paid: <code>{money(summary['total_paid'])}</code>",
+        f"New due: <code>{money(summary['total_due'])}</code>",
+        f"Collections: <code>{money(payment_summary['total'])}</code>",
+        f"Expenses: <code>{money(summary['total_expenses'])}</code>",
+        "",
+        "<b>Profit</b>",
+        f"Gross profit: <code>{money(summary['gross_profit'])}</code>",
+        f"Realized profit: <code>{money(summary['realized_profit'])}</code>",
+        f"Net profit: <code>{money(summary['net_profit'])}</code>",
+        "",
+        "<b>Cash</b>",
+        f"Opening: <code>{money(cash['opening_balance'])}</code>",
+        f"In: <code>{money(cash['cash_in'])}</code>",
+        f"Out: <code>{money(cash['cash_out'])}</code>",
+        f"Closing: <code>{money(cash['closing_balance'])}</code>",
+        f"Closed: <b>{'Yes' if cash['is_closed'] else 'No'}</b>",
+        "",
+        "<b>Receivable</b>",
+        f"Total receivable: <code>{money(summary['total_receivable'])}</code>",
+    ]
+
+    if payment_summary["by_method"]:
+        method_labels = {
+            "cash": "Cash",
+            "bank": "Bank",
+            "mobile": "Mobile",
+            "credit": "Credit",
+        }
+        lines.extend(["", "<b>Collections by Method</b>"])
+        for method, amount in payment_summary["by_method"].items():
+            label = method_labels.get(method, method.title())
+            lines.append(f"{escape(label)}: <code>{money(amount)}</code>")
+
+    top_books = report.get("top_books") or []
+    if top_books:
+        lines.extend(["", "<b>Top Books</b>"])
+        for index, book in enumerate(top_books[:3], start=1):
+            title = escape(book.get("book__title") or "Untitled")
+            qty = book.get("total_qty") or 0
+            revenue = money(book.get("total_revenue") or 0)
+            lines.append(f"{index}. {title} - {qty} pcs, <code>{revenue}</code>")
+
+    due_customers = report.get("top_due_customers") or []
+    if due_customers:
+        lines.extend(["", "<b>Top Due Customers</b>"])
+        for customer in due_customers[:3]:
+            lines.append(f"{escape(customer['name'])}: <code>{money(customer['due'])}</code>")
+
+    if not cash["has_record"]:
+        lines.extend(["", "<i>Note: No cash record was found for this date.</i>"])
 
     return "\n".join(lines)
 
@@ -193,21 +286,44 @@ def get_latest_telegram_chat(bot_token=None):
     return None
 
 
-def send_telegram_message(message, chat_id=None):
+def send_telegram_message(message, chat_id=None, parse_mode=None, reply_markup=None):
     bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
     chat_id = chat_id or _required_setting("TELEGRAM_CHAT_ID")
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+    }
+    if parse_mode:
+        payload["parse_mode"] = parse_mode
+    if reply_markup:
+        payload["reply_markup"] = json.dumps(reply_markup)
+
+    return _telegram_request(bot_token, "sendMessage", payload)
+
+
+def set_telegram_bot_commands():
+    bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
     return _telegram_request(
         bot_token,
-        "sendMessage",
+        "setMyCommands",
         {
-            "chat_id": chat_id,
-            "text": message,
+            "commands": json.dumps(
+                [
+                    {"command": "report", "description": "Today's report"},
+                    {"command": "yesterday", "description": "Yesterday's report"},
+                    {"command": "help", "description": "Show help and buttons"},
+                ]
+            )
         },
     )
 
 
 def send_telegram_owner_report(message):
-    return send_telegram_message(message)
+    return send_telegram_message(
+        message,
+        parse_mode="HTML",
+        reply_markup=TELEGRAM_REPORT_KEYBOARD,
+    )
 
 
 def _telegram_state_path():
@@ -292,6 +408,21 @@ def classify_telegram_report_text(text):
     if normalized in ("/start", "start", "/help", "help"):
         return {"type": "help"}
 
+    if normalized in ("date format", "format", "specific date"):
+        return {"type": "date_help"}
+
+    if normalized in ("/today", "today", "todays report", "today's report", "today report"):
+        return {"type": "report", "date": timezone.localdate()}
+
+    if normalized in (
+        "/yesterday",
+        "yesterday",
+        "yesterdays report",
+        "yesterday's report",
+        "yesterday report",
+    ):
+        return {"type": "report", "date": timezone.localdate() - timedelta(days=1)}
+
     if normalized.startswith("/report") or any(keyword in normalized for keyword in REPORT_KEYWORDS):
         try:
             report_date = _parse_report_date(normalized)
@@ -305,12 +436,28 @@ def classify_telegram_report_text(text):
 def telegram_report_help_message():
     return "\n".join(
         [
-            "Tarunno Prokashon report bot",
+            "<b>Tarunno Prokashon Report Bot</b>",
             "",
-            "Send:",
-            "/report - today's report",
-            "/report yesterday - yesterday's report",
-            "/report YYYY-MM-DD - a specific date",
+            "Use the buttons below, or send one of these:",
+            "",
+            "<code>/report</code> - today's report",
+            "<code>/yesterday</code> - yesterday's report",
+            "<code>/report YYYY-MM-DD</code> - a specific date",
+        ]
+    )
+
+
+def telegram_date_help_message():
+    return "\n".join(
+        [
+            "<b>Date Format</b>",
+            "",
+            "Use year-month-day format:",
+            "<code>/report 2026-05-20</code>",
+            "",
+            "You can also use:",
+            "<code>/report</code>",
+            "<code>/report yesterday</code>",
         ]
     )
 
@@ -359,13 +506,35 @@ def poll_telegram_report_bot(reset_state=False):
 
         processed += 1
         if request["type"] == "help":
-            send_telegram_message(telegram_report_help_message(), chat_id=chat_id)
+            send_telegram_message(
+                telegram_report_help_message(),
+                chat_id=chat_id,
+                parse_mode="HTML",
+                reply_markup=TELEGRAM_REPORT_KEYBOARD,
+            )
+            replied += 1
+        elif request["type"] == "date_help":
+            send_telegram_message(
+                telegram_date_help_message(),
+                chat_id=chat_id,
+                parse_mode="HTML",
+                reply_markup=TELEGRAM_REPORT_KEYBOARD,
+            )
             replied += 1
         elif request["type"] == "error":
-            send_telegram_message(request["message"], chat_id=chat_id)
+            send_telegram_message(
+                request["message"],
+                chat_id=chat_id,
+                reply_markup=TELEGRAM_REPORT_KEYBOARD,
+            )
             replied += 1
         elif request["type"] == "report":
-            send_telegram_message(build_daily_owner_summary(request["date"]), chat_id=chat_id)
+            send_telegram_message(
+                build_telegram_daily_owner_summary(request["date"]),
+                chat_id=chat_id,
+                parse_mode="HTML",
+                reply_markup=TELEGRAM_REPORT_KEYBOARD,
+            )
             replied += 1
 
     if last_update_id is not None:

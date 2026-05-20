@@ -164,6 +164,15 @@ if not result.get("ok"):
     raise SystemExit(result)
 PY
 
+info "Configuring Telegram command menu..."
+sudo -u "$APP_USER" bash -c "
+  set -a
+  source '$ENV_FILE'
+  set +a
+  cd '$APP_DIR'
+  '$VENV/bin/python' manage.py send_daily_telegram_report --set-menu
+"
+
 info "Running one Telegram poll now..."
 sudo -u "$APP_USER" bash -c "
   set -a
@@ -183,7 +192,10 @@ echo -e "  Log:     ${CYAN}$LOG_DIR/telegram_report.log${NC}"
 echo -e "  Bot log: ${CYAN}$LOG_DIR/telegram_bot.log${NC}"
 echo ""
 echo "  Ask the bot for a report:"
+echo -e "  ${YELLOW}Today's Report${NC}"
+echo -e "  ${YELLOW}Yesterday's Report${NC}"
 echo -e "  ${YELLOW}/report${NC}"
+echo -e "  ${YELLOW}/yesterday${NC}"
 echo -e "  ${YELLOW}/report yesterday${NC}"
 echo -e "  ${YELLOW}/report 2026-05-20${NC}"
 echo ""

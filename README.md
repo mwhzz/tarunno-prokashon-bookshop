@@ -218,9 +218,12 @@ Ask the bot for reports from Telegram:
 
 ```text
 /report
+/yesterday
 /report yesterday
 /report 2026-05-20
 ```
+
+The bot also shows a simple keyboard with `Today's Report`, `Yesterday's Report`, `Help`, and `Date Format` buttons.
 
 When the Accounts page daily cash close button is clicked, the same Telegram report is sent automatically if `TELEGRAM_REPORT_ENABLED=True`.
 

@@ -12,6 +12,7 @@ A production-ready Django bookshop management system for sales, inventory, custo
 - Sales return workflow with stock adjustment
 - Expense and account tracking
 - Profit, loss, stock value, and dashboard reports
+- Daily owner Telegram summary automation
 - Bangla A4 printable invoices with logo, local font, and multi-page print support
 - Role-aware frontend for admin, manager, and staff users
 
@@ -82,6 +83,16 @@ DJANGO_SESSION_COOKIE_SECURE=True
 DJANGO_CSRF_COOKIE_SECURE=True
 ```
 
+Optional Telegram daily report settings:
+
+```env
+TELEGRAM_REPORT_ENABLED=True
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_CHAT_ID=your-telegram-chat-id
+```
+
+Create a bot from Telegram `@BotFather`, send `/start` to that bot from the owner account, then use `python manage.py send_daily_telegram_report --get-chat-id` to find the chat id.
+
 For local development, you can temporarily set:
 
 ```env
@@ -151,6 +162,7 @@ git clone https://github.com/YOUR_USERNAME/tarunno-prokashon-bookshop.git /var/w
 cd /var/www/pos.tarunyaprokashon.com
 bash deploy/setup.sh
 bash deploy/add_domain.sh pos.tarunyaprokashon.com
+bash deploy/setup_telegram_report.sh
 ```
 
 The setup script creates the venv, environment file, database, static files, systemd service, and Nginx server block for only the POS subdomain. It does not remove or replace the droplet's existing main website config.
@@ -173,6 +185,27 @@ bash deploy/update.sh
 ```
 
 The update script fetches GitHub, resets tracked code to the selected branch, installs dependencies, runs `check`, `migrate`, `collectstatic`, and restarts `bookshop-pos`. It keeps `.bookshop_env`, `db.sqlite3`, `media/`, `staticfiles/`, `logs/`, and `venv/` outside Git.
+
+### Daily Telegram Report
+
+After production setup, configure the owner summary automation:
+
+```bash
+cd /var/www/pos.tarunyaprokashon.com
+bash deploy/setup_telegram_report.sh
+```
+
+The script stores Telegram credentials in `.bookshop_env`, writes `/etc/cron.d/bookshop-pos-telegram-report`, and sends the report every day at your selected time. You can preview the message locally:
+
+```bash
+python manage.py send_daily_telegram_report --dry-run
+```
+
+Send a one-off report from the server:
+
+```bash
+python manage.py send_daily_telegram_report --force
+```
 
 ### Useful Commands
 

@@ -20,6 +20,7 @@ err() { echo -e "${RED}[ERR]${NC} $1"; exit 1; }
 APP_DIR="${APP_DIR:-/var/www/pos.tarunyaprokashon.com}"
 APP_USER="${APP_USER:-bookshoppos}"
 SERVICE_NAME="${SERVICE_NAME:-bookshop-pos}"
+BOT_SERVICE_NAME="${BOT_SERVICE_NAME:-bookshop-pos-telegram-bot}"
 REMOTE="${REMOTE:-origin}"
 BRANCH="${BRANCH:-}"
 VENV="${VENV:-$APP_DIR/venv}"
@@ -76,5 +77,12 @@ info "Restarting service..."
 systemctl restart "$SERVICE_NAME"
 sleep 2
 systemctl is-active --quiet "$SERVICE_NAME" || err "$SERVICE_NAME restart failed. Check: journalctl -u $SERVICE_NAME -n 80 --no-pager"
+
+if systemctl cat "$BOT_SERVICE_NAME" >/dev/null 2>&1; then
+  info "Restarting Telegram bot worker..."
+  systemctl restart "$BOT_SERVICE_NAME"
+  sleep 2
+  systemctl is-active --quiet "$BOT_SERVICE_NAME" || err "$BOT_SERVICE_NAME restart failed. Check: journalctl -u $BOT_SERVICE_NAME -n 80 --no-pager"
+fi
 
 log "Update complete."

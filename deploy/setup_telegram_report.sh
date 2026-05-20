@@ -25,6 +25,7 @@ ENV_FILE="${ENV_FILE:-$APP_DIR/.bookshop_env}"
 LOG_DIR="${LOG_DIR:-$APP_DIR/logs}"
 CRON_FILE="${CRON_FILE:-/etc/cron.d/bookshop-pos-telegram-report}"
 OLD_WHATSAPP_CRON_FILE="${OLD_WHATSAPP_CRON_FILE:-/etc/cron.d/bookshop-pos-whatsapp-report}"
+BOT_SERVICE_NAME="${BOT_SERVICE_NAME:-bookshop-pos-telegram-bot}"
 REPORT_TIME="${REPORT_TIME:-22:30}"
 STATE_FILE="${STATE_FILE:-$LOG_DIR/telegram_report_bot_state.json}"
 
@@ -130,7 +131,6 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 $CRON_MINUTE $CRON_HOUR * * * $APP_USER set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report >> '$LOG_DIR/telegram_report.log' 2>&1
-* * * * * $APP_USER set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py poll_telegram_report_bot >> '$LOG_DIR/telegram_bot.log' 2>&1
 CRONEOF
 
 chmod 644 "$CRON_FILE"
@@ -182,6 +182,32 @@ sudo -u "$APP_USER" bash -c "
   '$VENV/bin/python' manage.py poll_telegram_report_bot --reset-state
 "
 
+info "Creating Telegram bot worker service..."
+cat > "/etc/systemd/system/$BOT_SERVICE_NAME.service" <<SVCEOF
+[Unit]
+Description=Tarunno Prokashon POS - Telegram Report Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=$APP_USER
+Group=$APP_USER
+WorkingDirectory=$APP_DIR
+EnvironmentFile=$ENV_FILE
+ExecStart=$VENV/bin/python manage.py run_telegram_report_bot
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+systemctl daemon-reload
+systemctl enable "$BOT_SERVICE_NAME"
+systemctl restart "$BOT_SERVICE_NAME"
+sleep 2
+systemctl is-active --quiet "$BOT_SERVICE_NAME" || err "$BOT_SERVICE_NAME did not start. Check: journalctl -u $BOT_SERVICE_NAME -n 80 --no-pager"
+
 echo ""
 echo "============================================================"
 echo -e "  ${GREEN}Daily Telegram report automation is configured.${NC}"
@@ -189,7 +215,7 @@ echo "============================================================"
 echo -e "  Chat ID: ${CYAN}$CHAT_ID${NC}"
 echo -e "  Time:    ${CYAN}$REPORT_TIME daily${NC}"
 echo -e "  Log:     ${CYAN}$LOG_DIR/telegram_report.log${NC}"
-echo -e "  Bot log: ${CYAN}$LOG_DIR/telegram_bot.log${NC}"
+echo -e "  Bot:     ${CYAN}$BOT_SERVICE_NAME systemd service${NC}"
 echo ""
 echo "  Ask the bot for a report:"
 echo -e "  ${YELLOW}Today's Report${NC}"
@@ -203,4 +229,6 @@ echo "  Send a test now:"
 echo -e "  ${YELLOW}sudo -u $APP_USER bash -c \"set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report --test\"${NC}"
 echo "  Send the full report now:"
 echo -e "  ${YELLOW}sudo -u $APP_USER bash -c \"set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report --force\"${NC}"
+echo "  Check bot worker logs:"
+echo -e "  ${YELLOW}journalctl -u $BOT_SERVICE_NAME -n 80 --no-pager${NC}"
 echo "============================================================"

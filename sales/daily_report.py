@@ -227,7 +227,7 @@ def _required_setting(name):
     return value
 
 
-def _telegram_request(bot_token, method, payload=None):
+def _telegram_request(bot_token, method, payload=None, request_timeout=30):
     url = f"https://api.telegram.org/bot{bot_token}/{method}"
     data = None
     headers = {}
@@ -238,7 +238,7 @@ def _telegram_request(bot_token, method, payload=None):
     request = urllib.request.Request(url, data=data, headers=headers, method="POST" if payload else "GET")
 
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=request_timeout) as response:
             parsed = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
@@ -462,7 +462,7 @@ def telegram_date_help_message():
     )
 
 
-def poll_telegram_report_bot(reset_state=False):
+def poll_telegram_report_bot(reset_state=False, telegram_timeout=0):
     bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
     allowed_chat_id = str(_required_setting("TELEGRAM_CHAT_ID"))
     if reset_state:
@@ -473,8 +473,11 @@ def poll_telegram_report_bot(reset_state=False):
     payload = {}
     if last_update_id is not None:
         payload["offset"] = int(last_update_id) + 1
+    if telegram_timeout:
+        payload["timeout"] = int(telegram_timeout)
 
-    data = _telegram_request(bot_token, "getUpdates", payload)
+    request_timeout = max(30, int(telegram_timeout) + 10) if telegram_timeout else 30
+    data = _telegram_request(bot_token, "getUpdates", payload, request_timeout=request_timeout)
     processed = 0
     replied = 0
     ignored_wrong_chat = 0

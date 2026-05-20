@@ -196,7 +196,7 @@ cd /var/www/pos.tarunyaprokashon.com
 bash deploy/setup_telegram_report.sh
 ```
 
-The script stores Telegram credentials in `.bookshop_env`, writes `/etc/cron.d/bookshop-pos-telegram-report`, sends the report every day at your selected time, and polls the bot every minute for owner commands. You can preview the message locally:
+The script stores Telegram credentials in `.bookshop_env`, writes `/etc/cron.d/bookshop-pos-telegram-report` for the daily scheduled report, and creates a `bookshop-pos-telegram-bot` systemd worker for near-instant bot replies. You can preview the message locally:
 
 ```bash
 python manage.py send_daily_telegram_report --dry-run
@@ -230,6 +230,8 @@ When the Accounts page daily cash close button is clicked, the same Telegram rep
 If the bot does not reply, send `/report` to the bot and run:
 
 ```bash
+systemctl status bookshop-pos-telegram-bot
+journalctl -u bookshop-pos-telegram-bot -n 80 --no-pager
 python manage.py poll_telegram_report_bot --show-updates
 python manage.py poll_telegram_report_bot --reset-state
 ```

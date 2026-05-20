@@ -123,3 +123,35 @@ class DailyTelegramReportTests(TestCase):
         self.assertEqual(result["replied"], 1)
         self.assertEqual(sent_payloads[0]["chat_id"], 123)
         self.assertIn("Daily Summary", sent_payloads[0]["text"])
+
+    def test_poll_telegram_report_bot_reports_wrong_chat(self):
+        def fake_telegram_request(bot_token, method, payload=None):
+            if method == "getUpdates":
+                return {
+                    "ok": True,
+                    "result": [
+                        {
+                            "update_id": 11,
+                            "message": {
+                                "chat": {"id": 999, "first_name": "Other", "type": "private"},
+                                "text": "/report",
+                            },
+                        }
+                    ],
+                }
+            return {"ok": True, "result": {"message_id": 77}}
+
+        with TemporaryDirectory() as temp_dir:
+            state_file = f"{temp_dir}/telegram_state.json"
+            with self.settings(
+                TELEGRAM_BOT_TOKEN="test-token",
+                TELEGRAM_CHAT_ID="123",
+                TELEGRAM_REPORT_STATE_FILE=state_file,
+            ):
+                with patch("sales.daily_report._telegram_request", side_effect=fake_telegram_request):
+                    result = poll_telegram_report_bot()
+
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(result["replied"], 0)
+        self.assertEqual(result["ignored_wrong_chat"], 1)
+        self.assertEqual(result["last_seen_chat_id"], "999")

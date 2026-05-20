@@ -224,6 +224,15 @@ Ask the bot for reports from Telegram:
 
 When the Accounts page daily cash close button is clicked, the same Telegram report is sent automatically if `TELEGRAM_REPORT_ENABLED=True`.
 
+If the bot does not reply, send `/report` to the bot and run:
+
+```bash
+python manage.py poll_telegram_report_bot --show-updates
+python manage.py poll_telegram_report_bot --reset-state
+```
+
+If `--show-updates` shows a different `chat_id`, update `TELEGRAM_CHAT_ID` in `.bookshop_env` and rerun `bash deploy/setup_telegram_report.sh`.
+
 ### Useful Commands
 
 ```bash

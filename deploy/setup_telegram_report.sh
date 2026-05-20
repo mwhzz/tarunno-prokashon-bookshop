@@ -144,6 +144,35 @@ sudo -u "$APP_USER" bash -c "
   '$VENV/bin/python' manage.py send_daily_telegram_report --dry-run
 "
 
+info "Clearing any existing Telegram webhook so polling can work..."
+BOT_TOKEN="$BOT_TOKEN" python3 - <<'PY'
+import json
+import os
+import urllib.parse
+import urllib.request
+
+token = os.environ["BOT_TOKEN"]
+data = urllib.parse.urlencode({"drop_pending_updates": "false"}).encode("utf-8")
+request = urllib.request.Request(
+    f"https://api.telegram.org/bot{token}/deleteWebhook",
+    data=data,
+    method="POST",
+)
+with urllib.request.urlopen(request, timeout=30) as response:
+    result = json.loads(response.read().decode("utf-8"))
+if not result.get("ok"):
+    raise SystemExit(result)
+PY
+
+info "Running one Telegram poll now..."
+sudo -u "$APP_USER" bash -c "
+  set -a
+  source '$ENV_FILE'
+  set +a
+  cd '$APP_DIR'
+  '$VENV/bin/python' manage.py poll_telegram_report_bot --reset-state
+"
+
 echo ""
 echo "============================================================"
 echo -e "  ${GREEN}Daily Telegram report automation is configured.${NC}"

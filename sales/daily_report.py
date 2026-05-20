@@ -234,6 +234,43 @@ def _save_telegram_state(state):
     path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
 
 
+def reset_telegram_report_bot_state():
+    path = _telegram_state_path()
+    if path.exists():
+        path.unlink()
+        return True
+    return False
+
+
+def get_telegram_updates_summary(limit=5):
+    bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
+    data = _telegram_request(bot_token, "getUpdates")
+    updates = []
+    for update in data.get("result", [])[-limit:]:
+        message = _extract_message(update)
+        if not message:
+            updates.append(
+                {
+                    "update_id": update.get("update_id"),
+                    "chat_id": "",
+                    "chat": "",
+                    "text": "",
+                }
+            )
+            continue
+
+        chat = message.get("chat") or {}
+        updates.append(
+            {
+                "update_id": update.get("update_id"),
+                "chat_id": str(chat.get("id", "")),
+                "chat": _chat_label(chat) or str(chat.get("id", "")),
+                "text": message.get("text") or "",
+            }
+        )
+    return updates
+
+
 def _parse_report_date(text):
     normalized = (text or "").strip().lower()
     match = re.search(r"\b\d{4}-\d{2}-\d{2}\b", normalized)
@@ -278,9 +315,12 @@ def telegram_report_help_message():
     )
 
 
-def poll_telegram_report_bot():
+def poll_telegram_report_bot(reset_state=False):
     bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
     allowed_chat_id = str(_required_setting("TELEGRAM_CHAT_ID"))
+    if reset_state:
+        reset_telegram_report_bot_state()
+
     state = _load_telegram_state()
     last_update_id = state.get("last_update_id")
     payload = {}
@@ -290,6 +330,9 @@ def poll_telegram_report_bot():
     data = _telegram_request(bot_token, "getUpdates", payload)
     processed = 0
     replied = 0
+    ignored_wrong_chat = 0
+    ignored_no_command = 0
+    last_seen_chat_id = ""
 
     for update in data.get("result", []):
         update_id = update.get("update_id")
@@ -302,12 +345,16 @@ def poll_telegram_report_bot():
 
         chat = message.get("chat") or {}
         chat_id = chat.get("id")
+        if chat_id is not None:
+            last_seen_chat_id = str(chat_id)
         if chat_id is None or str(chat_id) != allowed_chat_id:
+            ignored_wrong_chat += 1
             continue
 
         text = message.get("text") or ""
         request = classify_telegram_report_text(text)
         if not request:
+            ignored_no_command += 1
             continue
 
         processed += 1
@@ -329,5 +376,8 @@ def poll_telegram_report_bot():
         "updates": len(data.get("result", [])),
         "processed": processed,
         "replied": replied,
+        "ignored_wrong_chat": ignored_wrong_chat,
+        "ignored_no_command": ignored_no_command,
+        "last_seen_chat_id": last_seen_chat_id,
         "last_update_id": last_update_id,
     }

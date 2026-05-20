@@ -39,8 +39,25 @@ class Command(BaseCommand):
             action="store_true",
             help="Print the latest Telegram chat id seen by the bot.",
         )
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            help="Send a short Telegram test message instead of a report.",
+        )
 
     def handle(self, *args, **options):
+        if options["test"]:
+            try:
+                response = send_telegram_owner_report("Telegram test message from Tarunno Prokashon POS.")
+            except Exception as exc:
+                raise CommandError(str(exc)) from exc
+
+            result = response.get("result") if isinstance(response, dict) else None
+            message_id = result.get("message_id") if result else ""
+            suffix = f" Message ID: {message_id}" if message_id else ""
+            self.stdout.write(self.style.SUCCESS(f"Telegram test message sent.{suffix}"))
+            return
+
         if options["get_chat_id"]:
             try:
                 chat = get_latest_telegram_chat()

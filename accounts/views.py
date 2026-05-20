@@ -1,10 +1,15 @@
+import logging
+
+from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils import timezone
+
 from .models import DailyCash, CashTransaction
 from .serializers import DailyCashSerializer, CashTransactionSerializer
 from users.permissions import IsAdmin
+
+logger = logging.getLogger(__name__)
 
 class DailyCashViewSet(viewsets.ModelViewSet):
     queryset = DailyCash.objects.all().order_by('-date')
@@ -24,7 +29,23 @@ class DailyCashViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         obj.is_closed = True
         obj.update_closing_balance()
-        return Response({'message': f'Day {obj.date} closed successfully', 'closing_balance': obj.closing_balance})
+
+        telegram_report = {'sent': False}
+        if settings.TELEGRAM_REPORT_ENABLED:
+            try:
+                from sales.daily_report import build_daily_owner_summary, send_telegram_owner_report
+
+                send_telegram_owner_report(build_daily_owner_summary(obj.date))
+                telegram_report['sent'] = True
+            except Exception as exc:
+                logger.exception("Failed to send Telegram report after closing day %s.", obj.date)
+                telegram_report['error'] = str(exc)
+
+        return Response({
+            'message': f'Day {obj.date} closed successfully',
+            'closing_balance': obj.closing_balance,
+            'telegram_report': telegram_report,
+        })
 
 class CashTransactionViewSet(viewsets.ModelViewSet):
     queryset = CashTransaction.objects.all().order_by('-timestamp')

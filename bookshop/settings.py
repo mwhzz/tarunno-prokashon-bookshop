@@ -164,3 +164,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = env_int('DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE', 10 *
 TELEGRAM_REPORT_ENABLED = env_bool('TELEGRAM_REPORT_ENABLED', False)
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
+TELEGRAM_REPORT_STATE_FILE = os.environ.get(
+    'TELEGRAM_REPORT_STATE_FILE',
+    str(BASE_DIR / 'logs' / 'telegram_report_bot_state.json'),
+)

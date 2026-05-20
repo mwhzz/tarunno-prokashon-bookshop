@@ -1,8 +1,11 @@
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from decimal import Decimal
+from datetime import datetime, timedelta
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -16,6 +19,7 @@ from sales.reports import sales_report
 
 IN_TRANSACTION_TYPES = ("sale", "cash_in", "adjustment_in")
 OUT_TRANSACTION_TYPES = ("expense", "cash_out", "adjustment_out")
+REPORT_KEYWORDS = ("report", "hisab", "hishab", "hiseb", "হিসাব", "রিপোর্ট")
 
 
 def money(value):
@@ -154,17 +158,27 @@ def _telegram_request(bot_token, method, payload=None):
     return parsed
 
 
+def _extract_message(update):
+    return (
+        update.get("message")
+        or update.get("channel_post")
+        or update.get("edited_message")
+        or update.get("edited_channel_post")
+    )
+
+
+def _chat_label(chat):
+    return chat.get("title") or " ".join(
+        part for part in [chat.get("first_name"), chat.get("last_name")] if part
+    )
+
+
 def get_latest_telegram_chat(bot_token=None):
     bot_token = bot_token or _required_setting("TELEGRAM_BOT_TOKEN")
     data = _telegram_request(bot_token, "getUpdates")
 
     for update in reversed(data.get("result", [])):
-        message = (
-            update.get("message")
-            or update.get("channel_post")
-            or update.get("edited_message")
-            or update.get("edited_channel_post")
-        )
+        message = _extract_message(update)
         if not message:
             continue
 
@@ -173,17 +187,15 @@ def get_latest_telegram_chat(bot_token=None):
         if chat_id is None:
             continue
 
-        name = chat.get("title") or " ".join(
-            part for part in [chat.get("first_name"), chat.get("last_name")] if part
-        )
+        name = _chat_label(chat)
         return {"id": str(chat_id), "name": name or str(chat_id), "type": chat.get("type", "")}
 
     return None
 
 
-def send_telegram_owner_report(message):
+def send_telegram_message(message, chat_id=None):
     bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
-    chat_id = _required_setting("TELEGRAM_CHAT_ID")
+    chat_id = chat_id or _required_setting("TELEGRAM_CHAT_ID")
     return _telegram_request(
         bot_token,
         "sendMessage",
@@ -192,3 +204,130 @@ def send_telegram_owner_report(message):
             "text": message,
         },
     )
+
+
+def send_telegram_owner_report(message):
+    return send_telegram_message(message)
+
+
+def _telegram_state_path():
+    configured = getattr(settings, "TELEGRAM_REPORT_STATE_FILE", "")
+    if configured:
+        return Path(configured)
+    return Path(settings.BASE_DIR) / "logs" / "telegram_report_bot_state.json"
+
+
+def _load_telegram_state():
+    path = _telegram_state_path()
+    if not path.exists():
+        return {}
+
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _save_telegram_state(state):
+    path = _telegram_state_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _parse_report_date(text):
+    normalized = (text or "").strip().lower()
+    match = re.search(r"\b\d{4}-\d{2}-\d{2}\b", normalized)
+    if match:
+        return datetime.strptime(match.group(0), "%Y-%m-%d").date()
+
+    yesterday_words = ("yesterday", "kal", "gotokal", "গতকাল")
+    if any(word in normalized for word in yesterday_words):
+        return timezone.localdate() - timedelta(days=1)
+
+    return timezone.localdate()
+
+
+def classify_telegram_report_text(text):
+    normalized = (text or "").strip().lower()
+    if not normalized:
+        return None
+
+    if normalized in ("/start", "start", "/help", "help"):
+        return {"type": "help"}
+
+    if normalized.startswith("/report") or any(keyword in normalized for keyword in REPORT_KEYWORDS):
+        try:
+            report_date = _parse_report_date(normalized)
+        except ValueError:
+            return {"type": "error", "message": "Invalid date. Use: /report YYYY-MM-DD"}
+        return {"type": "report", "date": report_date}
+
+    return None
+
+
+def telegram_report_help_message():
+    return "\n".join(
+        [
+            "Tarunno Prokashon report bot",
+            "",
+            "Send:",
+            "/report - today's report",
+            "/report yesterday - yesterday's report",
+            "/report YYYY-MM-DD - a specific date",
+        ]
+    )
+
+
+def poll_telegram_report_bot():
+    bot_token = _required_setting("TELEGRAM_BOT_TOKEN")
+    allowed_chat_id = str(_required_setting("TELEGRAM_CHAT_ID"))
+    state = _load_telegram_state()
+    last_update_id = state.get("last_update_id")
+    payload = {}
+    if last_update_id is not None:
+        payload["offset"] = int(last_update_id) + 1
+
+    data = _telegram_request(bot_token, "getUpdates", payload)
+    processed = 0
+    replied = 0
+
+    for update in data.get("result", []):
+        update_id = update.get("update_id")
+        if update_id is not None:
+            last_update_id = max(int(last_update_id or update_id), int(update_id))
+
+        message = _extract_message(update)
+        if not message:
+            continue
+
+        chat = message.get("chat") or {}
+        chat_id = chat.get("id")
+        if chat_id is None or str(chat_id) != allowed_chat_id:
+            continue
+
+        text = message.get("text") or ""
+        request = classify_telegram_report_text(text)
+        if not request:
+            continue
+
+        processed += 1
+        if request["type"] == "help":
+            send_telegram_message(telegram_report_help_message(), chat_id=chat_id)
+            replied += 1
+        elif request["type"] == "error":
+            send_telegram_message(request["message"], chat_id=chat_id)
+            replied += 1
+        elif request["type"] == "report":
+            send_telegram_message(build_daily_owner_summary(request["date"]), chat_id=chat_id)
+            replied += 1
+
+    if last_update_id is not None:
+        state["last_update_id"] = int(last_update_id)
+        _save_telegram_state(state)
+
+    return {
+        "updates": len(data.get("result", [])),
+        "processed": processed,
+        "replied": replied,
+        "last_update_id": last_update_id,
+    }

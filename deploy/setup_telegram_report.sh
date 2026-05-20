@@ -24,7 +24,9 @@ VENV="${VENV:-$APP_DIR/venv}"
 ENV_FILE="${ENV_FILE:-$APP_DIR/.bookshop_env}"
 LOG_DIR="${LOG_DIR:-$APP_DIR/logs}"
 CRON_FILE="${CRON_FILE:-/etc/cron.d/bookshop-pos-telegram-report}"
+OLD_WHATSAPP_CRON_FILE="${OLD_WHATSAPP_CRON_FILE:-/etc/cron.d/bookshop-pos-whatsapp-report}"
 REPORT_TIME="${REPORT_TIME:-22:30}"
+STATE_FILE="${STATE_FILE:-$LOG_DIR/telegram_report_bot_state.json}"
 
 [[ -f "$APP_DIR/manage.py" ]] || err "Project folder not found or invalid: $APP_DIR"
 [[ -x "$VENV/bin/python" ]] || err "Python venv not found: $VENV"
@@ -109,11 +111,13 @@ info "Saving Telegram report settings..."
 set_env "TELEGRAM_REPORT_ENABLED" "True"
 set_env "TELEGRAM_BOT_TOKEN" "$BOT_TOKEN"
 set_env "TELEGRAM_CHAT_ID" "$CHAT_ID"
+set_env "TELEGRAM_REPORT_STATE_FILE" "$STATE_FILE"
 chown "$APP_USER":"$APP_USER" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 mkdir -p "$LOG_DIR"
 chown -R "$APP_USER":www-data "$LOG_DIR"
+rm -f "$OLD_WHATSAPP_CRON_FILE" 2>/dev/null || true
 
 CRON_HOUR="${REPORT_TIME%:*}"
 CRON_MINUTE="${REPORT_TIME#*:}"
@@ -126,6 +130,7 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 $CRON_MINUTE $CRON_HOUR * * * $APP_USER set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report >> '$LOG_DIR/telegram_report.log' 2>&1
+* * * * * $APP_USER set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py poll_telegram_report_bot >> '$LOG_DIR/telegram_bot.log' 2>&1
 CRONEOF
 
 chmod 644 "$CRON_FILE"
@@ -146,7 +151,15 @@ echo "============================================================"
 echo -e "  Chat ID: ${CYAN}$CHAT_ID${NC}"
 echo -e "  Time:    ${CYAN}$REPORT_TIME daily${NC}"
 echo -e "  Log:     ${CYAN}$LOG_DIR/telegram_report.log${NC}"
+echo -e "  Bot log: ${CYAN}$LOG_DIR/telegram_bot.log${NC}"
+echo ""
+echo "  Ask the bot for a report:"
+echo -e "  ${YELLOW}/report${NC}"
+echo -e "  ${YELLOW}/report yesterday${NC}"
+echo -e "  ${YELLOW}/report 2026-05-20${NC}"
 echo ""
 echo "  Send a test now:"
+echo -e "  ${YELLOW}sudo -u $APP_USER bash -c \"set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report --test\"${NC}"
+echo "  Send the full report now:"
 echo -e "  ${YELLOW}sudo -u $APP_USER bash -c \"set -a; source '$ENV_FILE'; set +a; cd '$APP_DIR'; '$VENV/bin/python' manage.py send_daily_telegram_report --force\"${NC}"
 echo "============================================================"

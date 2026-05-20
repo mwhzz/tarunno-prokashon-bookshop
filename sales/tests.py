@@ -1,5 +1,7 @@
 from decimal import Decimal
 from io import StringIO
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -9,7 +11,11 @@ from accounts.models import CashTransaction, DailyCash
 from books.models import Book
 from expenses.models import Expense, ExpenseCategory
 from sales.models import Customer, Payment, Sale, SaleItem
-from sales.daily_report import build_daily_owner_summary
+from sales.daily_report import (
+    build_daily_owner_summary,
+    classify_telegram_report_text,
+    poll_telegram_report_bot,
+)
 
 
 class DailyTelegramReportTests(TestCase):
@@ -75,3 +81,45 @@ class DailyTelegramReportTests(TestCase):
         call_command("send_daily_telegram_report", "--dry-run", stdout=out)
 
         self.assertIn("Daily Summary", out.getvalue())
+
+    def test_report_text_classifier_accepts_owner_commands(self):
+        self.assertEqual(classify_telegram_report_text("/report")["type"], "report")
+        self.assertEqual(classify_telegram_report_text("hishab dao")["type"], "report")
+        self.assertEqual(classify_telegram_report_text("/start")["type"], "help")
+
+    def test_poll_telegram_report_bot_replies_to_report_command(self):
+        sent_payloads = []
+
+        def fake_telegram_request(bot_token, method, payload=None):
+            if method == "getUpdates":
+                return {
+                    "ok": True,
+                    "result": [
+                        {
+                            "update_id": 10,
+                            "message": {
+                                "chat": {"id": 123, "first_name": "Owner", "type": "private"},
+                                "text": "/report",
+                            },
+                        }
+                    ],
+                }
+            if method == "sendMessage":
+                sent_payloads.append(payload)
+                return {"ok": True, "result": {"message_id": 77}}
+            return {"ok": True, "result": []}
+
+        with TemporaryDirectory() as temp_dir:
+            state_file = f"{temp_dir}/telegram_state.json"
+            with self.settings(
+                TELEGRAM_BOT_TOKEN="test-token",
+                TELEGRAM_CHAT_ID="123",
+                TELEGRAM_REPORT_STATE_FILE=state_file,
+            ):
+                with patch("sales.daily_report._telegram_request", side_effect=fake_telegram_request):
+                    result = poll_telegram_report_bot()
+
+        self.assertEqual(result["processed"], 1)
+        self.assertEqual(result["replied"], 1)
+        self.assertEqual(sent_payloads[0]["chat_id"], 123)
+        self.assertIn("Daily Summary", sent_payloads[0]["text"])

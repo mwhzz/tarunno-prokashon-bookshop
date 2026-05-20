@@ -89,6 +89,7 @@ Optional Telegram daily report settings:
 TELEGRAM_REPORT_ENABLED=True
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_CHAT_ID=your-telegram-chat-id
+TELEGRAM_REPORT_STATE_FILE=/var/www/pos.tarunyaprokashon.com/logs/telegram_report_bot_state.json
 ```
 
 Create a bot from Telegram `@BotFather`, send `/start` to that bot from the owner account, then use `python manage.py send_daily_telegram_report --get-chat-id` to find the chat id.
@@ -195,10 +196,16 @@ cd /var/www/pos.tarunyaprokashon.com
 bash deploy/setup_telegram_report.sh
 ```
 
-The script stores Telegram credentials in `.bookshop_env`, writes `/etc/cron.d/bookshop-pos-telegram-report`, and sends the report every day at your selected time. You can preview the message locally:
+The script stores Telegram credentials in `.bookshop_env`, writes `/etc/cron.d/bookshop-pos-telegram-report`, sends the report every day at your selected time, and polls the bot every minute for owner commands. You can preview the message locally:
 
 ```bash
 python manage.py send_daily_telegram_report --dry-run
+```
+
+Send a short test message:
+
+```bash
+python manage.py send_daily_telegram_report --test
 ```
 
 Send a one-off report from the server:
@@ -206,6 +213,16 @@ Send a one-off report from the server:
 ```bash
 python manage.py send_daily_telegram_report --force
 ```
+
+Ask the bot for reports from Telegram:
+
+```text
+/report
+/report yesterday
+/report 2026-05-20
+```
+
+When the Accounts page daily cash close button is clicked, the same Telegram report is sent automatically if `TELEGRAM_REPORT_ENABLED=True`.
 
 ### Useful Commands
 

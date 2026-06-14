@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="bn">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>পাঠশালা — বই ব্যবস্থাপনা</title>
+  <title>তারুণ্য প্রকাশন — বই ব্যবস্থাপনা</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
@@ -90,12 +91,11 @@
 
     .brand-icon {
       width: 42px; height: 42px;
-      background: var(--g600);
+      background: rgba(255,255,255,.12);
       border-radius: 11px;
       display: grid; place-items: center;
-      font-size: 20px;
       flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(27,122,85,.45);
+      box-shadow: 0 4px 14px rgba(0,0,0,.20);
     }
 
     .brand-text h1 {
@@ -615,9 +615,11 @@
 
     <div class="brand">
       <div class="brand-logo">
-        <div class="brand-icon">📚</div>
+        <div class="brand-icon">
+          <img src="{% static 'images/logo.png' %}" alt="Logo" style="width:36px;height:36px;object-fit:contain;display:block;">
+        </div>
         <div class="brand-text">
-          <h1>পাঠশালা</h1>
+          <h1>তারুণ্য প্রকাশন</h1>
           <p>বই ব্যবস্থাপনা সিস্টেম</p>
         </div>
       </div>

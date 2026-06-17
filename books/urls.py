@@ -6,7 +6,7 @@ router = DefaultRouter()
 router.register('groups', GroupViewSet, basename='group')
 router.register('', BookViewSet, basename='book')
 
-urlpatterns = router.urls + [
+urlpatterns = [
     path('csv-import/',   BookCSVImportView.as_view(),   name='book-csv-import'),
     path('csv-template/', BookCSVTemplateView.as_view(), name='book-csv-template'),
-]
+] + router.urls

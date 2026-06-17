@@ -1843,6 +1843,9 @@ async function startCSVImport() {
     });
 
     const data = await r.json();
+    if (!r.ok || !data.summary) {
+      throw new Error(data.error || data.detail || 'Server import response invalid');
+    }
     showImportResult(data);
 
   } catch (e) {
@@ -1854,7 +1857,7 @@ async function startCSVImport() {
 }
 
 function showImportResult(data) {
-  const s = data.summary;
+  const s = data.summary || { total: 0, created: 0, skipped: 0, errors: 1 };
   const resultEl  = document.getElementById('import-result');
   const headerEl  = document.getElementById('result-header');
   const statsEl   = document.getElementById('result-stats');
@@ -1885,13 +1888,13 @@ function showImportResult(data) {
     </div>`;
 
   let detailHTML = '';
-  data.created.forEach(r => {
+  (data.created || []).forEach(r => {
     detailHTML += `<div class="result-row"><span class="tag ok">OK</span>${r.title}</div>`;
   });
-  data.skipped.forEach(r => {
+  (data.skipped || []).forEach(r => {
     detailHTML += `<div class="result-row"><span class="tag skip">SKIP</span>${r.title} — ${r.reason}</div>`;
   });
-  data.errors.forEach(r => {
+  (data.errors || []).forEach(r => {
     detailHTML += `<div class="result-row"><span class="tag err">ERR</span>Row ${r.row}: ${r.msg || r.title}</div>`;
   });
 

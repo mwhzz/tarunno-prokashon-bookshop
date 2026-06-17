@@ -1,16 +1,18 @@
 import csv
 import io
+import urllib.request
 from decimal import Decimal, InvalidOperation
 
-from rest_framework import viewsets, filters, status
+from django.core.files.base import ContentFile
+from django.http import HttpResponse
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django_filters.rest_framework import DjangoFilterBackend
-from django.http import HttpResponse
 
 from .models import Book, Group
-from .serializers import BookSerializer, BookListSerializer, GroupSerializer
+from .serializers import BookListSerializer, BookSerializer, GroupSerializer
+from stock.models import StockEntry, StockSummary
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -21,7 +23,7 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.select_related('group').prefetch_related('stock_summary')
+    queryset = Book.objects.select_related('group')
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'author', 'publisher', 'isbn']
     ordering_fields = ['title', 'selling_price', 'created_at']
@@ -43,21 +45,18 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def out_of_stock(self, request):
-        """স্টক শেষ হওয়া বইয়ের তালিকা"""
-        books = Book.objects.filter(
-            stock_summary__quantity__lte=0
-        ).select_related('group')
-        serializer = BookListSerializer(books, many=True)
+        books = Book.objects.filter(stock_summary__godown_quantity__lte=0, stock_summary__shop_quantity__lte=0)
+        serializer = BookListSerializer(books.select_related('group'), many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def low_stock(self, request):
-        """কম স্টক (৫ এর নিচে)"""
         threshold = int(request.query_params.get('threshold', 5))
         books = Book.objects.filter(
-            stock_summary__quantity__lte=threshold,
-            stock_summary__quantity__gt=0
-        ).select_related('group')
+            stock_summary__godown_quantity__gte=0,
+            stock_summary__shop_quantity__gte=0,
+        )
+        books = [book for book in books.select_related('group') if 0 < book.current_stock <= threshold]
         serializer = BookListSerializer(books, many=True)
         return Response(serializer.data)
 
@@ -66,43 +65,44 @@ CSV_HEADERS = [
     'title', 'author', 'publisher', 'isbn', 'edition',
     'mrp', 'purchase_price', 'selling_price',
     'commission', 'discount', 'discount_type',
-    'group', 'product_code', 'book_type', 'notes',
+    'group', 'product_code', 'book_type',
+    'stock_quantity', 'stock_godown_quantity', 'stock_shop_quantity',
+    'stock_location', 'image_url', 'notes',
 ]
 
 CSV_EXAMPLE_ROW = [
-    'হাজার বছর ধরে', 'জহির রায়হান', 'অনন্যা', '9789840413232', '৫ম',
+    'Hazar Bochor Dhore', 'Jahir Rayhan', 'Ananya', '9789840413232', '5th',
     '300', '210', '250',
     '0', '0', 'amount',
-    'উপন্যাস', 'BK-1001', 'single', '',
+    'Novel', 'BK-1001', 'single',
+    '10', '0', '10', 'shop', 'https://example.com/cover.jpg', '',
 ]
 
 
 class BookCSVTemplateView(APIView):
-    """GET → example CSV download"""
     def get(self, request):
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="books_template.csv"'
-        response.write('﻿')  # BOM for Excel
+        response.write('\ufeff')
         writer = csv.writer(response)
         writer.writerow(CSV_HEADERS)
         writer.writerow(CSV_EXAMPLE_ROW)
         writer.writerow([
-            'আমার ছেলেবেলা', 'হুমায়ূন আহমেদ', 'অন্যপ্রকাশ', '', '২য়',
-            '350', '245', '280', '0', '0', 'amount', 'আত্মজীবনী', '', 'single', '',
+            'Amar Chelebela', 'Humayun Ahmed', 'Anyaprokash', '', '2nd',
+            '350', '245', '280', '0', '0', 'amount', 'Autobiography', '', 'single',
+            '5', '5', '0', 'godown', '', '',
         ])
         return response
 
 
 class BookCSVImportView(APIView):
-    """POST → parse CSV, create books, return result JSON"""
-
     def post(self, request):
         csv_file = request.FILES.get('csv_file')
         if not csv_file:
-            return Response({'error': 'CSV ফাইল দিন'}, status=400)
+            return Response({'error': 'CSV file is required'}, status=400)
 
         if not csv_file.name.endswith('.csv'):
-            return Response({'error': 'শুধু .csv ফাইল গ্রহণযোগ্য'}, status=400)
+            return Response({'error': 'Only .csv files are allowed'}, status=400)
 
         try:
             text = csv_file.read().decode('utf-8-sig')
@@ -111,85 +111,165 @@ class BookCSVImportView(APIView):
                 csv_file.seek(0)
                 text = csv_file.read().decode('cp1252')
             except Exception:
-                return Response({'error': 'ফাইল পড়া যাচ্ছে না — UTF-8 এ সেভ করুন'}, status=400)
+                return Response({'error': 'Could not read file. Save it as UTF-8 CSV.'}, status=400)
 
         reader = csv.DictReader(io.StringIO(text))
-
         if not reader.fieldnames or 'title' not in reader.fieldnames:
-            return Response({'error': "CSV-তে 'title' কলাম নেই"}, status=400)
+            return Response({'error': "CSV must contain a 'title' column"}, status=400)
 
-        created, skipped, errors = [], [], []
+        created, updated, skipped, errors = [], [], [], []
 
-        def to_dec(val, default='0'):
-            try:
-                return Decimal(str(val).strip()) if str(val).strip() else Decimal(default)
-            except InvalidOperation:
-                return Decimal(default)
-
-        for i, row in enumerate(reader, start=2):
+        for row_num, row in enumerate(reader, start=2):
             title = row.get('title', '').strip()
             if not title:
-                errors.append({'row': i, 'msg': 'title খালি'})
+                errors.append({'row': row_num, 'msg': 'title is empty'})
                 continue
-
-            isbn = row.get('isbn', '').strip() or None
-            product_code = row.get('product_code', '').strip() or None
-
-            # duplicate check
-            if isbn and Book.objects.filter(isbn=isbn).exists():
-                skipped.append({'row': i, 'title': title, 'reason': 'ISBN আগে থেকে আছে'})
-                continue
-            if Book.objects.filter(title=title).exists():
-                skipped.append({'row': i, 'title': title, 'reason': 'একই নামের বই আছে'})
-                continue
-
-            # product_code uniqueness
-            if product_code and Book.objects.filter(product_code=product_code).exists():
-                product_code = None
-
-            group = None
-            group_name = row.get('group', '').strip()
-            if group_name:
-                group, _ = Group.objects.get_or_create(name=group_name)
-
-            book_type = row.get('book_type', 'single').strip()
-            if book_type not in ('single', 'series'):
-                book_type = 'single'
-
-            discount_type = row.get('discount_type', 'amount').strip()
-            if discount_type not in ('amount', 'percentage'):
-                discount_type = 'amount'
 
             try:
-                book = Book.objects.create(
-                    title=title,
-                    author=row.get('author', '').strip(),
-                    publisher=row.get('publisher', '').strip(),
-                    isbn=isbn,
-                    edition=row.get('edition', '').strip(),
-                    mrp=to_dec(row.get('mrp', 0)),
-                    purchase_price=to_dec(row.get('purchase_price', 0)),
-                    selling_price=to_dec(row.get('selling_price', 0)),
-                    commission=to_dec(row.get('commission', 0)),
-                    discount=to_dec(row.get('discount', 0)),
-                    discount_type=discount_type,
-                    book_type=book_type,
-                    product_code=product_code,
-                    notes=row.get('notes', '').strip(),
-                    group=group,
-                )
-                created.append({'row': i, 'id': book.id, 'title': book.title})
-            except Exception as e:
-                errors.append({'row': i, 'title': title, 'msg': str(e)})
+                book, was_created = self._upsert_book(row)
+                self._sync_stock(book, row)
+                self._save_image_if_needed(book, row.get('image_url', ''))
+
+                payload = {'row': row_num, 'id': book.id, 'title': book.title}
+                if was_created:
+                    created.append(payload)
+                else:
+                    updated.append(payload)
+            except Exception as exc:
+                errors.append({'row': row_num, 'title': title, 'msg': str(exc)})
 
         return Response({
             'created': created,
+            'updated': updated,
             'skipped': skipped,
-            'errors':  errors,
+            'errors': errors,
             'summary': {
-                'total':   len(created) + len(skipped) + len(errors),
+                'total': len(created) + len(updated) + len(skipped) + len(errors),
                 'created': len(created),
+                'updated': len(updated),
                 'skipped': len(skipped),
-                'errors':  len(errors),
-            }
+                'errors': len(errors),
+            },
         }, status=200)
+
+    def _upsert_book(self, row):
+        title = row.get('title', '').strip()
+        isbn = row.get('isbn', '').strip() or None
+        product_code = row.get('product_code', '').strip() or None
+
+        existing = Book.objects.filter(isbn=isbn).first() if isbn else None
+        if not existing:
+            existing = Book.objects.filter(title=title).first()
+
+        if product_code and Book.objects.filter(product_code=product_code).exclude(
+            id=existing.id if existing else 0
+        ).exists():
+            product_code = None
+
+        group = None
+        group_name = row.get('group', '').strip()
+        if group_name:
+            group, _ = Group.objects.get_or_create(name=group_name)
+
+        book_type = row.get('book_type', 'single').strip() or 'single'
+        if book_type not in ('single', 'series'):
+            book_type = 'single'
+
+        discount_type = row.get('discount_type', 'amount').strip() or 'amount'
+        if discount_type not in ('amount', 'percentage'):
+            discount_type = 'amount'
+
+        data = {
+            'title': title,
+            'author': row.get('author', '').strip(),
+            'publisher': row.get('publisher', '').strip(),
+            'isbn': isbn,
+            'edition': row.get('edition', '').strip(),
+            'mrp': self._to_decimal(row.get('mrp', 0)),
+            'purchase_price': self._to_decimal(row.get('purchase_price', 0)),
+            'selling_price': self._to_decimal(row.get('selling_price', 0)),
+            'commission': self._to_decimal(row.get('commission', 0)),
+            'discount': self._to_decimal(row.get('discount', 0)),
+            'discount_type': discount_type,
+            'book_type': book_type,
+            'product_code': product_code,
+            'notes': row.get('notes', '').strip(),
+            'group': group,
+        }
+
+        if existing:
+            for key, value in data.items():
+                setattr(existing, key, value)
+            existing.save()
+            return existing, False
+
+        return Book.objects.create(**data), True
+
+    def _sync_stock(self, book, row):
+        godown_qty = self._to_int(row.get('stock_godown_quantity', ''))
+        shop_qty = self._to_int(row.get('stock_shop_quantity', ''))
+
+        if godown_qty is None and shop_qty is None:
+            stock_qty = self._to_int(row.get('stock_quantity', ''))
+            if stock_qty is None:
+                return
+            location = row.get('stock_location', '').strip() or 'godown'
+            if location == 'shop':
+                shop_qty = stock_qty
+            else:
+                godown_qty = stock_qty
+
+        summary, _ = StockSummary.objects.get_or_create(
+            book=book,
+            defaults={'godown_quantity': 0, 'shop_quantity': 0},
+        )
+
+        for location, field_name, target_qty in (
+            ('godown', 'godown_quantity', godown_qty),
+            ('shop', 'shop_quantity', shop_qty),
+        ):
+            if target_qty is None:
+                continue
+            current_qty = getattr(summary, field_name)
+            diff = target_qty - current_qty
+            if diff:
+                StockEntry.objects.create(
+                    book=book,
+                    quantity=diff,
+                    source='adjustment',
+                    location=location,
+                    purchase_price=book.purchase_price,
+                    note='CSV import stock sync',
+                )
+                setattr(summary, field_name, target_qty)
+
+        summary.save()
+
+    def _save_image_if_needed(self, book, image_url):
+        image_url = (image_url or '').strip()
+        if not image_url.startswith('http') or book.image:
+            return
+
+        req = urllib.request.Request(image_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as response:
+            image_data = response.read()
+
+        ext = image_url.split('?')[0].rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            ext = 'jpg'
+        book.image.save(f'book_{book.id}.{ext}', ContentFile(image_data), save=True)
+
+    def _to_decimal(self, val, default='0'):
+        try:
+            return Decimal(str(val).strip()) if str(val).strip() else Decimal(default)
+        except InvalidOperation:
+            return Decimal(default)
+
+    def _to_int(self, val):
+        val = str(val).strip()
+        if not val:
+            return None
+        try:
+            return int(Decimal(val))
+        except (InvalidOperation, ValueError):
+            return None

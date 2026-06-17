@@ -1857,7 +1857,7 @@ async function startCSVImport() {
 }
 
 function showImportResult(data) {
-  const s = data.summary || { total: 0, created: 0, skipped: 0, errors: 1 };
+  const s = data.summary || { total: 0, created: 0, updated: 0, skipped: 0, errors: 1 };
   const resultEl  = document.getElementById('import-result');
   const headerEl  = document.getElementById('result-header');
   const statsEl   = document.getElementById('result-stats');
@@ -1875,6 +1875,10 @@ function showImportResult(data) {
       <div class="stat-lbl">যোগ হয়েছে</div>
     </div>
     <div class="stat-box">
+      <div class="stat-num green">${s.updated || 0}</div>
+      <div class="stat-lbl">Update</div>
+    </div>
+    <div class="stat-box">
       <div class="stat-num yellow">${s.skipped}</div>
       <div class="stat-lbl">Skip হয়েছে</div>
     </div>
@@ -1890,6 +1894,9 @@ function showImportResult(data) {
   let detailHTML = '';
   (data.created || []).forEach(r => {
     detailHTML += `<div class="result-row"><span class="tag ok">OK</span>${r.title}</div>`;
+  });
+  (data.updated || []).forEach(r => {
+    detailHTML += `<div class="result-row"><span class="tag ok">UPD</span>${r.title}</div>`;
   });
   (data.skipped || []).forEach(r => {
     detailHTML += `<div class="result-row"><span class="tag skip">SKIP</span>${r.title} — ${r.reason}</div>`;

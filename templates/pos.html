@@ -362,6 +362,36 @@
   text-align: right;
 }
 
+.ci-adjust {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.ci-adjust label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 800;
+  margin: 0;
+}
+
+.ci-adjust input {
+  min-height: 28px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+.ci-line-meta {
+  display: block;
+  margin-top: 3px;
+  color: var(--danger) !important;
+}
+
 /* Billing form */
 .billing-form {
   flex: 1;
@@ -1002,7 +1032,15 @@ function addToCart(id) {
     if (ex.qty >= book.shop_quantity) { toast(`দোকানে মাত্র ${book.shop_quantity}টি আছে`, 'error'); return; }
     ex.qty++;
   } else {
-    cart.push({ bid: id, title: book.title, price: parseFloat(book.selling_price), qty: 1, max: book.shop_quantity });
+    cart.push({
+      bid: id,
+      title: book.title,
+      price: parseFloat(book.selling_price),
+      qty: 1,
+      max: book.shop_quantity,
+      defaultCommission: parseFloat(book.commission || 0),
+      extraCommission: 0
+    });
   }
   renderCart();
   calcTotals();
@@ -1017,6 +1055,13 @@ function changeQty(id, d) {
   calcTotals();
 }
 
+function setExtraCommission(id, value) {
+  const item = cart.find(i => i.bid === id);
+  if (!item) return;
+  item.extraCommission = Math.max(0, parseFloat(value || 0));
+  calcTotals();
+}
+
 function clearCart() {
   cart = [];
   renderCart();
@@ -1028,9 +1073,9 @@ function renderCart() {
   const lbl = document.getElementById('cart-count-lbl');
   if (!el) return;
 
-  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const total = cart.reduce((s,i) => s + itemNet(i), 0);
   if (lbl) lbl.textContent = cart.length
-    ? `${cart.length}টি বই • সাবটোটাল ৳${total.toFixed(0)}`
+    ? `${cart.length}টি বই • মোট ৳${total.toFixed(0)}`
     : 'কোনো বই নেই — বাম থেকে বই যোগ করুন';
 
   if (!cart.length) {
@@ -1047,13 +1092,18 @@ function renderCart() {
       <div class="ci-name">
         <strong>${i.title}</strong>
         <small>৳${i.price} × ${i.qty}</small>
+        <small class="ci-line-meta">ছাড়: ${itemCommissionPct(i).toFixed(1)}% / ৳${itemDiscount(i).toFixed(0)} • নেট: ৳${itemNet(i).toFixed(0)}</small>
+        <div class="ci-adjust">
+          <label>Extra %</label>
+          <input type="number" min="0" step="0.1" value="${i.extraCommission || 0}" onclick="event.stopPropagation()" oninput="setExtraCommission(${i.bid}, this.value)" onchange="renderCart()">
+        </div>
       </div>
       <div class="ci-qty">
         <button class="qb" onclick="changeQty(${i.bid},-1)">−</button>
         <span class="ci-count">${i.qty}</span>
         <button class="qb" onclick="changeQty(${i.bid},+1)">+</button>
       </div>
-      <div class="ci-total">৳${(i.price*i.qty).toFixed(0)}</div>
+      <div class="ci-total">৳${itemNet(i).toFixed(0)}</div>
     </div>`).join('');
 }
 
@@ -1144,20 +1194,51 @@ async function fetchDue() {
 /* ══════════════════════════════════════
    TOTALS
 ══════════════════════════════════════ */
+function defaultCommissionPct() {
+  return Math.max(0, parseFloat(document.getElementById('commission')?.value || 0));
+}
+
+function itemGross(item) {
+  return item.price * item.qty;
+}
+
+function itemBaseCommission(item) {
+  const globalPct = defaultCommissionPct();
+  return globalPct > 0 ? globalPct : Math.max(0, parseFloat(item.defaultCommission || 0));
+}
+
+function itemCommissionPct(item) {
+  return itemBaseCommission(item) + Math.max(0, parseFloat(item.extraCommission || 0));
+}
+
+function itemDiscount(item) {
+  const gross = itemGross(item);
+  return Math.min(gross, gross * itemCommissionPct(item) / 100);
+}
+
+function itemNet(item) {
+  return Math.max(0, itemGross(item) - itemDiscount(item));
+}
+
 function fromCommission() {
-  const sub  = cart.reduce((s,i) => s + i.price*i.qty, 0);
-  const comm = parseFloat(document.getElementById('commission')?.value || 0);
+  const sub  = cart.reduce((s,i) => s + itemGross(i), 0);
+  const comm = defaultCommissionPct();
   if (document.getElementById('discount'))
     document.getElementById('discount').value = Math.round(sub * comm / 100);
+  renderCart();
   calcTotals();
 }
 
 function calcTotals(manualDisc = false) {
-  const sub  = cart.reduce((s,i) => s + i.price*i.qty, 0);
-  const disc = parseFloat(document.getElementById('discount')?.value || 0);
+  const sub  = cart.reduce((s,i) => s + itemGross(i), 0);
+  const manualDiscount = parseFloat(document.getElementById('discount')?.value || 0);
 
-  if (manualDisc && sub > 0)
-    document.getElementById('commission').value = ((disc/sub)*100).toFixed(1);
+  if (manualDisc && sub > 0) {
+    document.getElementById('commission').value = ((manualDiscount/sub)*100).toFixed(1);
+    renderCart();
+  }
+
+  const disc = cart.reduce((s,i) => s + itemDiscount(i), 0);
 
   const extra = (parseFloat(document.getElementById('pack')?.value||0))
               + (parseFloat(document.getElementById('courier')?.value||0))
@@ -1197,14 +1278,14 @@ async function completeSale() {
   const payload = {
     customer_name:     document.getElementById('cus-name')?.value || 'Walk-in Customer',
     customer_phone:    document.getElementById('cus-phone')?.value || '',
-    discount:          parseFloat(document.getElementById('discount')?.value||0),
+    discount:          0,
     packaging_charge:  parseFloat(document.getElementById('pack')?.value||0),
     courier_charge:    parseFloat(document.getElementById('courier')?.value||0),
     transaction_fee:   parseFloat(document.getElementById('txfee')?.value||0),
     paid_amount:       parseFloat(document.getElementById('paid')?.value||0),
     payment_method:    document.getElementById('pay-method')?.value,
     sale_type:         document.getElementById('sale-type')?.value || 'retail',
-    items: cart.map(i => ({ book: i.bid, quantity: i.qty, unit_price: i.price, discount: 0 }))
+    items: cart.map(i => ({ book: i.bid, quantity: i.qty, unit_price: i.price, discount: itemDiscount(i) }))
   };
 
   try {

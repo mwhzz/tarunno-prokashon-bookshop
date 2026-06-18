@@ -292,6 +292,10 @@ async function initEdit() {
               </div>
             </div>
             <input type="file" id="b-image" accept="image/*" onchange="previewImg(this)">
+            <div class="ec-field" style="margin-top:12px">
+              <label>কভার ছবির লিংক</label>
+              <input id="b-image-url" type="url" placeholder="https://example.com/book-cover.jpg">
+            </div>
           </div>
           <div class="ec-field">
             <label>বইটি কি সক্রিয়?</label>
@@ -396,6 +400,10 @@ async function doUpdate() {
 
   const img = document.getElementById('b-image');
   if (img?.files.length > 0) fd.append('image', img.files[0]);
+  else {
+    const imageUrl = document.getElementById('b-image-url')?.value.trim();
+    if (imageUrl) fd.append('image_url', imageUrl);
+  }
 
   try {
     const r = await fetch(`${API}/books/${bookId}/`, {

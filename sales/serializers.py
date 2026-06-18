@@ -27,6 +27,12 @@ class SaleItemCreateSerializer(serializers.Serializer):
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
 
+    def validate(self, data):
+        line_total = data['unit_price'] * data['quantity']
+        if data.get('discount', 0) > line_total:
+            raise serializers.ValidationError("Item discount cannot be greater than item total.")
+        return data
+
 
 class SaleSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, read_only=True)

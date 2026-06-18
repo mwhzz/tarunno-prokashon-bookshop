@@ -23,7 +23,7 @@ async function initBooks() {
   const w = document.getElementById('books-wrapper');
   try {
     // API থেকে সব বই আনা হচ্ছে
-    const r = await api('/books/?page_size=200');
+    const r = await fetchAllBooks();
     allBooksList = r.results;
     
     // টেবিল তৈরি করে ডাটা দেখানো
@@ -109,6 +109,22 @@ async function deleteBook(id) {
   } catch (e) {
     toast('Delete failed: ' + (e?.detail || JSON.stringify(e)), 'error');
   }
+}
+
+async function fetchAllBooks() {
+  let page = 1;
+  const results = [];
+  let count = 0;
+
+  while (true) {
+    const r = await api(`/books/?page=${page}&page_size=1000`);
+    results.push(...(r.results || []));
+    count = r.count || results.length;
+    if (!r.next) break;
+    page++;
+  }
+
+  return { count, results };
 }
 
 // সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন

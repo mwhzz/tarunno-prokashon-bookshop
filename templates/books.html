@@ -85,8 +85,30 @@ function bookRowHtml(b) {
     <td>${b.is_active ? '<span class="badge badge-green">সক্রিয়</span>' : '<span class="badge badge-red">বন্ধ</span>'}</td>
     <td style="text-align:right">
       <a href="/books/edit/${b.id}/" class="btn btn-ghost btn-sm" style="text-decoration:none">✎ এডিট</a>
+      <button type="button" class="btn btn-danger btn-sm" onclick="deleteBook(${b.id})">Delete</button>
     </td>
   </tr>`;
+}
+
+async function deleteBook(id) {
+  const book = allBooksList.find(b => b.id === id);
+  const name = book?.title || 'this book';
+  if (!confirm(`Delete "${name}"?`)) return;
+
+  try {
+    const r = await fetch(`${API}/books/${id}/`, {
+      method: 'DELETE',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+    if (!r.ok) throw await r.json().catch(() => ({}));
+
+    allBooksList = allBooksList.filter(b => b.id !== id);
+    const tbody = document.querySelector('#books-table tbody');
+    if (tbody) tbody.innerHTML = allBooksList.map(bookRowHtml).join('');
+    toast('Book deleted');
+  } catch (e) {
+    toast('Delete failed: ' + (e?.detail || JSON.stringify(e)), 'error');
+  }
 }
 
 // সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন

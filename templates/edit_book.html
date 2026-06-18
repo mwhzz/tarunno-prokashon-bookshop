@@ -389,6 +389,8 @@ async function doUpdate() {
   fd.append('purchase_price', document.getElementById('b-cost')?.value   || 0);
   fd.append('selling_price',  document.getElementById('b-price')?.value  || 0);
   fd.append('commission',     document.getElementById('b-commission')?.value || 0);
+  fd.append('discount',       0);
+  fd.append('discount_type',  'amount');
   fd.append('is_active',      bookStatus);
   fd.append('notes',          document.getElementById('b-note')?.value   || '');
 

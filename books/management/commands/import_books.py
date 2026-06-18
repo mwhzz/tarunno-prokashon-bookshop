@@ -111,10 +111,11 @@ class Command(BaseCommand):
             reader = csv.DictReader(f)
 
             # header check
-            if 'title' not in reader.fieldnames:
-                raise CommandError("CSV-তে 'title' column নেই। --template দিয়ে template দেখুন।")
+            if 'title' not in reader.fieldnames and 'Book Name' not in reader.fieldnames:
+                raise CommandError("CSV-তে 'title' বা 'Book Name' column নেই। --template দিয়ে template দেখুন।")
 
             for row_num, row in enumerate(reader, start=2):
+                row = self._normalize_row(row)
                 title = row.get('title', '').strip()
                 if not title:
                     errors.append(f'Row {row_num}: title খালি, skip করা হয়েছে')
@@ -154,6 +155,8 @@ class Command(BaseCommand):
         existing = None
         if isbn:
             existing = Book.objects.filter(isbn=isbn).first()
+        if not existing and product_code:
+            existing = Book.objects.filter(product_code=product_code).first()
         if not existing:
             existing = Book.objects.filter(title=title).first()
 
@@ -239,8 +242,14 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'    ⚠ Image download failed: {e}'))
 
-        # Stock যোগ
+        # Stock যোগ / exact sync
         if add_stock:
+            godown_qty = row.get('stock_godown_quantity', '').strip()
+            shop_qty = row.get('stock_shop_quantity', '').strip()
+            if godown_qty or shop_qty:
+                self._sync_stock(book, godown_qty, shop_qty)
+                return action
+
             qty_str = row.get('stock_quantity', '').strip()
             loc = row.get('stock_location', '').strip() or default_location
             if loc not in ('godown', 'shop'):
@@ -260,3 +269,75 @@ class Command(BaseCommand):
                 pass
 
         return action
+
+    def _sync_stock(self, book, godown_qty, shop_qty):
+        targets = {}
+        for location, value in (('godown', godown_qty), ('shop', shop_qty)):
+            value = str(value or '').strip()
+            if not value:
+                continue
+            try:
+                targets[location] = int(Decimal(value))
+            except (InvalidOperation, ValueError):
+                continue
+
+        if not targets:
+            return
+
+        summary, _ = StockSummary.objects.get_or_create(
+            book=book,
+            defaults={'godown_quantity': 0, 'shop_quantity': 0},
+        )
+
+        for location, target in targets.items():
+            field_name = 'godown_quantity' if location == 'godown' else 'shop_quantity'
+            current = getattr(summary, field_name)
+            diff = target - current
+            if not diff:
+                continue
+            StockEntry.objects.create(
+                book=book,
+                quantity=diff,
+                source='adjustment',
+                location=location,
+                purchase_price=book.purchase_price,
+                note='Stock report sync',
+            )
+            setattr(summary, field_name, target)
+
+        summary.save()
+
+    def _normalize_row(self, row):
+        normalized = dict(row)
+        if 'Book Name' not in row:
+            return normalized
+
+        def to_int(value):
+            value = str(value or '').strip()
+            if not value:
+                return 0
+            try:
+                return int(Decimal(value))
+            except (InvalidOperation, ValueError):
+                return 0
+
+        godown_quantity = to_int(row.get('গোডাউন ৪তলা')) + to_int(row.get('গোডাউন ৬তলা'))
+        shop_quantity = to_int(row.get('বিক্রয়কেন্দ্র'))
+
+        normalized.update({
+            'title': row.get('Book Name', ''),
+            'product_code': row.get('Book Code', ''),
+            'purchase_price': row.get('Production Cost', ''),
+            'mrp': row.get('MRP', ''),
+            'selling_price': row.get('Selling Price', ''),
+            'commission': row.get('commission', '0'),
+            'discount': row.get('discount', '0'),
+            'discount_type': row.get('discount_type', 'amount'),
+            'book_type': row.get('book_type', 'single'),
+            'stock_quantity': row.get('Total Stock', ''),
+            'stock_godown_quantity': str(godown_quantity),
+            'stock_shop_quantity': str(shop_quantity),
+            'stock_location': 'shop',
+            'notes': row.get('notes', 'Imported from stock report'),
+        })
+        return normalized

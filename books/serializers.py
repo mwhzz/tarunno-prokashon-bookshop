@@ -36,6 +36,11 @@ class BookSerializer(serializers.ModelSerializer):
             return None
         return value
 
+    def validate_product_code(self, value):
+        if value == '':
+            return None
+        return value
+
 
 class BookListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for lists"""

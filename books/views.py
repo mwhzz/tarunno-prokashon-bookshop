@@ -4,8 +4,10 @@ import urllib.request
 from decimal import Decimal, InvalidOperation
 
 from django.core.files.base import ContentFile
+from django.db import transaction
+from django.db.models import ProtectedError
 from django.http import HttpResponse
-from rest_framework import filters, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,7 +43,19 @@ class BookViewSet(viewsets.ModelViewSet):
         active = self.request.query_params.get('active')
         if active is not None:
             qs = qs.filter(is_active=active.lower() == 'true')
+        elif getattr(self, 'action', None) == 'list':
+            qs = qs.filter(is_active=True)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        book = self.get_object()
+        try:
+            with transaction.atomic():
+                book.delete()
+        except ProtectedError:
+            book.is_active = False
+            book.save(update_fields=['is_active', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def out_of_stock(self, request):
@@ -114,12 +128,16 @@ class BookCSVImportView(APIView):
                 return Response({'error': 'Could not read file. Save it as UTF-8 CSV.'}, status=400)
 
         reader = csv.DictReader(io.StringIO(text))
-        if not reader.fieldnames or 'title' not in reader.fieldnames:
-            return Response({'error': "CSV must contain a 'title' column"}, status=400)
+        if not reader.fieldnames:
+            return Response({'error': 'CSV file has no header row'}, status=400)
+
+        if 'title' not in reader.fieldnames and 'Book Name' not in reader.fieldnames:
+            return Response({'error': "CSV must contain a 'title' or 'Book Name' column"}, status=400)
 
         created, updated, skipped, errors = [], [], [], []
 
         for row_num, row in enumerate(reader, start=2):
+            row = self._normalize_row(row)
             title = row.get('title', '').strip()
             if not title:
                 errors.append({'row': row_num, 'msg': 'title is empty'})
@@ -158,6 +176,8 @@ class BookCSVImportView(APIView):
         product_code = row.get('product_code', '').strip() or None
 
         existing = Book.objects.filter(isbn=isbn).first() if isbn else None
+        if not existing and product_code:
+            existing = Book.objects.filter(product_code=product_code).first()
         if not existing:
             existing = Book.objects.filter(title=title).first()
 
@@ -204,6 +224,33 @@ class BookCSVImportView(APIView):
             return existing, False
 
         return Book.objects.create(**data), True
+
+    def _normalize_row(self, row):
+        normalized = dict(row)
+        if 'Book Name' not in row:
+            return normalized
+
+        godown_4 = self._to_int(row.get('গোডাউন ৪তলা', '')) or 0
+        godown_6 = self._to_int(row.get('গোডাউন ৬তলা', '')) or 0
+        shop_qty = self._to_int(row.get('বিক্রয়কেন্দ্র', '')) or 0
+
+        normalized.update({
+            'title': row.get('Book Name', ''),
+            'product_code': row.get('Book Code', ''),
+            'purchase_price': row.get('Production Cost', ''),
+            'mrp': row.get('MRP', ''),
+            'selling_price': row.get('Selling Price', ''),
+            'commission': row.get('commission', '0'),
+            'discount': row.get('discount', '0'),
+            'discount_type': row.get('discount_type', 'amount'),
+            'book_type': row.get('book_type', 'single'),
+            'stock_quantity': row.get('Total Stock', ''),
+            'stock_godown_quantity': str(godown_4 + godown_6),
+            'stock_shop_quantity': str(shop_qty),
+            'stock_location': 'shop',
+            'notes': row.get('notes', 'Imported from stock report'),
+        })
+        return normalized
 
     def _sync_stock(self, book, row):
         godown_qty = self._to_int(row.get('stock_godown_quantity', ''))

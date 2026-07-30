@@ -64,16 +64,19 @@ class SaleViewSet(viewsets.ModelViewSet):
         today = timezone.now().date()
         today_sales = Sale.objects.filter(created_at__date=today)
         today_stats = {
-            'revenue': today_sales.aggregate(total=Sum('total'))['total'] or 0,
-            'paid': today_sales.aggregate(paid=Sum('paid_amount'))['paid'] or 0,
-            'invoices': today_sales.count()
+            'total_revenue': float(today_sales.aggregate(total=Sum('total'))['total'] or 0),
+            'total_paid': float(today_sales.aggregate(paid=Sum('paid_amount'))['paid'] or 0),
+            'total_due': float(today_sales.aggregate(due=Sum('due_amount'))['due'] or 0),
+            'total_invoices': today_sales.count(),
+            'realized_profit': sum(float(s.realized_profit) for s in today_sales),
         }
 
         return Response({
             'today': today_stats,
+            'this_month': stats['summary'],
             'stats': stats,
             'stock': stock,
-            'due_invoices_count': Sale.objects.filter(status__in=['due', 'partial']).count()
+            'due_invoices': Sale.objects.filter(status__in=['due', 'partial']).count()
         })
 
     @action(detail=False, methods=['get'])

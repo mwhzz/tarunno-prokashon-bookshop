@@ -78,6 +78,12 @@ def manage_users_view(request):
         return redirect('dashboard')
     return render(request, 'manage_users.html')
 
+@login_required
+def settings_view(request):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'admin':
+        return redirect('dashboard')
+    return render(request, 'settings.html')
+
 # Auth Views
 def login_view(request):
     if request.user.is_authenticated:

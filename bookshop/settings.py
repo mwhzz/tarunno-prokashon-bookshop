@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'expenses',
     'accounts',
     'users',
+    'sitesettings',
 ]
 
 MIDDLEWARE = [

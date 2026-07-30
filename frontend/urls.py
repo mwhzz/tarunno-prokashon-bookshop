@@ -34,6 +34,9 @@ urlpatterns = [
     
     # User Management
     path('users/manage/', views.manage_users_view, name='manage_users'),
+
+    # Settings
+    path('settings/', views.settings_view, name='settings'),
     
     # Auth
     path('login/', views.login_view, name='login'),

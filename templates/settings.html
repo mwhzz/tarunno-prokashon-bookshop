@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block page_title %}সেটিংস (Settings){% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:640px; padding:24px;">
+    <h3 style="color:var(--accent); margin-bottom:6px;">💾 ডাটা ব্যাকআপ ও রিসেট</h3>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">
+        পুরো সাইটের সব ডাটা মুছে ফেলতে চাইলে, আগে একটা সাম্প্রতিক ব্যাকআপ ডাউনলোড করতে হবে। ব্যাকআপ ছাড়া রিসেট করা যাবে না।
+    </p>
+
+    <div style="border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
+        <div style="font-size:13px; margin-bottom:10px;">
+            সর্বশেষ ব্যাকআপ: <strong id="last-backup-text">লোড হচ্ছে...</strong>
+        </div>
+        <button class="btn btn-primary" id="backup-btn" onclick="downloadBackup()">
+            ⬇ ব্যাকআপ ডাউনলোড করুন
+        </button>
+    </div>
+
+    <div style="border:1px solid var(--danger); background:#fef2f2; border-radius:8px; padding:16px;">
+        <div style="font-size:13px; color:#991b1b; margin-bottom:10px;">
+            ⚠️ এই অ্যাকশন অপরিবর্তনীয়। সব বই, স্টক, বিক্রয়, গ্রাহক, খরচ ও হিসাবের রেকর্ড স্থায়ীভাবে মুছে যাবে।
+            ইউজার/লগইন অ্যাকাউন্ট মুছে যাবে না।
+        </div>
+        <button class="btn btn-danger" id="reset-btn" onclick="resetAllData()" disabled>
+            🗑 সব ডাটা মুছে ফেলুন
+        </button>
+        <div id="reset-hint" style="font-size:11px; color:#991b1b; margin-top:8px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', refreshBackupStatus);
+
+function fmtDateTime(s) {
+    return new Date(s).toLocaleString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function refreshBackupStatus() {
+    const textEl = document.getElementById('last-backup-text');
+    const resetBtn = document.getElementById('reset-btn');
+    const hintEl = document.getElementById('reset-hint');
+    try {
+        const data = await api('/sitesettings/backup/status/');
+        textEl.textContent = data.last_backup_at ? fmtDateTime(data.last_backup_at) : 'কখনো নেওয়া হয়নি';
+        resetBtn.disabled = !data.is_recent;
+        hintEl.textContent = data.is_recent
+            ? ''
+            : `রিসেট করার জন্য গত ${data.recency_minutes} মিনিটের মধ্যে একটা ব্যাকআপ ডাউনলোড করুন।`;
+    } catch (e) {
+        textEl.textContent = 'জানা যায়নি';
+    }
+}
+
+async function downloadBackup() {
+    const btn = document.getElementById('backup-btn');
+    btn.disabled = true;
+    try {
+        const r = await fetch(`${API}/sitesettings/backup/download/`, {
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        });
+        if (!r.ok) throw new Error('backup failed');
+        const disposition = r.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match ? match[1] : 'backup.sqlite3';
+
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        toast('ব্যাকআপ ডাউনলোড হয়েছে।');
+        refreshBackupStatus();
+    } catch (e) {
+        toast('ব্যাকআপ ডাউনলোড করা যায়নি।', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function resetAllData() {
+    if (!confirm('⚠️ এটি অপরিবর্তনীয়! সব বই, স্টক, বিক্রয়, গ্রাহক, খরচ ও হিসাব স্থায়ীভাবে মুছে যাবে। আপনি কি নিশ্চিত?')) return;
+
+    const typed = prompt('নিশ্চিত করতে বড় হাতের অক্ষরে RESET লিখুন:');
+    if (typed !== 'RESET') {
+        if (typed !== null) toast('নিশ্চিতকরণ টেক্সট মেলেনি, রিসেট বাতিল করা হয়েছে।', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('reset-btn');
+    btn.disabled = true;
+    try {
+        await api('/sitesettings/reset/', 'POST', { confirm: 'RESET' });
+        toast('সব ডাটা মুছে ফেলা হয়েছে।');
+        setTimeout(() => window.location.href = '/', 2000);
+    } catch (e) {
+        toast(e.detail || 'রিসেট করা যায়নি।', 'error');
+        refreshBackupStatus();
+    }
+}
+</script>
+{% endblock %}

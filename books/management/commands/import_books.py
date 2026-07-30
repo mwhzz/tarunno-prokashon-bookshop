@@ -330,7 +330,7 @@ class Command(BaseCommand):
             'purchase_price': row.get('Production Cost', ''),
             'mrp': row.get('MRP', ''),
             'selling_price': row.get('Selling Price', ''),
-            'commission': row.get('commission', '0'),
+            'commission': row.get('Regular Commission', row.get('commission', '0')),
             'discount': row.get('discount', '0'),
             'discount_type': row.get('discount_type', 'amount'),
             'book_type': row.get('book_type', 'single'),

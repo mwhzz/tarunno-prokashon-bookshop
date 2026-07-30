@@ -37,6 +37,35 @@
         </div>
     </div>
 </div>
+
+<!-- ওপেনিং ব্যালেন্স এডিট মডাল -->
+<div id="edit-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:20px;">
+    <div class="form-card" style="width:100%; max-width:400px; padding:24px;">
+        <h3 style="margin-bottom:20px; color:var(--accent);">✎ ওপেনিং ব্যালেন্স এডিট করুন</h3>
+
+        <input type="hidden" id="edit-id">
+
+        <div class="form-group section-gap">
+            <label>তারিখ</label>
+            <input type="text" id="edit-date-label" readonly style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px; background:#f8fafc;">
+        </div>
+
+        <div class="form-group section-gap">
+            <label>ওপেনিং ব্যালেন্স (৳) *</label>
+            <input type="number" id="edit-opening" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
+            <p id="edit-closed-warning" style="display:none; font-size:11px; color:var(--danger); margin-top:6px;">⚠️ এই দিনটি ক্লোজড। তবুও পরিবর্তন করা যাবে, কিন্তু ক্লোজিং ব্যালেন্সও রিক্যালকুলেট হয়ে যাবে।</p>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:20px;">
+            <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="saveOpeningBalance()">
+                ✓ সেভ করুন
+            </button>
+            <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="closeEditModal()">
+                বাতিল
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -68,6 +97,7 @@ async function fetchHistory() {
                 </td>
                 <td style="padding:12px 8px; text-align:right;">
                     <button class="btn btn-ghost btn-sm" onclick="viewDetails(${d.id})">👁 দেখুন</button>
+                    <button class="btn btn-ghost btn-sm" onclick="openEditModal(${d.id}, '${d.date}', ${d.opening_balance}, ${d.is_closed})">✎ ওপেনিং এডিট</button>
                 </td>
             </tr>
         `).join('');
@@ -123,6 +153,37 @@ async function viewDetails(id) {
 
 function closeModal() {
     document.getElementById('detail-modal').style.display = 'none';
+}
+
+function openEditModal(id, date, openingBalance, isClosed) {
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-date-label').value = fmtDate(date);
+    document.getElementById('edit-opening').value = openingBalance;
+    document.getElementById('edit-closed-warning').style.display = isClosed ? 'block' : 'none';
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+async function saveOpeningBalance() {
+    const id = document.getElementById('edit-id').value;
+    const value = document.getElementById('edit-opening').value;
+
+    if (value === '' || isNaN(value)) {
+        toast('সঠিক পরিমাণ লিখুন।', 'error');
+        return;
+    }
+
+    try {
+        await api(`/accounts/daily/${id}/`, 'PATCH', { opening_balance: value });
+        toast('ওপেনিং ব্যালেন্স আপডেট হয়েছে।');
+        closeEditModal();
+        fetchHistory();
+    } catch (e) {
+        toast('আপডেট করা যায়নি।', 'error');
+    }
 }
 </script>
 {% endblock %}

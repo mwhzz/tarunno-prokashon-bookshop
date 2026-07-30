@@ -16,6 +16,10 @@ class DailyCashViewSet(viewsets.ModelViewSet):
     serializer_class = DailyCashSerializer
     permission_classes = [IsAdmin]
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        instance.update_closing_balance()
+
     @action(detail=False, methods=['get'])
     def today(self, request):
         obj = DailyCash.get_for_today()

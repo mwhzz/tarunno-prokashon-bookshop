@@ -80,8 +80,27 @@ class SaleViewSet(viewsets.ModelViewSet):
     def due_list(self, request):
         """বাকি বিলের তালিকা"""
         dues = Sale.objects.filter(status__in=['due', 'partial'])
-        serializer = SaleSerializer(dues, many=True)
-        return Response(serializer.data)
+        invoices = SaleSerializer(dues, many=True).data
+
+        # কিছু গ্রাহকের বাকি কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয় (যেমন: গ্রাহক যোগ করার
+        # সময় সরাসরি বসানো ওপেনিং ব্যালেন্স) — সেগুলো এখানে আলাদাভাবে দেখানো হচ্ছে,
+        # নাহলে টাকা বাকি থাকলেও এই তালিকায় কখনো দেখা যেত না।
+        customer_dues = []
+        for customer in Customer.objects.filter(total_due__gt=0):
+            sales_due = Sale.objects.filter(
+                customer=customer, status__in=['due', 'partial']
+            ).aggregate(total=Sum('due_amount'))['total'] or 0
+            extra = customer.total_due - sales_due
+            if extra > 0:
+                customer_dues.append({
+                    'id': customer.id,
+                    'name': customer.name,
+                    'phone': customer.phone,
+                    'customer_code': customer.customer_code,
+                    'amount': extra,
+                })
+
+        return Response({'invoices': invoices, 'customer_dues': customer_dues})
 
     @action(detail=True, methods=['post'])
     def add_payment(self, request, pk=None):
@@ -263,11 +282,32 @@ class CustomerViewSet(viewsets.ModelViewSet):
         phone = request.query_params.get('phone')
         if not phone:
             return Response({'error': 'Phone number required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         customer = Customer.objects.filter(phone=phone).first()
         if customer:
             return Response(CustomerSerializer(customer).data)
         return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'])
+    def collect_other_due(self, request, pk=None):
+        """কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয় এমন বাকি (যেমন ওপেনিং ব্যালেন্স) থেকে টাকা জমা নেওয়া"""
+        from decimal import Decimal
+        customer = self.get_object()
+        amount_str = request.data.get('amount')
+
+        if not amount_str:
+            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            amount = Decimal(str(amount_str))
+        except Exception:
+            return Response({'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0 or amount > customer.total_due:
+            return Response({'error': 'Amount exceeds due balance'}, status=status.HTTP_400_BAD_REQUEST)
+
+        customer.total_due -= amount
+        customer.save()
+        return Response(CustomerSerializer(customer).data)
 
 
 from rest_framework.decorators import api_view

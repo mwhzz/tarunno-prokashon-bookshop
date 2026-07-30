@@ -8,7 +8,8 @@ from books.models import Book
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'phone', 'address', 'total_due', 'customer_type', 'default_commission', 'created_at']
+        fields = ['id', 'name', 'phone', 'address', 'customer_code', 'total_due', 'customer_type', 'default_commission', 'created_at']
+        read_only_fields = ['customer_code']
 
 
 class SaleItemSerializer(serializers.ModelSerializer):

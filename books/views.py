@@ -27,7 +27,7 @@ class GroupViewSet(viewsets.ModelViewSet):
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.select_related('group')
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'author', 'publisher', 'isbn']
+    search_fields = ['title', 'author', 'publisher', 'isbn', 'product_code']
     ordering_fields = ['title', 'selling_price', 'created_at']
 
     def get_serializer_class(self):

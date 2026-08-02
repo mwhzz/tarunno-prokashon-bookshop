@@ -6,6 +6,11 @@ urlpatterns = [
     path('pos/', views.pos_view, name='pos'),
     path('external-trade/', views.external_trade_view, name='external_trade'),
 
+    # Purchase
+    path('purchase/', views.purchase_entry_view, name='purchase_entry'),
+    path('purchase/bills/', views.purchase_bills_view, name='purchase_bills'),
+    path('purchase/vendors/', views.vendors_view, name='vendors'),
+
     # Books
     path('books/', views.books_list_view, name='books_list'),
     path('books/add/', views.add_book_view, name='add_book'),

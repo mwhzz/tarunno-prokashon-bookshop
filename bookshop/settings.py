@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'books',
     'stock',
     'sales',
+    'purchase',
     'expenses',
     'accounts',
     'users',

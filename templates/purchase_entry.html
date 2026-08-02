@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block page_title %}নতুন ক্রয়{% endblock %}
+
+{% block extra_css %}
+<style>
+.pe-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.pe-shell {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 320px;
+  gap: 14px;
+  align-items: start;
+}
+
+.pe-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+
+.pe-head {
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  padding: 13px 16px;
+}
+.pe-head-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:800; color:#fff; }
+.pe-head-sub { font-size:11.5px; color:rgba(255,255,255,.55); margin-top:2px; }
+
+.pe-body { padding: 16px; }
+
+.pe-field { margin-bottom: 10px; position: relative; }
+.pe-field label {
+  display:block; font-size:11.5px; font-weight:800;
+  color:var(--text2); margin-bottom:4px;
+}
+.pe-input {
+  width:100%; min-height:40px;
+  padding: 7px 12px;
+  border: 2px solid var(--border); border-radius:9px;
+  background: var(--surface2);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:13.5px; font-weight:500; color:var(--text);
+  outline:none; transition:all .18s;
+}
+.pe-input:focus {
+  border-color: var(--accent); background:#fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+.pe-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pe-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+
+.pe-suggest {
+  position:absolute; top:100%; left:0; right:0; z-index:20;
+  background:#fff; border:1.5px solid var(--border); border-radius:10px;
+  box-shadow:0 10px 30px rgba(13,51,38,.15);
+  max-height:260px; overflow-y:auto; margin-top:4px; display:none;
+}
+.pe-suggest.show { display:block; }
+.pe-suggest-item { padding:9px 12px; cursor:pointer; border-bottom:1px solid #f0f7f3; }
+.pe-suggest-item:last-child { border-bottom:none; }
+.pe-suggest-item:hover { background:var(--surface2); }
+.pe-suggest-item strong { display:block; font-size:13px; color:var(--g900); }
+.pe-suggest-item small { font-size:11px; color:var(--muted); }
+.pe-suggest-empty { padding:12px; font-size:12px; color:var(--muted); text-align:center; }
+
+.add-list-btn {
+  min-height:42px; padding: 0 20px;
+  border-radius:11px; background:var(--accent);
+  color:#fff; border:none; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:14px; font-weight:800;
+  transition:all .18s;
+}
+.add-list-btn:hover { background:var(--accent-dark); }
+
+/* cart table */
+.cart-wrap { border-top: 1px solid var(--border); }
+.cart-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.cart-table th {
+  text-align:left; padding: 9px 14px; font-size:10.5px; font-weight:800;
+  color:var(--muted); text-transform:uppercase; letter-spacing:.05em;
+  border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.cart-table td { padding: 9px 14px; border-bottom:1px solid #f0f7f3; vertical-align:middle; }
+.cart-table tr:last-child td { border-bottom:none; }
+.cart-table .num { font-family:'JetBrains Mono',monospace; text-align:right; white-space:nowrap; }
+.cart-table .qty-inp {
+  width:56px; text-align:center; border:1.5px solid var(--border); border-radius:7px;
+  padding:4px; font-family:'JetBrains Mono',monospace; font-size:13px;
+}
+.cart-remove {
+  width:28px; height:28px; border-radius:8px; border:1.5px solid var(--border);
+  background:#fff; cursor:pointer; color:var(--danger); font-size:13px;
+}
+.cart-remove:hover { border-color:var(--danger); background:#fef2f2; }
+.cart-empty { padding:36px 20px; text-align:center; color:var(--muted); font-size:13px; }
+
+/* right summary panel */
+.pe-summary { position: sticky; top: 16px; }
+.sum-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 9px 16px; border-bottom: 1px solid #f0f7f3;
+  font-size: 13px; font-weight:700; color: var(--text2);
+}
+.sum-row .val { font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--g900); }
+.sum-row.total .val { color: var(--accent); font-size:16px; }
+.sum-row.due .val { color: var(--danger); }
+
+.sum-field { padding: 10px 16px 0; }
+.sum-field label {
+  display:block; font-size:11.5px; font-weight:800;
+  color:var(--text2); margin-bottom:4px;
+}
+.sum-amount-wrap { position:relative; }
+.sum-amount-sym {
+  position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--muted);
+}
+.sum-amount-inp {
+  width:100%; height:40px; padding:0 10px 0 30px;
+  border:2px solid var(--border); border-radius:9px; background:var(--surface2);
+  font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--g900);
+  outline:none;
+}
+.sum-amount-inp:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 4px rgba(27,122,85,.1); }
+
+.submit-purchase-btn {
+  width:calc(100% - 32px); margin: 14px 16px 16px; min-height:46px;
+  border-radius:12px; background:var(--accent); color:#fff; border:none; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:800;
+  box-shadow:0 6px 20px rgba(27,122,85,.28); transition:all .18s;
+}
+.submit-purchase-btn:hover { background:var(--accent-dark); transform:translateY(-1px); }
+.submit-purchase-btn:disabled { background:var(--muted); box-shadow:none; cursor:not-allowed; transform:none; }
+
+@media (max-width:900px) {
+  .pe-shell { grid-template-columns: 1fr; }
+  .pe-summary { position:static; }
+  .pe-row4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width:560px) {
+  .pe-row2, .pe-row4 { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pe-page">
+  <div class="pe-shell">
+
+    <!-- MAIN: vendor + book entry + cart -->
+    <div class="pe-card">
+      <div class="pe-head">
+        <div class="pe-head-title">🧾 নতুন ক্রয় (Purchase)</div>
+        <div class="pe-head-sub">ভেন্ডরের কাছ থেকে একাধিক বই একসাথে কিনে একটা বিল তৈরি করুন</div>
+      </div>
+      <div class="pe-body">
+
+        <div class="pe-row2">
+          <div class="pe-field">
+            <label>ভেন্ডর <span style="color:var(--danger)">*</span></label>
+            <input class="pe-input" id="v-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন বা নতুন নাম লিখুন" autocomplete="off"
+                   oninput="onVendorInput()" onfocus="onVendorInput()">
+            <div class="pe-suggest" id="v-suggest"></div>
+          </div>
+          <div class="pe-field">
+            <label>মেমো নম্বর</label>
+            <input class="pe-input" id="v-memo" placeholder="ঐচ্ছিক">
+          </div>
+        </div>
+
+        <div class="pe-field" style="margin-top:6px;">
+          <label>বই খুঁজুন <span style="color:var(--danger)">*</span></label>
+          <input class="pe-input" id="b-search" placeholder="নাম, কোড, ISBN, লেখক দিয়ে খুঁজুন বা নতুন বইয়ের নাম লিখুন" autocomplete="off"
+                 oninput="onBookInput()" onfocus="onBookInput()">
+          <div class="pe-suggest" id="b-suggest"></div>
+        </div>
+
+        <div class="pe-row4">
+          <div class="pe-field">
+            <label>পরিমাণ</label>
+            <input class="pe-input" id="b-qty" type="number" min="1" value="1">
+          </div>
+          <div class="pe-field">
+            <label>MRP ৳</label>
+            <input class="pe-input" id="b-mrp" type="number" min="0" placeholder="০">
+          </div>
+          <div class="pe-field">
+            <label>ক্রয়মূল্য/কপি ৳ <span style="color:var(--danger)">*</span></label>
+            <input class="pe-input" id="b-price" type="number" min="0" placeholder="০">
+          </div>
+          <div class="pe-field">
+            <label>বিক্রয় কমিশন %</label>
+            <input class="pe-input" id="b-commission" type="number" min="0" max="100" placeholder="০">
+          </div>
+        </div>
+        <div class="pe-row2">
+          <div class="pe-field">
+            <label>বিক্রয়মূল্য ৳</label>
+            <input class="pe-input" id="b-selling" type="number" min="0" placeholder="ঐচ্ছিক">
+          </div>
+          <div class="pe-field" style="display:flex; align-items:flex-end;">
+            <button class="add-list-btn" style="width:100%;" onclick="addToCart()">➕ তালিকায় যোগ করুন</button>
+          </div>
+        </div>
+
+        <div class="cart-wrap">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>বই</th>
+                <th class="num">MRP</th>
+                <th class="num">বিক্রয়মূল্য</th>
+                <th class="num">ইউনিট মূল্য</th>
+                <th class="num">পরিমাণ</th>
+                <th class="num">মোট</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cart-tbody">
+              <tr><td colspan="7" class="cart-empty">এখনো কোনো বই তালিকায় যোগ হয়নি — উপরে থেকে বই খুঁজে যোগ করুন।</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUMMARY / PAYMENT -->
+    <div class="pe-card pe-summary">
+      <div class="pe-head">
+        <div class="pe-head-title">💰 হিসাব</div>
+      </div>
+
+      <div class="sum-row"><span>মোট আইটেম</span><span class="val" id="s-items">০</span></div>
+      <div class="sum-row"><span>মোট পরিমাণ</span><span class="val" id="s-qty">০</span></div>
+      <div class="sum-row"><span>মোট ক্রয়মূল্য</span><span class="val" id="s-subtotal">৳০</span></div>
+
+      <div class="sum-field">
+        <label>ডিসকাউন্ট ৳</label>
+        <div class="sum-amount-wrap">
+          <span class="sum-amount-sym">৳</span>
+          <input class="sum-amount-inp" id="s-discount" type="number" min="0" value="0" oninput="calcTotals()">
+        </div>
+      </div>
+
+      <div class="sum-row total" style="margin-top:8px;"><span>সর্বমোট প্রদেয়</span><span class="val" id="s-payable">৳০</span></div>
+
+      <div class="sum-field">
+        <label>পরিশোধিত টাকা ৳</label>
+        <div class="sum-amount-wrap">
+          <span class="sum-amount-sym">৳</span>
+          <input class="sum-amount-inp" id="s-paid" type="number" min="0" value="0" oninput="calcTotals()">
+        </div>
+      </div>
+
+      <div class="sum-row due"><span>বাকি (Due)</span><span class="val" id="s-due">৳০</span></div>
+
+      <div class="sum-field">
+        <label>একাউন্ট</label>
+        <select class="pe-input" id="s-account">
+          <option value="cash">Cash</option>
+          <option value="bank">Bank</option>
+        </select>
+      </div>
+
+      <div class="sum-field">
+        <label>স্টক যাবে</label>
+        <select class="pe-input" id="s-location">
+          <option value="godown">🏭 গোডাউন</option>
+          <option value="shop">🏪 দোকান</option>
+        </select>
+      </div>
+
+      <div class="sum-field">
+        <label>ক্রয়ের তারিখ</label>
+        <input class="pe-input" id="s-date" type="date">
+      </div>
+
+      <div class="sum-field" style="padding-bottom:6px;">
+        <label>নোট</label>
+        <input class="pe-input" id="s-note" placeholder="ঐচ্ছিক">
+      </div>
+
+      <button class="submit-purchase-btn" id="submit-btn" onclick="submitPurchase()">✅ ক্রয় সম্পন্ন করুন</button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let cart = [];
+let allVendors = [];
+let selectedVendor = null;   // {id, name} or null (new vendor by typed name)
+let selectedBook = null;     // {id, title, ...} or null (new book by typed title)
+let bookSearchTimer = null;
+
+async function init() {
+  document.getElementById('s-date').value = new Date().toISOString().slice(0, 10);
+  try {
+    const res = await api('/purchase/vendors/?page_size=1000');
+    allVendors = res.results || [];
+  } catch (e) { /* vendor list preload failed silently, search-as-you-type still works via typed name */ }
+  renderCart();
+  calcTotals();
+}
+
+/* ══════════════════════════
+   VENDOR SEARCH
+══════════════════════════ */
+function onVendorInput() {
+  selectedVendor = null;
+  const q = document.getElementById('v-search').value.trim().toLowerCase();
+  const box = document.getElementById('v-suggest');
+  if (!q) { box.classList.remove('show'); return; }
+
+  const matches = allVendors.filter(v =>
+    v.name.toLowerCase().includes(q) || (v.phone || '').includes(q) || (v.vendor_code || '').toLowerCase().includes(q)
+  ).slice(0, 8);
+
+  if (!matches.length) {
+    box.innerHTML = `<div class="pe-suggest-empty">মিলছে না — এই নামেই নতুন ভেন্ডর হিসেবে যোগ হবে।</div>`;
+  } else {
+    box.innerHTML = matches.map(v => `
+      <div class="pe-suggest-item" onclick="selectVendor(${v.id})">
+        <strong>${v.name}</strong>
+        <small>কোড: ${v.vendor_code || 'N/A'}${v.phone ? ' • ফোন: ' + v.phone : ''}${Number(v.total_due) > 0 ? ' • বাকি: ৳' + num(v.total_due) : ''}</small>
+      </div>`).join('');
+  }
+  box.classList.add('show');
+}
+
+function selectVendor(id) {
+  const v = allVendors.find(x => x.id === id);
+  if (!v) return;
+  selectedVendor = v;
+  document.getElementById('v-search').value = v.name;
+  document.getElementById('v-suggest').classList.remove('show');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#v-search') && !e.target.closest('#v-suggest')) {
+    document.getElementById('v-suggest')?.classList.remove('show');
+  }
+  if (!e.target.closest('#b-search') && !e.target.closest('#b-suggest')) {
+    document.getElementById('b-suggest')?.classList.remove('show');
+  }
+});
+
+/* ══════════════════════════
+   BOOK SEARCH
+══════════════════════════ */
+function onBookInput() {
+  selectedBook = null;
+  const q = document.getElementById('b-search').value.trim();
+  const box = document.getElementById('b-suggest');
+  if (!q) { box.classList.remove('show'); return; }
+
+  clearTimeout(bookSearchTimer);
+  bookSearchTimer = setTimeout(async () => {
+    try {
+      const res = await api(`/books/?search=${encodeURIComponent(q)}&page_size=8`);
+      const results = res.results || [];
+      if (!results.length) {
+        box.innerHTML = `<div class="pe-suggest-empty">মিলছে না — এই নামেই নতুন বই হিসেবে যোগ হবে।</div>`;
+      } else {
+        box.innerHTML = results.map(b => `
+          <div class="pe-suggest-item" onclick='selectBook(${JSON.stringify(b).replace(/'/g, "&apos;")})'>
+            <strong>${b.title}${b.author ? ' — ' + b.author : ''}</strong>
+            <small>কোড: ${b.product_code || 'N/A'} • স্টক: ${b.current_stock ?? 0} • MRP ৳${num(b.mrp)}</small>
+          </div>`).join('');
+      }
+      box.classList.add('show');
+    } catch (e) { box.classList.remove('show'); }
+  }, 250);
+}
+
+function selectBook(b) {
+  selectedBook = b;
+  document.getElementById('b-search').value = b.title;
+  document.getElementById('b-mrp').value = b.mrp || '';
+  document.getElementById('b-price').value = b.purchase_price || '';
+  document.getElementById('b-commission').value = b.commission || '';
+  document.getElementById('b-selling').value = b.selling_price || '';
+  document.getElementById('b-suggest').classList.remove('show');
+}
+
+/* ══════════════════════════
+   CART
+══════════════════════════ */
+function addToCart() {
+  const title = document.getElementById('b-search').value.trim();
+  if (!title) { shakeEl('b-search'); toast('বইয়ের নাম লিখুন বা খুঁজে সিলেক্ট করুন!', 'error'); return; }
+
+  const price = document.getElementById('b-price').value;
+  if (!price || Number(price) <= 0) { shakeEl('b-price'); toast('ক্রয়মূল্য লিখুন!', 'error'); return; }
+
+  const qty = parseInt(document.getElementById('b-qty').value) || 1;
+
+  cart.push({
+    book: selectedBook ? selectedBook.id : null,
+    book_title: title,
+    author: selectedBook ? (selectedBook.author || '') : '',
+    quantity: qty,
+    mrp: parseFloat(document.getElementById('b-mrp').value) || 0,
+    unit_price: parseFloat(price),
+    commission: parseFloat(document.getElementById('b-commission').value) || 0,
+    selling_price: parseFloat(document.getElementById('b-selling').value) || 0,
+  });
+
+  document.getElementById('b-search').value = '';
+  document.getElementById('b-qty').value = '1';
+  document.getElementById('b-mrp').value = '';
+  document.getElementById('b-price').value = '';
+  document.getElementById('b-commission').value = '';
+  document.getElementById('b-selling').value = '';
+  selectedBook = null;
+  document.getElementById('b-search').focus();
+
+  renderCart();
+  calcTotals();
+}
+
+function removeFromCart(idx) {
+  cart.splice(idx, 1);
+  renderCart();
+  calcTotals();
+}
+
+function updateCartQty(idx, value) {
+  const qty = parseInt(value) || 1;
+  cart[idx].quantity = qty;
+  renderCart();
+  calcTotals();
+}
+
+function renderCart() {
+  const tbody = document.getElementById('cart-tbody');
+  if (!cart.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="cart-empty">এখনো কোনো বই তালিকায় যোগ হয়নি — উপরে থেকে বই খুঁজে যোগ করুন।</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cart.map((item, idx) => `
+    <tr>
+      <td><strong>${item.book_title}</strong>${item.author ? '<br><small style="color:var(--muted)">' + item.author + '</small>' : ''}</td>
+      <td class="num">৳${num(item.mrp)}</td>
+      <td class="num">৳${num(item.selling_price)}</td>
+      <td class="num">৳${num(item.unit_price)}</td>
+      <td class="num"><input class="qty-inp" type="number" min="1" value="${item.quantity}" onchange="updateCartQty(${idx}, this.value)"></td>
+      <td class="num">৳${num(item.unit_price * item.quantity)}</td>
+      <td><button class="cart-remove" onclick="removeFromCart(${idx})">✕</button></td>
+    </tr>`).join('');
+}
+
+/* ══════════════════════════
+   TOTALS
+══════════════════════════ */
+function calcTotals() {
+  const items = cart.length;
+  const qty = cart.reduce((s, i) => s + i.quantity, 0);
+  const subtotal = cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const discount = parseFloat(document.getElementById('s-discount').value) || 0;
+  const payable = Math.max(0, subtotal - discount);
+  const paid = parseFloat(document.getElementById('s-paid').value) || 0;
+  const due = Math.max(0, payable - paid);
+
+  setText('s-items', items);
+  setText('s-qty', qty);
+  setText('s-subtotal', `৳${num(subtotal)}`);
+  setText('s-payable', `৳${num(payable)}`);
+  setText('s-due', `৳${num(due)}`);
+}
+
+/* ══════════════════════════
+   SUBMIT
+══════════════════════════ */
+async function submitPurchase() {
+  if (!cart.length) { toast('কমপক্ষে একটি বই তালিকায় যোগ করুন!', 'error'); return; }
+
+  const vendorInput = document.getElementById('v-search').value.trim();
+  if (!vendorInput) { shakeEl('v-search'); toast('ভেন্ডরের নাম লিখুন!', 'error'); return; }
+
+  const payload = {
+    vendor: selectedVendor ? selectedVendor.id : null,
+    vendor_name: selectedVendor ? selectedVendor.name : vendorInput,
+    memo_number: document.getElementById('v-memo').value,
+    discount: document.getElementById('s-discount').value || 0,
+    paid_amount: document.getElementById('s-paid').value || 0,
+    account_name: document.getElementById('s-account').value,
+    location: document.getElementById('s-location').value,
+    purchase_date: document.getElementById('s-date').value,
+    note: document.getElementById('s-note').value,
+    items: cart.map(i => ({
+      book: i.book,
+      book_title: i.book_title,
+      author: i.author,
+      quantity: i.quantity,
+      mrp: i.mrp,
+      unit_price: i.unit_price,
+      commission: i.commission,
+      selling_price: i.selling_price,
+    })),
+  };
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+
+  try {
+    await api('/purchase/bills/', 'POST', payload);
+    toast('ক্রয় বিল সেভ হয়েছে ✓');
+    cart = [];
+    selectedVendor = null;
+    selectedBook = null;
+    document.getElementById('v-search').value = '';
+    document.getElementById('v-memo').value = '';
+    document.getElementById('s-discount').value = '0';
+    document.getElementById('s-paid').value = '0';
+    document.getElementById('s-note').value = '';
+    renderCart();
+    calcTotals();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('সেভ করা যায়নি: ' + msg, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '✅ ক্রয় সম্পন্ন করুন';
+  }
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+function shakeEl(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor = 'var(--danger)'; el.style.animation = 'none';
+  void el.offsetWidth; el.style.animation = 'shake .3s ease'; el.focus();
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

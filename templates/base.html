@@ -639,9 +639,21 @@
         <span class="nav-label">বিক্রয় করুন (POS)</span>
       </a>
 
-      <a href="/external-trade/" class="nav-item {% if '/external-trade/' in request.path %}active{% endif %}">
-        <span class="nav-icon">🛍️</span>
-        <span class="nav-label">বাইরের বই ক্রয়-বিক্রয়</span>
+      <div class="nav-section-label">ক্রয় (Purchase)</div>
+
+      <a href="/purchase/" class="nav-item {% if request.path == '/purchase/' %}active{% endif %}">
+        <span class="nav-icon">🧾</span>
+        <span class="nav-label">নতুন ক্রয়</span>
+      </a>
+
+      <a href="/purchase/bills/" class="nav-item {% if '/purchase/bills/' in request.path %}active{% endif %}">
+        <span class="nav-icon">📜</span>
+        <span class="nav-label">ক্রয় রেকর্ড</span>
+      </a>
+
+      <a href="/purchase/vendors/" class="nav-item {% if '/purchase/vendors/' in request.path %}active{% endif %}">
+        <span class="nav-icon">🏢</span>
+        <span class="nav-label">ভেন্ডরগণ</span>
       </a>
 
       <div class="nav-section-label">বই ও স্টক</div>

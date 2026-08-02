@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block page_title %}ভেন্ডরগণ{% endblock %}
+
+{% block extra_css %}
+<style>
+.vd-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.vd-shell { display:grid; grid-template-columns: 300px minmax(0,1fr); gap:14px; align-items:start; }
+
+.vd-card {
+  background:#fff; border:1px solid var(--border); border-radius:18px; overflow:hidden;
+  box-shadow:0 2px 12px rgba(13,51,38,.05); position:sticky; top:16px;
+}
+.vd-head { background:linear-gradient(135deg, var(--g800), var(--g900)); padding:13px 16px; }
+.vd-head-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:800; color:#fff; }
+.vd-body { padding:14px 16px; }
+.vd-field { margin-bottom:10px; }
+.vd-field label { display:block; font-size:11.5px; font-weight:800; color:var(--text2); margin-bottom:4px; }
+.vd-input {
+  width:100%; min-height:38px; padding:7px 12px; border:2px solid var(--border); border-radius:9px;
+  background:var(--surface2); font-family:'Hind Siliguri',sans-serif; font-size:13.5px; outline:none; transition:all .18s;
+}
+.vd-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 4px rgba(27,122,85,.1); }
+.vd-save-btn {
+  width:100%; min-height:40px; border-radius:10px; background:var(--accent); color:#fff; border:none; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif; font-size:14px; font-weight:800; transition:all .18s;
+}
+.vd-save-btn:hover { background:var(--accent-dark); }
+
+.vd-stats { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.vd-stat {
+  flex:1; min-width:140px; background:#fff; border:1px solid var(--border); border-radius:14px;
+  padding:12px 14px; box-shadow:0 2px 12px rgba(13,51,38,.05);
+}
+.vd-stat-label { font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.vd-stat-val { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--g900); margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vd-page">
+  <div class="vd-shell">
+
+    <div class="vd-card">
+      <div class="vd-head"><div class="vd-head-title">🏢 নতুন ভেন্ডর</div></div>
+      <div class="vd-body">
+        <div class="vd-field"><label>নাম <span style="color:var(--danger)">*</span></label><input class="vd-input" id="nv-name" placeholder="ভেন্ডর/প্রকাশনীর নাম"></div>
+        <div class="vd-field"><label>ফোন</label><input class="vd-input" id="nv-phone" placeholder="ঐচ্ছিক"></div>
+        <div class="vd-field"><label>ঠিকানা</label><input class="vd-input" id="nv-address" placeholder="ঐচ্ছিক"></div>
+        <div class="vd-field"><label>শুরুর বকেয়া ৳</label><input class="vd-input" id="nv-opening" type="number" min="0" placeholder="০"></div>
+        <button class="vd-save-btn" id="nv-save-btn" onclick="addVendor()">💾 ভেন্ডর যোগ করুন</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="vd-stats" id="vd-stats">
+        <div class="vd-stat"><div class="vd-stat-label">মোট ভেন্ডর</div><div class="vd-stat-val" id="stat-count">০</div></div>
+        <div class="vd-stat"><div class="vd-stat-label">মোট বকেয়া</div><div class="vd-stat-val" style="color:var(--danger)" id="stat-due">৳০</div></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">📋 সব ভেন্ডর</span>
+          <input type="text" id="vd-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন" oninput="debouncedLoad()"
+                 style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; font-family:'Hind Siliguri',sans-serif; font-size:13px; outline:none;">
+        </div>
+        <div id="vendors-wrapper">
+          <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let searchTimer = null;
+function debouncedLoad() { clearTimeout(searchTimer); searchTimer = setTimeout(loadVendors, 350); }
+
+async function loadVendors() {
+  const w = document.getElementById('vendors-wrapper');
+  try {
+    const q = document.getElementById('vd-search').value.trim();
+    const params = new URLSearchParams({ page_size: 200 });
+    if (q) params.set('search', q);
+    const r = await api(`/purchase/vendors/?${params.toString()}`);
+    const vendors = r.results || [];
+
+    setText('stat-count', r.count ?? vendors.length);
+    const totalDue = vendors.reduce((s, v) => s + Number(v.total_due || 0), 0);
+    setText('stat-due', `৳${num(totalDue)}`);
+
+    if (!vendors.length) {
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">🏢</div><h3>কোনো ভেন্ডর নেই</h3></div>`;
+      return;
+    }
+
+    w.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="padding:10px 20px">নাম</th>
+            <th>কোড</th>
+            <th>ফোন</th>
+            <th>শুরুর বকেয়া</th>
+            <th>বর্তমান বকেয়া</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${vendors.map(v => `
+            <tr>
+              <td style="padding:10px 20px"><strong>${v.name}</strong></td>
+              <td style="font-family:monospace">${v.vendor_code || 'N/A'}</td>
+              <td>${v.phone || '—'}</td>
+              <td style="font-family:monospace">৳${num(v.opening_due)}</td>
+              <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+  }
+}
+
+async function addVendor() {
+  const name = document.getElementById('nv-name').value.trim();
+  if (!name) { toast('ভেন্ডরের নাম লিখুন!', 'error'); return; }
+
+  const btn = document.getElementById('nv-save-btn');
+  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+  try {
+    await api('/purchase/vendors/', 'POST', {
+      name,
+      phone: document.getElementById('nv-phone').value,
+      address: document.getElementById('nv-address').value,
+      opening_due: document.getElementById('nv-opening').value || 0,
+    });
+    toast('ভেন্ডর যোগ হয়েছে ✓');
+    document.getElementById('nv-name').value = '';
+    document.getElementById('nv-phone').value = '';
+    document.getElementById('nv-address').value = '';
+    document.getElementById('nv-opening').value = '';
+    loadVendors();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('যোগ করা যায়নি: ' + msg, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '💾 ভেন্ডর যোগ করুন';
+  }
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+document.addEventListener('DOMContentLoaded', loadVendors);
+</script>
+{% endblock %}

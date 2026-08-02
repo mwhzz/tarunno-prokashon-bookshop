@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block page_title %}ক্রয় রেকর্ড{% endblock %}
+
+{% block extra_css %}
+<style>
+.pb-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.pb-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pb-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+}
+.pb-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.pb-val { font-family:'JetBrains Mono', monospace; font-size:20px; font-weight:700; color:var(--g900); margin-top:2px; }
+.pb-val.due { color: var(--danger); }
+.pb-val.paid { color: var(--accent); }
+
+.pb-filters {
+  display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.pb-filters .ff { display:flex; flex-direction:column; gap:4px; }
+.pb-filters label { font-size:11px; font-weight:800; color:var(--text2); }
+.pb-filters input {
+  height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;
+  font-family:'Hind Siliguri',sans-serif; font-size:13px; outline:none;
+}
+.pb-filters input:focus { border-color:var(--accent); }
+.pb-find-btn {
+  height:36px; padding:0 18px; border-radius:8px; border:none;
+  background:var(--accent); color:#fff; font-weight:800; font-size:13px; cursor:pointer;
+}
+.pb-find-btn:hover { background:var(--accent-dark); }
+.pb-search-box { flex:1; min-width:200px; }
+
+@media (max-width:900px) { .pb-summary { grid-template-columns: 1fr 1fr; } }
+@media (max-width:520px) { .pb-summary { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pb-page">
+
+  <div class="pb-summary" id="pb-summary">
+    <div class="pb-card"><div class="pb-label">মোট মূল্য</div><div class="pb-val" id="sum-total">৳০</div></div>
+    <div class="pb-card"><div class="pb-label">ডিসকাউন্ট</div><div class="pb-val" id="sum-discount">৳০</div></div>
+    <div class="pb-card"><div class="pb-label">পরিশোধিত</div><div class="pb-val paid" id="sum-paid">৳০</div></div>
+    <div class="pb-card"><div class="pb-label">বাকি</div><div class="pb-val due" id="sum-due">৳০</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="pb-filters">
+      <div class="ff">
+        <label>শুরুর তারিখ</label>
+        <input type="date" id="f-from">
+      </div>
+      <div class="ff">
+        <label>শেষ তারিখ</label>
+        <input type="date" id="f-to">
+      </div>
+      <button class="pb-find-btn" onclick="loadBills()">খুঁজুন</button>
+      <div class="ff pb-search-box">
+        <label>সার্চ (ভেন্ডর/মেমো)</label>
+        <input type="text" id="f-search" placeholder="ভেন্ডরের নাম বা মেমো নম্বর" oninput="debouncedLoad()">
+      </div>
+    </div>
+
+    <div class="table-header">
+      <span class="table-title">📜 ক্রয় বিলের তালিকা</span>
+    </div>
+
+    <div id="bills-wrapper">
+      <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let searchTimer = null;
+
+function debouncedLoad() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadBills, 350);
+}
+
+function buildParams() {
+  const params = new URLSearchParams();
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  const search = document.getElementById('f-search').value.trim();
+  if (from) params.set('date_from', from);
+  if (to) params.set('date_to', to);
+  if (search) params.set('search', search);
+  return params;
+}
+
+async function loadSummary() {
+  try {
+    const s = await api(`/purchase/bills/summary/?${buildParams().toString()}`);
+    setText('sum-total', `৳${num(s.total_price)}`);
+    setText('sum-discount', `৳${num(s.discount)}`);
+    setText('sum-paid', `৳${num(s.paid)}`);
+    setText('sum-due', `৳${num(s.due)}`);
+  } catch (e) { /* summary is a nice-to-have, table load reports real errors */ }
+}
+
+async function loadBills() {
+  const w = document.getElementById('bills-wrapper');
+  w.innerHTML = `<div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>`;
+  try {
+    const params = buildParams();
+    params.set('page_size', 100);
+    const r = await api(`/purchase/bills/?${params.toString()}`);
+    const bills = r.results || [];
+
+    if (!bills.length) {
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📜</div><h3>কোনো বিল নেই</h3></div>`;
+      loadSummary();
+      return;
+    }
+
+    w.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="padding:10px 20px">বিল</th>
+            <th>ভেন্ডর</th>
+            <th>মেমো</th>
+            <th>মোট</th>
+            <th>ডিসকাউন্ট</th>
+            <th>পেইড</th>
+            <th>বাকি</th>
+            <th>তারিখ</th>
+            <th>স্ট্যাটাস</th>
+            <th>অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bills.map(b => `
+            <tr>
+              <td style="padding:10px 20px; font-family:monospace"><strong>#${b.id}</strong></td>
+              <td>${b.vendor_name}${b.vendor_code ? '<br><small style="color:var(--muted)">' + b.vendor_code + '</small>' : ''}</td>
+              <td>${b.memo_number || '—'}</td>
+              <td style="font-family:monospace">৳${num(b.total)}</td>
+              <td style="font-family:monospace">৳${num(b.discount)}</td>
+              <td style="font-family:monospace;color:var(--accent2)">৳${num(b.paid_amount)}</td>
+              <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
+              <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
+              <td>${statusBadge(b.status)}</td>
+              <td>
+                <button class="btn btn-ghost btn-sm" onclick="deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    loadSummary();
+  } catch (e) {
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+  }
+}
+
+async function deleteBill(id) {
+  const ok = confirm(`বিল #${id} মুছে ফেলতে চান?\n\nএর সাথে যুক্ত স্টক ও ক্যাশ হিসাব রিভার্স হয়ে যাবে। এই কাজটি বাতিল করা যাবে না।`);
+  if (!ok) return;
+  try {
+    await api(`/purchase/bills/${id}/`, 'DELETE');
+    toast('বিল মুছে ফেলা হয়েছে।');
+    loadBills();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
+  }
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+document.addEventListener('DOMContentLoaded', loadBills);
+</script>
+{% endblock %}

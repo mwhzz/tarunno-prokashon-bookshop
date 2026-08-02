@@ -31,7 +31,7 @@ class DailyCash(models.Model):
         ).aggregate(Sum('amount'))['amount__sum'] or 0
         
         total_out = self.transactions.filter(
-            transaction_type__in=['expense', 'cash_out', 'adjustment_out']
+            transaction_type__in=['expense', 'cash_out', 'purchase', 'adjustment_out']
         ).aggregate(Sum('amount'))['amount__sum'] or 0
         
         self.closing_balance = self.opening_balance + total_in - total_out
@@ -44,6 +44,7 @@ class CashTransaction(models.Model):
         ('cash_in', 'Cash In (মালিকের জমা/অন্যান্য)'),
         ('expense', 'Expense (খরচ)'),
         ('cash_out', 'Cash Out (টাকা উত্তোলন)'),
+        ('purchase', 'Purchase Payment (ক্রয় বিল পেমেন্ট)'),
         ('adjustment_in', 'Adjustment (+)'),
         ('adjustment_out', 'Adjustment (-)'),
     ]

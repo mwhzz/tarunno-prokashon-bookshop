@@ -36,10 +36,23 @@ def stock_summary_view(request):
 def add_stock_view(request):
     return render(request, 'add_stock.html')
 
-# External Trade (বাইরের বই ক্রয়-বিক্রয়)
+# External Trade (বাইরের বই ক্রয়-বিক্রয়) — legacy, kept reachable but not linked in nav
 @login_required
 def external_trade_view(request):
     return render(request, 'external_trade.html')
+
+# Purchase (ভেন্ডর থেকে ক্রয়)
+@login_required
+def purchase_entry_view(request):
+    return render(request, 'purchase_entry.html')
+
+@login_required
+def purchase_bills_view(request):
+    return render(request, 'purchase_bills.html')
+
+@login_required
+def vendors_view(request):
+    return render(request, 'vendors.html')
 
 # Sales/Invoices
 @login_required

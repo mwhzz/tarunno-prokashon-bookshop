@@ -69,12 +69,12 @@
 }
 
 .pos-filter-row select {
-  height: 34px;
+  height: 36px;
   padding: 0 10px;
   border-radius: 9px;
   border: 1.5px solid var(--border);
   background: #fff;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--text2);
   font-family: 'Hind Siliguri', sans-serif;
@@ -85,7 +85,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--text2);
   cursor: pointer;
@@ -132,7 +132,7 @@
   line-height: 1;
 }
 
-.psb-info span { font-size: 11px; color: var(--muted); font-weight: 700; }
+.psb-info span { font-size: 12.5px; color: var(--muted); font-weight: 700; }
 
 /* book grid */
 .books-scroll {
@@ -200,7 +200,7 @@
 
 .book-cover {
   width: 100%;
-  height: 130px;
+  height: 108px;
   object-fit: contain;
   border-radius: 8px;
   background: var(--g100);
@@ -208,11 +208,11 @@
 }
 
 .book-title {
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--g900);
   line-height: 1.35;
-  height: 33px;
+  height: 40px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -220,7 +220,7 @@
 }
 
 .book-author {
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--muted);
   font-weight: 600;
 }
@@ -242,34 +242,34 @@
 
 .book-price {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--accent);
 }
 
 .book-price-mrp {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--muted);
   text-decoration: line-through;
 }
 
 .book-disc-badge {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   color: #fff;
   background: var(--danger);
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 99px;
 }
 
 .book-stock-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   background: var(--g100);
   color: var(--g700);
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 99px;
   flex-shrink: 0;
 }
@@ -326,7 +326,7 @@
   color: #fff;
 }
 
-.rh-sub { font-size: 11px; color: rgba(255,255,255,.55); }
+.rh-sub { font-size: 12.5px; color: rgba(255,255,255,.7); }
 
 .clear-btn {
   background: rgba(229,62,62,.2);
@@ -334,7 +334,7 @@
   border-radius: 99px;
   color: #fca5a5;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   padding: 5px 12px;
   transition: background .15s;
@@ -356,7 +356,7 @@
   text-align: center;
   padding: 28px 10px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
 }
 
@@ -384,7 +384,7 @@
 
 .ci-name strong {
   display: block;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--g900);
   white-space: nowrap;
@@ -392,7 +392,9 @@
   text-overflow: ellipsis;
 }
 
-.ci-name small { font-size: 11px; color: var(--muted); }
+.ci-name small { font-size: 12.5px; color: var(--muted); }
+.ci-name .ci-breakdown { display: block; font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 2px; }
+.ci-name .ci-breakdown b { color: var(--g700); font-weight: 700; }
 
 .ci-qty {
   display: flex;
@@ -419,26 +421,26 @@
 .qb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .ci-count-input {
-  width: 36px;
+  width: 42px;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--g900);
   border: 1.5px solid var(--border);
   border-radius: 7px;
-  padding: 3px 2px;
+  padding: 4px 2px;
   background: #fff;
 }
 .ci-count-input:focus { border-color: var(--accent); outline: none; }
 
 .ci-total {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--accent);
   flex-shrink: 0;
-  min-width: 50px;
+  min-width: 54px;
   text-align: right;
 }
 
@@ -466,25 +468,19 @@
 }
 
 .ci-adjust label {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   font-weight: 800;
   margin: 0;
 }
 
 .ci-adjust input {
-  min-height: 28px;
+  min-height: 30px;
   padding: 4px 7px;
   border-radius: 7px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
   text-align: right;
-}
-
-.ci-line-meta {
-  display: block;
-  margin-top: 3px;
-  color: var(--danger) !important;
 }
 
 /* Billing form */
@@ -501,7 +497,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--muted);
   text-transform: uppercase;
@@ -536,7 +532,7 @@
 .bf-field { display: flex; flex-direction: column; gap: 4px; }
 
 .bf-field label {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--text2);
   letter-spacing: .02em;
@@ -544,12 +540,12 @@
 
 .bf-field input,
 .bf-field select {
-  min-height: 38px;
+  min-height: 40px;
   padding: 8px 12px;
   border-radius: 9px;
   border: 1.5px solid var(--border);
   background: var(--surface2);
-  font-size: 13px;
+  font-size: 14.5px;
   font-family: 'Hind Siliguri', sans-serif;
   color: var(--text);
   outline: none;
@@ -565,16 +561,16 @@
 }
 
 .bf-hint {
-  font-size: 10.5px;
+  font-size: 12.5px;
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.55;
   margin: -3px 0 10px;
 }
 
 .phone-check-indicator {
   display: block;
-  min-height: 13px;
-  font-size: 10.5px;
+  min-height: 15px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--accent);
   margin-top: 2px;
@@ -616,8 +612,8 @@
 }
 .wsr-item:last-child { border-bottom: none; }
 .wsr-item:hover { background: var(--g100); }
-.wsr-item strong { display: block; font-size: 13px; color: var(--g900); }
-.wsr-item small  { font-size: 11px; color: var(--muted); }
+.wsr-item strong { display: block; font-size: 14.5px; color: var(--g900); }
+.wsr-item small  { font-size: 12.5px; color: var(--muted); }
 
 /* Summary totals */
 .totals-box {
@@ -632,8 +628,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
-  font-size: 13px;
+  padding: 6px 0;
+  font-size: 14.5px;
   color: var(--text2);
   font-weight: 600;
   border-bottom: 1px solid #eef4f0;
@@ -647,7 +643,7 @@
 }
 
 .total-line.big {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--g900);
   padding: 8px 0;
@@ -660,7 +656,7 @@
 .total-line.change-line span:last-child { color: var(--accent-dark); }
 
 .total-line.grand {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--danger);
 }
@@ -675,7 +671,7 @@
 }
 
 .paid-wrap label {
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--g700);
   margin-bottom: 6px;
@@ -1219,7 +1215,7 @@ function renderPOS(container) {
             <span id="t-due">৳০</span>
           </div>
           <div class="total-line grand">
-            <span>মোট মোট বাকি</span>
+            <span>সর্বমোট বাকি (আগের + নতুন)</span>
             <span id="t-grand-due">৳০</span>
           </div>
         </div>
@@ -1351,7 +1347,7 @@ function filterBooks() {
            src="${b.image || ''}"
            onerror="coverFallback(this)"
            alt="${b.title}">
-      <div class="book-title">${b.title}</div>
+      <div class="book-title" title="${b.title}">${b.title}</div>
       <div class="book-author">${b.author || '—'}</div>
       <div class="book-footer">
         <div class="book-price-block">
@@ -1466,7 +1462,12 @@ function renderCart() {
       <div class="ci-name">
         <strong title="${i.title}">${i.title}</strong>
         <small>৳${money(i.price)} × ${i.qty}</small>
-        <small class="ci-line-meta">ছাড়: ${itemCommissionPct(i).toFixed(1)}% (${globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট'}${i.extraCommission > 0 ? ' + Extra' : ''}) / ৳${money(itemDiscount(i))} • নেট: ৳${money(itemNet(i))}</small>
+        <small class="ci-breakdown">
+          ছাড় <b>${itemCommissionPct(i).toFixed(1)}%</b>
+          (${globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট'}${i.extraCommission > 0 ? ' + অতিরিক্ত' : ''})
+          — ৳${money(itemDiscount(i))} বাদ
+        </small>
+        <small class="ci-breakdown">নেট মূল্য: <b>৳${money(itemNet(i))}</b></small>
         <div class="ci-adjust">
           <label>Extra %</label>
           <input type="number" min="0" max="100" step="0.1" value="${i.extraCommission || 0}" onclick="event.stopPropagation()" oninput="setExtraCommission(${i.bid}, this.value)" onchange="renderCart()">

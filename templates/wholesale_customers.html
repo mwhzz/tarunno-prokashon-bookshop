@@ -72,6 +72,7 @@
 {% block extra_js %}
 <script>
 let wholesaleCustomers = [];
+let editingOriginalDue = null;
 
 // পেজ লোড হলে তালিকা দেখাবে
 document.addEventListener('DOMContentLoaded', fetchCustomers);
@@ -121,6 +122,7 @@ function editCustomer(id) {
     document.getElementById('address').value = c.address || '';
     document.getElementById('commission').value = c.default_commission;
     document.getElementById('opening_due').value = c.total_due;
+    editingOriginalDue = parseFloat(c.total_due) || 0;
 
     document.getElementById('form-title').textContent = `✏️ গ্রাহক সম্পাদনা: ${c.name}`;
     document.getElementById('opening-due-label').textContent = 'বর্তমান মোট বাকি (Total Due)';
@@ -132,6 +134,7 @@ function editCustomer(id) {
 }
 
 function cancelEdit() {
+    editingOriginalDue = null;
     document.getElementById('editing-id').value = '';
     document.getElementById('name').value = '';
     document.getElementById('phone').value = '';
@@ -178,6 +181,15 @@ async function saveCustomer() {
     if (!name || !phone) {
         toast('নাম এবং ফোন নম্বর অবশ্যই দিতে হবে!', 'error');
         return;
+    }
+
+    if (editingId && editingOriginalDue !== null && parseFloat(openingDue || 0) !== editingOriginalDue) {
+        const ok = confirm(
+            `"${name}"-এর মোট বাকি ৳${num(editingOriginalDue)} থেকে সরাসরি ৳${num(openingDue || 0)}-এ বদলে যাবে।\n\n` +
+            `এটা কোনো ইনভয়েস/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বাকির হিসাব হারিয়ে যাবে।\n\n` +
+            `আপনি কি নিশ্চিত?`
+        );
+        if (!ok) return;
     }
 
     const payload = {

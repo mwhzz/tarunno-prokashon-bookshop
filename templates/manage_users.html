@@ -94,10 +94,15 @@ async function fetchUsers() {
     }
 }
 
+let editUserName = '';
+let editUserCurrentRole = '';
+
 function openEditModal(u) {
     document.getElementById('edit-user-id').value = u.id;
     document.getElementById('edit-name').value = u.first_name + ' ' + u.last_name;
     document.getElementById('edit-role').value = u.profile.role;
+    editUserName = (u.first_name + ' ' + u.last_name).trim() || u.username;
+    editUserCurrentRole = u.profile.role;
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
@@ -108,7 +113,13 @@ function closeModal() {
 async function updateUserRole() {
     const id = document.getElementById('edit-user-id').value;
     const role = document.getElementById('edit-role').value;
-    
+
+    if (role === editUserCurrentRole) { closeModal(); return; }
+
+    const roleLabel = { admin: 'Admin (অ্যাডমিন)', manager: 'Manager (ম্যানেজার)', staff: 'Staff (স্টাফ)' }[role] || role;
+    const warn = role === 'admin' ? '\n\n⚠️ Admin হলে পুরো সিস্টেমে সম্পূর্ণ অ্যাক্সেস পাবে (ডেটা রিসেট সহ)।' : '';
+    if (!confirm(`"${editUserName}"-এর পদমর্যাদা বদলে ${roleLabel} করতে চান?${warn}`)) return;
+
     try {
         await api(`/users/manage/${id}/`, 'PATCH', {
             profile: { role: role }

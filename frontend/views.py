@@ -121,7 +121,6 @@ def register_view(request):
         p = request.POST.get('password')
         f = request.POST.get('first_name')
         l = request.POST.get('last_name')
-        r = request.POST.get('role', 'staff')
         
         if User.objects.filter(username=u).exists():
             messages.error(request, 'এই ইউজারনেম অলরেডি ব্যবহার করা হয়েছে!')
@@ -129,7 +128,7 @@ def register_view(request):
             user = User.objects.create_user(username=u, email=e, password=p, first_name=f, last_name=l)
             # প্রোফাইল আপডেট (সিগন্যাল থেকে অলরেডি তৈরি হয়ে আছে, শুধু রোল চেঞ্জ হবে)
             if hasattr(user, 'profile'):
-                user.profile.role = r
+                user.profile.role = 'staff'
                 user.profile.save()
             messages.success(request, 'একাউন্ট তৈরি হয়েছে! এখন লগইন করুন।')
             return redirect('login')

@@ -444,7 +444,7 @@ async function loadDash() {
           <span class="m-icon">💹</span>
           <div class="m-kicker">আজকের লাভ</div>
           <div class="m-value">৳${num(t.realized_profit)}</div>
-          <div class="m-sub">আদায়কৃত অংশ</div>
+          <div class="m-sub">আদায়কৃত অংশ ${t.external_trade_profit ? `(বাইরের বই ৳${num(t.external_trade_profit)} সহ)` : ''}</div>
         </div>
         <div class="metric-card red">
           <span class="m-icon">⚠️</span>

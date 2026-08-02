@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sale, SaleItem, Customer
-from .serializers import SaleSerializer, SaleCreateSerializer, CustomerSerializer
+from .models import Sale, SaleItem, Customer, ExternalTrade
+from .serializers import (
+    SaleSerializer, SaleCreateSerializer, CustomerSerializer,
+    ExternalTradeSerializer, ExternalTradeCreateSerializer,
+)
 from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -63,12 +66,14 @@ class SaleViewSet(viewsets.ModelViewSet):
         # ৩. আজকের কুইক স্ট্যাটস (সবসময় দেখানোর জন্য)
         today = timezone.now().date()
         today_sales = Sale.objects.filter(created_at__date=today)
+        today_external_profit = sum(float(t.profit) for t in ExternalTrade.objects.filter(status='sold', sold_at__date=today))
         today_stats = {
             'total_revenue': float(today_sales.aggregate(total=Sum('total'))['total'] or 0),
             'total_paid': float(today_sales.aggregate(paid=Sum('paid_amount'))['paid'] or 0),
             'total_due': float(today_sales.aggregate(due=Sum('due_amount'))['due'] or 0),
             'total_invoices': today_sales.count(),
-            'realized_profit': sum(float(s.realized_profit) for s in today_sales),
+            'external_trade_profit': today_external_profit,
+            'realized_profit': sum(float(s.realized_profit) for s in today_sales) + today_external_profit,
         }
 
         return Response({
@@ -265,6 +270,153 @@ class SaleViewSet(viewsets.ModelViewSet):
         sale = self.get_object()
         html = render_to_string('invoice_print.html', {'sale': sale}, request=request)
         return HttpResponse(html)
+
+
+class ExternalTradeViewSet(viewsets.ModelViewSet):
+    """বাইরে থেকে কেনা ও সরাসরি বিক্রি করা বই (দোকানের স্টকে ঢোকে না)"""
+    queryset = ExternalTrade.objects.all()
+    http_method_names = ['get', 'post', 'head', 'options']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ExternalTradeCreateSerializer
+        return ExternalTradeSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        trade = serializer.save()
+        return Response(ExternalTradeSerializer(trade).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def complete_sale(self, request, pk=None):
+        """পেন্ডিং থাকা ট্রেডের বিক্রয়মূল্য বসিয়ে বিক্রি সম্পন্ন করা"""
+        from decimal import Decimal, InvalidOperation
+        from accounts.models import DailyCash, CashTransaction
+
+        trade = self.get_object()
+        if trade.status == 'sold':
+            return Response({'error': 'এই ট্রেডের বিক্রয় ইতিমধ্যে সম্পন্ন হয়েছে।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            selling_price = Decimal(str(request.data.get('selling_price')))
+        except (TypeError, InvalidOperation):
+            return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
+        if selling_price < 0:
+            return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        customer_name = request.data.get('customer_name')
+        customer_phone = request.data.get('customer_phone')
+        if customer_name:
+            trade.customer_name = customer_name
+        if customer_phone:
+            trade.customer_phone = customer_phone
+
+        trade.selling_price = selling_price
+        trade.status = 'sold'
+        trade.sold_at = timezone.now()
+        trade.save()
+
+        daily_cash = DailyCash.get_for_today()
+        CashTransaction.objects.create(
+            daily_cash=daily_cash,
+            transaction_type='cash_in',
+            amount=trade.total_sale,
+            note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
+            reference_id=f"ext_{trade.id}",
+        )
+
+        return Response(ExternalTradeSerializer(trade).data)
+
+    @action(detail=True, methods=['post'])
+    def add_to_stock(self, request, pk=None):
+        """
+        এই ট্রেডের বইটি স্থায়ীভাবে নিজের Book ক্যাটালগ ও স্টকে যোগ করা।
+        ট্রেড রেকর্ডটি (ক্যাশ হিসাবসহ) আলাদা ইতিহাস হিসেবে থেকেই যায় —
+        শুধু ভবিষ্যতে এই বইটি সাধারণ POS/স্টক দিয়েও বিক্রি করা যাবে।
+        """
+        from decimal import Decimal, InvalidOperation
+        from books.models import Book
+        from stock.models import StockSummary, StockEntry
+
+        trade = self.get_object()
+        if trade.converted_book_id:
+            return Response({'error': 'এই বইটি ইতিমধ্যে স্টকে যোগ করা হয়েছে।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        location = request.data.get('location', 'shop')
+        if location not in ('shop', 'godown'):
+            return Response({'error': 'সঠিক লোকেশন দিন (shop/godown)।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            selling_price = Decimal(str(request.data.get('selling_price') or trade.selling_price or trade.purchase_price))
+        except InvalidOperation:
+            return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        book = Book.objects.create(
+            title=trade.book_title,
+            author=trade.author,
+            purchase_price=trade.purchase_price,
+            selling_price=selling_price,
+            mrp=selling_price,
+            notes=f"বাইরের ক্রয়-বিক্রয় থেকে যোগ করা হয়েছে (External Trade #{trade.id})",
+        )
+
+        # যতগুলো কপি এখনো বিক্রি হয়নি (pending), শুধু ততগুলোই সত্যিকারের স্টকে যোগ হবে।
+        add_qty = trade.quantity if trade.status == 'pending' else 0
+        if add_qty > 0:
+            StockEntry.objects.create(
+                book=book,
+                quantity=add_qty,
+                source='purchase',
+                location=location,
+                purchase_price=trade.purchase_price,
+                supplier_name=trade.note[:200] if trade.note else '',
+                note=f"বাইরের ক্রয় থেকে স্টকে যোগ (External Trade #{trade.id})",
+            )
+            StockSummary.update_stock(book, add_qty, location=location)
+
+        trade.converted_book = book
+        trade.save(update_fields=['converted_book'])
+
+        return Response({
+            'book_id': book.id,
+            'book_title': book.title,
+            'stock_added': add_qty,
+            'trade': ExternalTradeSerializer(trade).data,
+        })
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        from django.db.models import F, Q, DecimalField
+        from django.db.models.functions import Coalesce
+
+        qs = self.get_queryset()
+        total_purchase = qs.aggregate(
+            total=Sum(F('purchase_price') * F('quantity'), output_field=DecimalField())
+        )['total'] or 0
+        total_sale = qs.filter(status='sold').aggregate(
+            total=Sum(F('selling_price') * F('quantity'), output_field=DecimalField())
+        )['total'] or 0
+        pending = qs.filter(status='pending')
+        pending_amount = pending.aggregate(
+            total=Sum(F('purchase_price') * F('quantity'), output_field=DecimalField())
+        )['total'] or 0
+
+        return Response({
+            'total_trades': qs.count(),
+            'pending_count': pending.count(),
+            'pending_amount': pending_amount,
+            'total_purchase': total_purchase,
+            'total_sale': total_sale,
+            'total_profit': total_sale - total_purchase,
+        })
 
 
 class CustomerViewSet(viewsets.ModelViewSet):

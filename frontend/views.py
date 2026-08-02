@@ -36,6 +36,11 @@ def stock_summary_view(request):
 def add_stock_view(request):
     return render(request, 'add_stock.html')
 
+# External Trade (বাইরের বই ক্রয়-বিক্রয়)
+@login_required
+def external_trade_view(request):
+    return render(request, 'external_trade.html')
+
 # Sales/Invoices
 @login_required
 def invoices_list_view(request):

@@ -1,7 +1,7 @@
 from django.db.models import Sum, Count, F, ExpressionWrapper, DecimalField
 from django.utils import timezone
 from datetime import timedelta, date
-from .models import Sale, SaleItem, Customer
+from .models import Sale, SaleItem, Customer, ExternalTrade
 from stock.models import StockSummary
 from expenses.models import Expense
 
@@ -45,7 +45,10 @@ def sales_report(date_from, date_to):
         realized_profit += float(s.realized_profit)
 
     # নিট লাভ (Net Profit) = আদায়কৃত লাভ - মোট খরচ
-    net_profit = float(realized_profit) - float(total_expenses)
+    external_trades_sold = ExternalTrade.objects.filter(status='sold', sold_at__date__gte=date_from, sold_at__date__lte=date_to)
+    external_trade_profit = external_trades_sold.aggregate(total=Sum(ExpressionWrapper((F('selling_price') - F('purchase_price')) * F('quantity'), output_field=DecimalField())))['total'] or 0
+    total_profit = float(gross_profit) + float(external_trade_profit)
+    net_profit = float(realized_profit) + float(external_trade_profit) - float(total_expenses)
 
     # দৈনিক breakdown
     daily = []
@@ -95,6 +98,8 @@ def sales_report(date_from, date_to):
             'total_due': float(total_due),
             'total_expenses': float(total_expenses),
             'gross_profit': float(gross_profit),
+            'external_trade_profit': float(external_trade_profit),
+            'total_profit': float(total_profit),
             'realized_profit': float(realized_profit),
             'net_profit': float(net_profit),
             'total_receivable': float(total_receivable),

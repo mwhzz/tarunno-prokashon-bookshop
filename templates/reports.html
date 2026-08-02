@@ -536,8 +536,8 @@ function renderReport(el, d, s, st) {
       <div class="rh-card green">
         <span class="rhc-icon">💹</span>
         <div class="rhc-label">মোট লাভ</div>
-        <div class="rhc-val">৳${num(s.gross_profit)}</div>
-        <div class="rhc-sub">মার্জিন ${margin}%</div>
+        <div class="rhc-val">৳${num(s.total_profit != null ? s.total_profit : s.gross_profit)}</div>
+        <div class="rhc-sub">মার্জিন ${margin}% ${s.external_trade_profit ? `• বাইরের বই থেকে ৳${num(s.external_trade_profit)}` : ''}</div>
       </div>
       <div class="rh-card blue">
         <span class="rhc-icon">💵</span>

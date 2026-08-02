@@ -157,6 +157,58 @@ class SaleReturn(models.Model):
         return f"Return: {self.book.title} x {self.quantity} for Invoice #{self.sale.invoice_number}"
 
 
+class ExternalTrade(models.Model):
+    """
+    বাইরে থেকে ক্যাশ দিয়ে বই কিনে সরাসরি গ্রাহকের কাছে বিক্রি করার হিসাব।
+    এই বইগুলো নিজের দোকানের স্টক/ইনভেন্টরিতে (Book/StockSummary) যোগ হয় না —
+    শুধু ক্যাশ লেজারে টাকার আসা-যাওয়া এবং লাভ-ক্ষতির হিসাব রাখা হয়।
+    """
+    STATUS_CHOICES = [
+        ('pending', 'বিক্রয় বাকি'),
+        ('sold', 'বিক্রি সম্পন্ন'),
+    ]
+
+    book_title = models.CharField(max_length=500)
+    author = models.CharField(max_length=300, blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="প্রতি কপি ক্রয়মূল্য (নগদ)")
+    selling_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="প্রতি কপি বিক্রয়মূল্য")
+
+    customer_name = models.CharField(max_length=200, blank=True)
+    customer_phone = models.CharField(max_length=20, blank=True)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sold_at = models.DateTimeField(null=True, blank=True)
+
+    # যদি পরে সিদ্ধান্ত নেওয়া হয় এই বইটি স্থায়ীভাবে নিজের ক্যাটালগ/স্টকে রাখা হবে —
+    # এই ট্রেড রেকর্ডটি তখনও আলাদা ইতিহাস হিসেবে থেকে যায়, শুধু কোন Book হিসেবে
+    # যোগ হলো তার লিঙ্ক রাখা হয় যাতে দুইবার যোগ না হয়।
+    converted_book = models.ForeignKey(
+        'books.Book', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='external_trade_origins'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.book_title} x{self.quantity} ({self.get_status_display()})"
+
+    @property
+    def total_purchase(self):
+        return self.purchase_price * self.quantity
+
+    @property
+    def total_sale(self):
+        return self.selling_price * self.quantity
+
+    @property
+    def profit(self):
+        return self.total_sale - self.total_purchase
+
+
 class SaleItem(models.Model):
     """একটি ইনভয়েসের প্রতিটি বই"""
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')

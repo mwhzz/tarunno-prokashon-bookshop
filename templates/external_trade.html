@@ -1,0 +1,712 @@
+{% extends "base.html" %}
+{% block page_title %}বাইরের বই ক্রয়-বিক্রয়{% endblock %}
+
+{% block extra_css %}
+<style>
+.ext-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── TOP SUMMARY ─── */
+.ext-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.es-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 110px; position: relative; overflow: hidden;
+  transition: box-shadow .2s, transform .18s;
+}
+
+.es-card:hover { box-shadow: 0 6px 22px rgba(13,51,38,.09); transform: translateY(-2px); }
+
+.es-card.profit {
+  background: linear-gradient(140deg, var(--g800), var(--g900));
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(27,122,85,.25);
+}
+
+.es-card.profit::after {
+  content:''; position:absolute; top:-25px; right:-25px;
+  width:90px; height:90px; border-radius:50%;
+  background: rgba(255,255,255,.08);
+}
+
+.es-card::before {
+  content:''; position:absolute; left:0; top:18%; bottom:18%;
+  width:3px; border-radius:99px; background: var(--warning);
+}
+
+.es-card.profit::before { display:none; }
+
+.es-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.es-card.profit .es-label { color: rgba(255,255,255,.55); }
+
+.es-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 700; color: var(--warning);
+  margin: 6px 0 4px; line-height: 1;
+}
+
+.es-card.profit .es-val { color: #fff; font-size: 28px; }
+
+.es-sub { font-size:12px; color:var(--muted); font-weight:600; }
+.es-card.profit .es-sub { color: rgba(255,255,255,.5); }
+
+/* ─── SHELL ─── */
+.ext-shell {
+  display: grid;
+  grid-template-columns: 340px minmax(0,1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* ─── ENTRY FORM ─── */
+.entry-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(13,51,38,.05);
+  position: sticky; top: 16px;
+}
+
+.ec-head {
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  padding: 18px 20px;
+}
+
+.ec-head-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:800; color:#fff; }
+.ec-head-sub   { font-size:12px; color:rgba(255,255,255,.55); margin-top:4px; }
+
+.ec-body { padding: 20px; }
+
+.ec-field { margin-bottom:14px; }
+
+.ec-field label {
+  display:block; font-size:12px; font-weight:800;
+  color:var(--text2); margin-bottom:6px;
+}
+
+.ec-input {
+  width:100%; min-height:46px;
+  padding: 10px 14px;
+  border: 2px solid var(--border); border-radius:10px;
+  background: var(--surface2);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:14px; font-weight:500; color:var(--text);
+  outline:none; transition:all .18s;
+}
+
+.ec-input:focus {
+  border-color: var(--accent); background:#fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+}
+
+.ec-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+.amount-wrap { position: relative; }
+
+.amount-sym {
+  position: absolute; left:16px; top:50%;
+  transform: translateY(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:20px; font-weight:700; color:var(--muted);
+  pointer-events:none;
+}
+
+.amount-inp {
+  width:100%; height:52px;
+  padding: 0 14px 0 40px;
+  border: 2px solid var(--border); border-radius:12px;
+  background: var(--surface2);
+  font-family:'JetBrains Mono',monospace;
+  font-size:22px; font-weight:700; color:var(--g900);
+  outline:none; transition:all .18s;
+}
+
+.amount-inp:focus {
+  border-color: var(--accent); background:#fff;
+  box-shadow: 0 0 0 4px rgba(27,122,85,.1);
+  color: var(--accent);
+}
+
+.ec-field textarea {
+  width:100%; min-height:64px;
+  padding:10px 14px; border:2px solid var(--border);
+  border-radius:10px; background:var(--surface2);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:14px; color:var(--text); outline:none; resize:vertical;
+  transition:all .18s;
+}
+
+.ec-field textarea:focus {
+  border-color:var(--accent); background:#fff;
+  box-shadow:0 0 0 4px rgba(27,122,85,.1);
+}
+
+/* sold toggle */
+.sold-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sold-btn {
+  padding: 10px 8px; border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--text2); cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+
+.sold-btn.active { border-color: var(--accent); background: var(--g100); color: var(--g700); }
+
+.sold-extra { display: none; }
+.sold-extra.show { display: block; }
+
+.save-ext-btn {
+  width:100%; min-height:50px;
+  border-radius:12px; background:var(--accent);
+  color:#fff; border:none; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:16px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 6px 20px rgba(27,122,85,.28);
+  transition:all .18s;
+}
+
+.save-ext-btn:hover { background:var(--accent-dark); transform:translateY(-1px); box-shadow:0 8px 28px rgba(27,122,85,.38); }
+.save-ext-btn:disabled { background:var(--muted); box-shadow:none; cursor:not-allowed; transform:none; }
+
+/* ─── RECORDS LIST ─── */
+.records-panel {
+  background:#fff; border:1px solid var(--border);
+  border-radius:18px; overflow:hidden;
+  box-shadow:0 2px 12px rgba(13,51,38,.05);
+}
+
+.rp-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px; border-bottom:1px solid var(--border); gap:12px;
+}
+
+.rp-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:800; color:var(--g900); }
+
+.rp-filters { display:flex; gap:6px; }
+.rp-filter {
+  padding: 6px 12px; border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-size: 12px; font-weight: 700;
+  color: var(--text2); cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.rp-filter.active { border-color: var(--accent); background: var(--g100); color: var(--g700); }
+
+/* trade row */
+.trade-row {
+  padding:14px 20px; border-bottom:1px solid #f0f7f3;
+  transition:background .12s;
+}
+.trade-row:last-child { border-bottom:none; }
+.trade-row:hover { background: var(--surface2); }
+
+.tr-main { display:flex; align-items:center; gap:12px; }
+
+.tr-icon {
+  width:38px; height:38px; border-radius:10px;
+  background: var(--g100); display:grid; place-items:center;
+  font-size:17px; flex-shrink:0;
+}
+
+.tr-info { flex:1; min-width:0; }
+.tr-info strong { display:block; font-size:13px; font-weight:800; color:var(--g900); }
+.tr-info small  { font-size:11px; color:var(--muted); }
+
+.tr-nums { text-align:right; flex-shrink:0; }
+.tr-nums .buy  { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--danger); font-weight:700; }
+.tr-nums .sell { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--g700); font-weight:700; }
+.tr-nums .profit { font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--accent); font-weight:800; }
+
+.tr-badge {
+  font-size: 10px; font-weight: 800;
+  padding: 3px 10px; border-radius: 99px;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.tr-badge.pending { background: #fff7e6; color: var(--warning); }
+.tr-badge.sold    { background: var(--g100); color: var(--g700); }
+
+.tr-complete-btn {
+  flex-shrink:0;
+  padding: 8px 14px; border-radius: 99px;
+  border: 1.5px solid var(--accent);
+  background: #fff; color: var(--accent);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  transition: all .15s;
+}
+.tr-complete-btn:hover { background: var(--accent); color:#fff; }
+
+.tr-stock-btn {
+  flex-shrink:0;
+  padding: 8px 14px; border-radius: 99px;
+  border: 1.5px solid var(--info);
+  background: #fff; color: var(--info);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  transition: all .15s;
+}
+.tr-stock-btn:hover { background: var(--info); color:#fff; }
+
+.tr-stock-badge {
+  font-size: 11px; font-weight: 800;
+  color: var(--info); flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.tr-stock-form {
+  display: none;
+  margin-top: 12px; padding: 14px;
+  background: #eef5ff; border-radius: 12px;
+  gap: 10px; align-items: center;
+}
+.tr-stock-form.show { display: flex; flex-wrap: wrap; }
+.tr-stock-form select, .tr-stock-form input {
+  height: 40px; padding: 0 12px; border-radius: 8px;
+  border: 2px solid var(--border); background:#fff;
+  font-family:'Hind Siliguri',sans-serif; font-size:13px;
+  outline:none;
+}
+.tr-stock-form input { font-family:'JetBrains Mono',monospace; font-size:15px; width: 130px; }
+.tr-stock-form select:focus, .tr-stock-form input:focus { border-color: var(--info); }
+.tr-stock-form button {
+  height: 40px; padding: 0 16px; border-radius: 8px;
+  border:none; background: var(--info); color:#fff;
+  font-family:'Hind Siliguri',sans-serif; font-size:13px; font-weight:800; cursor:pointer;
+}
+.tr-stock-form button:hover { background: #1d4ed8; }
+.tr-stock-form .cancel-link {
+  background:none; color:var(--muted); font-weight:700; cursor:pointer;
+  border:none; font-size:12px; text-decoration:underline;
+}
+
+.tr-complete-form {
+  display: none;
+  margin-top: 12px; padding: 14px;
+  background: var(--surface2); border-radius: 12px;
+  gap: 10px; align-items: center;
+}
+.tr-complete-form.show { display: flex; flex-wrap: wrap; }
+.tr-complete-form input {
+  height: 40px; padding: 0 12px; border-radius: 8px;
+  border: 2px solid var(--border); background:#fff;
+  font-family:'JetBrains Mono',monospace; font-size:15px;
+  width: 140px; outline:none;
+}
+.tr-complete-form input:focus { border-color: var(--accent); }
+.tr-complete-form button {
+  height: 40px; padding: 0 16px; border-radius: 8px;
+  border:none; background: var(--accent); color:#fff;
+  font-family:'Hind Siliguri',sans-serif; font-size:13px; font-weight:800; cursor:pointer;
+}
+.tr-complete-form button:hover { background: var(--accent-dark); }
+.tr-complete-form .cancel-link {
+  background:none; color:var(--muted); font-weight:700; cursor:pointer;
+  border:none; font-size:12px; text-decoration:underline;
+}
+
+/* ─── Responsive ─── */
+@media (max-width:900px) {
+  .ext-shell { grid-template-columns:1fr; }
+  .entry-card { position:static; }
+  .ext-summary { grid-template-columns:1fr 1fr; }
+}
+
+@media (max-width:560px) {
+  .ext-summary { grid-template-columns:1fr; }
+  .ec-row { grid-template-columns:1fr; }
+  .tr-main { flex-wrap: wrap; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ext-page">
+
+  <!-- ─── SUMMARY ─── -->
+  <div class="ext-summary" id="ext-summary">
+    <div class="es-card profit">
+      <div class="es-label">মোট লাভ (বিক্রিত)</div>
+      <div class="es-val" id="es-profit">৳০</div>
+      <div class="es-sub" id="es-profit-sub">০টি বিক্রি সম্পন্ন</div>
+    </div>
+    <div class="es-card">
+      <div class="es-label">পেন্ডিং ক্যাশ (এখনো বিক্রি হয়নি)</div>
+      <div class="es-val" id="es-pending">৳০</div>
+      <div class="es-sub" id="es-pending-sub">০টি বই বিক্রির অপেক্ষায়</div>
+    </div>
+    <div class="es-card">
+      <div class="es-label">মোট ট্রেড</div>
+      <div class="es-val" id="es-total-count" style="color:var(--text)">০</div>
+      <div class="es-sub">সব সময়ের</div>
+    </div>
+  </div>
+
+  <!-- ─── SHELL ─── -->
+  <div class="ext-shell">
+
+    <!-- FORM -->
+    <div class="entry-card">
+      <div class="ec-head">
+        <div class="ec-head-title">🛍️ বাইরের বই ক্রয়</div>
+        <div class="ec-head-sub">ক্যাশ দিয়ে বাইরে থেকে কেনা বই — নিজের স্টকে যোগ হবে না</div>
+      </div>
+      <div class="ec-body">
+
+        <div class="ec-field">
+          <label>বইয়ের নাম <span style="color:var(--danger)">*</span></label>
+          <input class="ec-input" id="e-title" placeholder="যেমন: মেঘনাদবধ কাব্য">
+        </div>
+
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>লেখক</label>
+            <input class="ec-input" id="e-author" placeholder="ঐচ্ছিক">
+          </div>
+          <div class="ec-field">
+            <label>পরিমাণ (কপি)</label>
+            <input class="ec-input" id="e-qty" type="number" min="1" value="1">
+          </div>
+        </div>
+
+        <div class="ec-field">
+          <label>ক্রয়মূল্য / কপি (নগদ) <span style="color:var(--danger)">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-sym">৳</span>
+            <input class="amount-inp" id="e-purchase-price" type="number" min="0" placeholder="০">
+          </div>
+        </div>
+
+        <div class="ec-field">
+          <label>বিক্রয় অবস্থা</label>
+          <div class="sold-toggle">
+            <div class="sold-btn active" id="btn-pending" onclick="setSoldMode(false)">⏳ এখনো বিক্রি হয়নি</div>
+            <div class="sold-btn" id="btn-sold" onclick="setSoldMode(true)">✅ বিক্রি হয়ে গেছে</div>
+          </div>
+        </div>
+
+        <div class="sold-extra" id="sold-extra">
+          <div class="ec-field">
+            <label>বিক্রয়মূল্য / কপি</label>
+            <div class="amount-wrap">
+              <span class="amount-sym">৳</span>
+              <input class="amount-inp" id="e-selling-price" type="number" min="0" placeholder="০">
+            </div>
+          </div>
+          <div class="ec-row">
+            <div class="ec-field">
+              <label>গ্রাহকের নাম</label>
+              <input class="ec-input" id="e-cust-name" placeholder="ঐচ্ছিক">
+            </div>
+            <div class="ec-field">
+              <label>গ্রাহকের ফোন</label>
+              <input class="ec-input" id="e-cust-phone" placeholder="ঐচ্ছিক">
+            </div>
+          </div>
+        </div>
+
+        <div class="ec-field">
+          <label>নোট</label>
+          <textarea id="e-note" placeholder="কার থেকে কিনলেন, কোন উপলক্ষ্যে ইত্যাদি..."></textarea>
+        </div>
+
+        <button class="save-ext-btn" id="save-ext-btn" onclick="addTrade()">
+          💾 রেকর্ড করুন
+        </button>
+
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="records-panel">
+      <div class="rp-header">
+        <div class="rp-title">📜 ক্রয়-বিক্রয়ের ইতিহাস</div>
+        <div class="rp-filters">
+          <div class="rp-filter active" id="f-all" onclick="setFilter('')">সব</div>
+          <div class="rp-filter" id="f-pending" onclick="setFilter('pending')">বিক্রয় বাকি</div>
+          <div class="rp-filter" id="f-sold" onclick="setFilter('sold')">বিক্রি সম্পন্ন</div>
+        </div>
+      </div>
+      <div id="trade-list">
+        <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let soldMode = false;
+let currentFilter = '';
+
+/* ══════════════════════════
+   INIT
+══════════════════════════ */
+async function init() {
+  await Promise.all([loadSummary(), loadTrades()]);
+}
+
+/* ══════════════════════════
+   SOLD TOGGLE
+══════════════════════════ */
+function setSoldMode(v) {
+  soldMode = v;
+  document.getElementById('btn-pending').classList.toggle('active', !v);
+  document.getElementById('btn-sold').classList.toggle('active', v);
+  document.getElementById('sold-extra').classList.toggle('show', v);
+}
+
+/* ══════════════════════════
+   FILTER
+══════════════════════════ */
+function setFilter(f) {
+  currentFilter = f;
+  ['all','pending','sold'].forEach(k => {
+    document.getElementById(`f-${k}`).classList.toggle('active', (k==='all' ? '' : k) === f);
+  });
+  loadTrades();
+}
+
+/* ══════════════════════════
+   SUMMARY
+══════════════════════════ */
+async function loadSummary() {
+  try {
+    const s = await api('/sales/external-trades/summary/');
+    setText('es-profit',     `৳${num(s.total_profit)}`);
+    setText('es-profit-sub', `${s.total_trades - s.pending_count}টি বিক্রি সম্পন্ন`);
+    setText('es-pending',     `৳${num(s.pending_amount)}`);
+    setText('es-pending-sub', `${s.pending_count}টি বই বিক্রির অপেক্ষায়`);
+    setText('es-total-count', `${s.total_trades}`);
+  } catch(e) {
+    toast('সামারি লোড করা যায়নি।', 'error');
+  }
+}
+
+/* ══════════════════════════
+   LOAD TRADES
+══════════════════════════ */
+async function loadTrades() {
+  const list = document.getElementById('trade-list');
+  try {
+    const q = currentFilter ? `?status=${currentFilter}` : '';
+    const data = await api(`/sales/external-trades/${q}`);
+    const trades = data.results || [];
+
+    if (!trades.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:50px 20px;">
+          <div class="empty-icon">🛍️</div>
+          <h3>কোনো রেকর্ড নেই</h3>
+          <p>বাম দিকের ফর্ম থেকে বাইরের বই ক্রয়ের রেকর্ড যোগ করুন।</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = trades.map(t => {
+      const dt = new Date(t.created_at).toLocaleString('bn-BD', {
+        day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+      const pending = t.status === 'pending';
+      const converted = !!t.converted_book;
+      return `
+        <div class="trade-row">
+          <div class="tr-main">
+            <div class="tr-icon">📗</div>
+            <div class="tr-info">
+              <strong>${t.book_title}${t.author ? ' — '+t.author : ''}</strong>
+              <small>${t.quantity} কপি &nbsp;•&nbsp; ${dt}${t.customer_name ? ' • '+t.customer_name : ''}</small>
+            </div>
+            <div class="tr-badge ${pending ? 'pending' : 'sold'}">${t.status_display}</div>
+            <div class="tr-nums">
+              <div class="buy">ক্রয়: ৳${num(t.total_purchase)}</div>
+              ${pending ? '' : `<div class="sell">বিক্রয়: ৳${num(t.total_sale)}</div><div class="profit">${t.profit >= 0 ? '+' : ''}৳${num(t.profit)}</div>`}
+            </div>
+            ${pending ? `<button class="tr-complete-btn" onclick="toggleCompleteForm(${t.id})">বিক্রি সম্পন্ন করুন</button>` : ''}
+            ${converted
+              ? `<div class="tr-stock-badge">🏪 স্টকে যোগ করা ✓${t.converted_book_title ? ' ('+t.converted_book_title+')' : ''}</div>`
+              : `<button class="tr-stock-btn" onclick="toggleStockForm(${t.id})">স্থায়ীভাবে স্টকে যোগ করুন</button>`}
+          </div>
+          ${pending ? `
+          <div class="tr-complete-form" id="cf-${t.id}">
+            <input type="number" min="0" id="cf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳">
+            <input type="text" id="cf-cname-${t.id}" placeholder="গ্রাহকের নাম (ঐচ্ছিক)">
+            <input type="text" id="cf-cphone-${t.id}" placeholder="ফোন (ঐচ্ছিক)">
+            <button onclick="completeSale(${t.id})">✅ সম্পন্ন করুন</button>
+            <button class="cancel-link" onclick="toggleCompleteForm(${t.id})">বাতিল</button>
+          </div>` : ''}
+          ${!converted ? `
+          <div class="tr-stock-form" id="sf-${t.id}">
+            <select id="sf-loc-${t.id}">
+              <option value="shop">🏪 দোকান</option>
+              <option value="godown">🏭 গোডাউন</option>
+            </select>
+            <input type="number" min="0" id="sf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳" value="${t.selling_price && Number(t.selling_price) > 0 ? t.selling_price : ''}">
+            <button onclick="addToStock(${t.id})">🏪 স্টকে যোগ করুন</button>
+            <button class="cancel-link" onclick="toggleStockForm(${t.id})">বাতিল</button>
+            <p style="width:100%; font-size:11px; color:var(--muted); margin:2px 0 0;">
+              ${pending ? 'এতে "'+t.book_title+'" আপনার সাধারণ Book ক্যাটালগে যোগ হবে এবং '+t.quantity+' কপি নির্বাচিত জায়গায় স্টকে যোগ হবে।' : 'এই বই আগেই বিক্রি হয়ে গেছে, তাই ০ কপি স্টকে যোগ হবে — শুধু ভবিষ্যতে সহজে অর্ডার করার জন্য Book ক্যাটালগে যোগ হবে।'}
+            </p>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px;">
+        <div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3>
+      </div>`;
+    toast('তালিকা লোড করা যায়নি।', 'error');
+  }
+}
+
+function toggleCompleteForm(id) {
+  document.getElementById(`cf-${id}`)?.classList.toggle('show');
+}
+
+/* ══════════════════════════
+   ADD TRADE
+══════════════════════════ */
+async function addTrade() {
+  const title = document.getElementById('e-title').value.trim();
+  if (!title) { shakeEl('e-title'); toast('বইয়ের নাম লিখুন!', 'error'); return; }
+
+  const purchasePrice = document.getElementById('e-purchase-price').value;
+  if (!purchasePrice || Number(purchasePrice) <= 0) {
+    shakeEl('e-purchase-price');
+    toast('ক্রয়মূল্য লিখুন!', 'error');
+    return;
+  }
+
+  const qty = parseInt(document.getElementById('e-qty').value) || 1;
+
+  const payload = {
+    book_title: title,
+    author: document.getElementById('e-author').value,
+    quantity: qty,
+    purchase_price: purchasePrice,
+    already_sold: soldMode,
+    note: document.getElementById('e-note').value,
+  };
+
+  if (soldMode) {
+    const sp = document.getElementById('e-selling-price').value;
+    if (!sp || Number(sp) <= 0) {
+      shakeEl('e-selling-price');
+      toast('বিক্রয়মূল্য লিখুন!', 'error');
+      return;
+    }
+    payload.selling_price = sp;
+    payload.customer_name = document.getElementById('e-cust-name').value;
+    payload.customer_phone = document.getElementById('e-cust-phone').value;
+  }
+
+  const btn = document.getElementById('save-ext-btn');
+  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+
+  try {
+    await api('/sales/external-trades/', 'POST', payload);
+    toast('রেকর্ড সেভ হয়েছে ✓');
+    document.getElementById('e-title').value = '';
+    document.getElementById('e-author').value = '';
+    document.getElementById('e-qty').value = '1';
+    document.getElementById('e-purchase-price').value = '';
+    document.getElementById('e-selling-price').value = '';
+    document.getElementById('e-cust-name').value = '';
+    document.getElementById('e-cust-phone').value = '';
+    document.getElementById('e-note').value = '';
+    setSoldMode(false);
+    loadSummary();
+    loadTrades();
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('সেভ করা যায়নি: ' + msg, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '💾 রেকর্ড করুন';
+  }
+}
+
+/* ══════════════════════════
+   COMPLETE SALE
+══════════════════════════ */
+async function completeSale(id) {
+  const price = document.getElementById(`cf-price-${id}`).value;
+  if (!price || Number(price) <= 0) {
+    shakeEl(`cf-price-${id}`);
+    toast('বিক্রয়মূল্য লিখুন!', 'error');
+    return;
+  }
+  try {
+    await api(`/sales/external-trades/${id}/complete_sale/`, 'POST', {
+      selling_price: price,
+      customer_name: document.getElementById(`cf-cname-${id}`).value,
+      customer_phone: document.getElementById(`cf-cphone-${id}`).value,
+    });
+    toast('বিক্রি সম্পন্ন হয়েছে ✓');
+    loadSummary();
+    loadTrades();
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('সম্পন্ন করা যায়নি: ' + msg, 'error');
+  }
+}
+
+/* ══════════════════════════
+   ADD TO STOCK (স্থায়ীভাবে)
+══════════════════════════ */
+function toggleStockForm(id) {
+  document.getElementById(`sf-${id}`)?.classList.toggle('show');
+}
+
+async function addToStock(id) {
+  const location = document.getElementById(`sf-loc-${id}`).value;
+  const price = document.getElementById(`sf-price-${id}`).value;
+  try {
+    const res = await api(`/sales/external-trades/${id}/add_to_stock/`, 'POST', {
+      location,
+      selling_price: price || undefined,
+    });
+    toast(`"${res.book_title}" স্টকে যোগ হয়েছে ✓ (${res.stock_added} কপি)`);
+    loadTrades();
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('স্টকে যোগ করা যায়নি: ' + msg, 'error');
+  }
+}
+
+function setText(id, v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+
+function shakeEl(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor='var(--danger)'; el.style.animation='none';
+  void el.offsetWidth; el.style.animation='shake .3s ease'; el.focus();
+  setTimeout(()=>{ el.style.borderColor=''; el.style.animation=''; },1200);
+}
+
+const sKF = document.createElement('style');
+sKF.textContent=`@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}`;
+document.head.appendChild(sKF);
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

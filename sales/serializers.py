@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.db import transaction
+from django.utils import timezone
 from stock.models import StockSummary, StockEntry
-from .models import Sale, SaleItem, Customer
+from .models import Sale, SaleItem, Customer, ExternalTrade
 from books.models import Book
 
 
@@ -167,3 +168,74 @@ class SaleCreateSerializer(serializers.Serializer):
         sale.save(update_fields=['total_cost'])
 
         return sale
+
+
+class ExternalTradeSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    total_purchase = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    total_sale = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    converted_book_title = serializers.CharField(source='converted_book.title', read_only=True, default=None)
+
+    class Meta:
+        model = ExternalTrade
+        fields = [
+            'id', 'book_title', 'author', 'quantity',
+            'purchase_price', 'selling_price',
+            'customer_name', 'customer_phone',
+            'status', 'status_display', 'note',
+            'total_purchase', 'total_sale', 'profit',
+            'converted_book', 'converted_book_title',
+            'created_at', 'sold_at',
+        ]
+        read_only_fields = ['status', 'sold_at', 'converted_book']
+
+
+class ExternalTradeCreateSerializer(serializers.Serializer):
+    """
+    বাইরে থেকে বই কিনে সরাসরি বিক্রির রেকর্ড তৈরির জন্য।
+    already_sold=False হলে শুধু ক্রয়ের ক্যাশ-আউট রেকর্ড হবে (বিক্রয় পরে সম্পন্ন করা যাবে)।
+    """
+    book_title = serializers.CharField(max_length=500)
+    author = serializers.CharField(max_length=300, required=False, allow_blank=True, default='')
+    quantity = serializers.IntegerField(min_value=1, default=1)
+    purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    already_sold = serializers.BooleanField(default=False)
+    selling_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0, min_value=0)
+    customer_name = serializers.CharField(max_length=200, required=False, allow_blank=True, default='')
+    customer_phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    note = serializers.CharField(required=False, allow_blank=True, default='')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        from accounts.models import DailyCash, CashTransaction
+
+        already_sold = validated_data.pop('already_sold', False)
+        submitted_selling_price = validated_data.pop('selling_price', 0)
+        selling_price = submitted_selling_price if already_sold else 0
+
+        trade = ExternalTrade.objects.create(
+            status='sold' if already_sold else 'pending',
+            selling_price=selling_price,
+            sold_at=timezone.now() if already_sold else None,
+            **validated_data
+        )
+
+        daily_cash = DailyCash.get_for_today()
+        CashTransaction.objects.create(
+            daily_cash=daily_cash,
+            transaction_type='cash_out',
+            amount=trade.total_purchase,
+            note=f"বাইরের বই ক্রয়: {trade.book_title} x{trade.quantity}",
+            reference_id=f"ext_{trade.id}",
+        )
+        if already_sold and trade.total_sale > 0:
+            CashTransaction.objects.create(
+                daily_cash=daily_cash,
+                transaction_type='cash_in',
+                amount=trade.total_sale,
+                note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
+                reference_id=f"ext_{trade.id}",
+            )
+
+        return trade

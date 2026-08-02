@@ -21,7 +21,7 @@
 .books-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   overflow: hidden;
 }
 
@@ -32,9 +32,9 @@
 
 .pos-search input {
   width: 100%;
-  height: 52px;
-  padding: 0 18px 0 50px;
-  border-radius: 14px;
+  height: 44px;
+  padding: 0 18px 0 46px;
+  border-radius: 12px;
   border: 2px solid var(--border);
   background: #fff;
   font-size: 16px;
@@ -69,6 +69,9 @@
 }
 
 .pos-filter-row select {
+  width: auto;
+  flex: 0 1 150px;
+  min-height: 36px;
   height: 36px;
   padding: 0 10px;
   border-radius: 9px;
@@ -89,9 +92,15 @@
   font-weight: 700;
   color: var(--text2);
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.filter-check input { cursor: pointer; }
+.filter-check input {
+  width: auto;
+  min-height: auto;
+  cursor: pointer;
+}
 
 /* stats bar */
 .pos-stats-bar {
@@ -105,10 +114,10 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .psb-item.clickable { cursor: pointer; transition: all .15s; }
@@ -116,18 +125,18 @@
 .psb-item.active { border-color: var(--accent); background: var(--g100); }
 
 .psb-icon {
-  width: 36px; height: 36px;
-  border-radius: 9px;
+  width: 30px; height: 30px;
+  border-radius: 8px;
   background: var(--g100);
   display: grid; place-items: center;
-  font-size: 17px;
+  font-size: 15px;
   flex-shrink: 0;
 }
 
 .psb-info strong {
   display: block;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 18px; font-weight: 700;
+  font-size: 16px; font-weight: 700;
   color: var(--g900);
   line-height: 1;
 }

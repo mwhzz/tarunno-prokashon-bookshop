@@ -170,7 +170,16 @@ class ExternalTrade(models.Model):
 
     book_title = models.CharField(max_length=500)
     author = models.CharField(max_length=300, blank=True)
+    publisher = models.CharField(max_length=300, blank=True, help_text="প্রকাশনীর নাম")
     quantity = models.PositiveIntegerField(default=1)
+
+    # প্রকাশনীর নির্ধারিত বডি রেট (কভার প্রাইস) এবং সেখান থেকে কত % কমিশনে কেনা/বেচা
+    # হয়েছে — শুধু হিসাব-নিকাশ ও রিপোর্টিং-এর জন্য রাখা হয়, প্রকৃত ক্যাশ হিসাব সবসময়
+    # purchase_price/selling_price থেকেই হয়।
+    body_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="প্রকাশনীর বডি রেট/কভার প্রাইস")
+    purchase_commission = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="বডি রেট থেকে কত % কমিশনে কেনা হয়েছে")
+    sale_commission = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="বডি রেট থেকে কত % কমিশনে বিক্রি হয়েছে/হবে")
+
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="প্রতি কপি ক্রয়মূল্য (নগদ)")
     selling_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="প্রতি কপি বিক্রয়মূল্য")
 

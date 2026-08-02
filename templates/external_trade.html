@@ -108,6 +108,11 @@
 
 .ec-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
+.commission-hint {
+  font-size: 11.5px; color: var(--muted); margin: -8px 0 14px; line-height: 1.5;
+}
+.commission-hint b { color: var(--g700); }
+
 .amount-wrap { position: relative; }
 
 .amount-sym {
@@ -200,7 +205,7 @@
 
 .rp-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:800; color:var(--g900); }
 
-.rp-filters { display:flex; gap:6px; }
+.rp-filters { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .rp-filter {
   padding: 6px 12px; border-radius: 99px;
   border: 1.5px solid var(--border);
@@ -210,6 +215,36 @@
   transition: all .15s; white-space: nowrap;
 }
 .rp-filter.active { border-color: var(--accent); background: var(--g100); color: var(--g700); }
+
+.publisher-select {
+  height: 32px; padding: 0 10px; border-radius: 99px;
+  border: 1.5px solid var(--border); background: #fff;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  cursor: pointer;
+}
+
+/* ─── PUBLISHER SUMMARY ─── */
+.pub-panel {
+  background:#fff; border:1px solid var(--border);
+  border-radius:18px; overflow:hidden;
+  box-shadow:0 2px 12px rgba(13,51,38,.05);
+  margin-top: 18px;
+}
+
+.pub-table-wrap { overflow-x: auto; }
+
+.pub-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.pub-table th {
+  text-align: left; padding: 10px 20px; font-size: 11px; font-weight: 800;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+.pub-table td { padding: 12px 20px; border-bottom: 1px solid #f0f7f3; }
+.pub-table tr:last-child td { border-bottom: none; }
+.pub-table .num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+.pub-table .profit-pos { color: var(--accent); font-weight: 800; }
+.pub-table .profit-neg { color: var(--danger); font-weight: 800; }
 
 /* trade row */
 .trade-row {
@@ -269,6 +304,50 @@
   font-size: 11px; font-weight: 800;
   color: var(--info); flex-shrink: 0;
   white-space: nowrap;
+}
+
+.tr-icon-btn {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: #fff; cursor: pointer;
+  font-size: 14px;
+  display: grid; place-items: center;
+  transition: all .15s;
+}
+.tr-icon-btn:hover { border-color: var(--accent); background: var(--g100); }
+.tr-icon-btn.danger:hover { border-color: var(--danger); background: #fef2f2; }
+
+.tr-edit-form {
+  display: none;
+  margin-top: 12px; padding: 16px;
+  background: #fffaf0; border: 1px solid #fde68a; border-radius: 12px;
+}
+.tr-edit-form.show { display: block; }
+.tr-edit-form .ef-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.tr-edit-form .ef-field label {
+  display: block; font-size: 11px; font-weight: 800; color: var(--text2); margin-bottom: 4px;
+}
+.tr-edit-form input, .tr-edit-form textarea {
+  width: 100%; min-height: 38px; padding: 6px 10px;
+  border: 1.5px solid var(--border); border-radius: 8px; background:#fff;
+  font-family: 'Hind Siliguri', sans-serif; font-size: 13px; outline: none;
+}
+.tr-edit-form input:focus, .tr-edit-form textarea:focus { border-color: var(--accent); }
+.tr-edit-form .ef-actions { display: flex; gap: 8px; margin-top: 4px; }
+.tr-edit-form .ef-save {
+  padding: 9px 18px; border-radius: 8px; border: none;
+  background: var(--accent); color: #fff; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.tr-edit-form .ef-save:hover { background: var(--accent-dark); }
+.tr-edit-form .ef-cancel {
+  padding: 9px 18px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--text2); font-weight: 700; font-size: 13px; cursor: pointer;
+}
+
+@media (max-width:700px) {
+  .tr-edit-form .ef-row { grid-template-columns: 1fr 1fr; }
 }
 
 .tr-stock-form {
@@ -381,18 +460,36 @@
             <input class="ec-input" id="e-author" placeholder="ঐচ্ছিক">
           </div>
           <div class="ec-field">
-            <label>পরিমাণ (কপি)</label>
-            <input class="ec-input" id="e-qty" type="number" min="1" value="1">
+            <label>প্রকাশনী</label>
+            <input class="ec-input" id="e-publisher" placeholder="ঐচ্ছিক">
           </div>
         </div>
 
-        <div class="ec-field">
-          <label>ক্রয়মূল্য / কপি (নগদ) <span style="color:var(--danger)">*</span></label>
-          <div class="amount-wrap">
-            <span class="amount-sym">৳</span>
-            <input class="amount-inp" id="e-purchase-price" type="number" min="0" placeholder="০">
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>পরিমাণ (কপি)</label>
+            <input class="ec-input" id="e-qty" type="number" min="1" value="1">
+          </div>
+          <div class="ec-field">
+            <label>বডি রেট (কভার প্রাইস) ৳</label>
+            <input class="ec-input" id="e-body-rate" type="number" min="0" placeholder="ঐচ্ছিক" oninput="recalcPurchasePrice()">
           </div>
         </div>
+
+        <div class="ec-row">
+          <div class="ec-field">
+            <label>ক্রয় কমিশন %</label>
+            <input class="ec-input" id="e-purchase-commission" type="number" min="0" max="100" placeholder="ঐচ্ছিক" oninput="recalcPurchasePrice()">
+          </div>
+          <div class="ec-field">
+            <label>ক্রয়মূল্য / কপি (নগদ) <span style="color:var(--danger)">*</span></label>
+            <div class="amount-wrap">
+              <span class="amount-sym">৳</span>
+              <input class="amount-inp" id="e-purchase-price" type="number" min="0" placeholder="০" style="height:46px; font-size:18px;">
+            </div>
+          </div>
+        </div>
+        <div class="commission-hint">বডি রেট ও ক্রয় কমিশন % দিলে ক্রয়মূল্য নিজে থেকেই হিসাব হয়ে যাবে — চাইলে সরাসরি ক্রয়মূল্যও লিখতে পারেন।</div>
 
         <div class="ec-field">
           <label>বিক্রয় অবস্থা</label>
@@ -403,13 +500,20 @@
         </div>
 
         <div class="sold-extra" id="sold-extra">
-          <div class="ec-field">
-            <label>বিক্রয়মূল্য / কপি</label>
-            <div class="amount-wrap">
-              <span class="amount-sym">৳</span>
-              <input class="amount-inp" id="e-selling-price" type="number" min="0" placeholder="০">
+          <div class="ec-row">
+            <div class="ec-field">
+              <label>বিক্রয় কমিশন %</label>
+              <input class="ec-input" id="e-sale-commission" type="number" min="0" max="100" placeholder="ঐচ্ছিক" oninput="recalcSellingPrice()">
+            </div>
+            <div class="ec-field">
+              <label>বিক্রয়মূল্য / কপি</label>
+              <div class="amount-wrap">
+                <span class="amount-sym">৳</span>
+                <input class="amount-inp" id="e-selling-price" type="number" min="0" placeholder="০" style="height:46px; font-size:18px;">
+              </div>
             </div>
           </div>
+          <div class="commission-hint">বডি রেট দেওয়া থাকলে বিক্রয় কমিশন % থেকে বিক্রয়মূল্য অটো হিসাব হবে।</div>
           <div class="ec-row">
             <div class="ec-field">
               <label>গ্রাহকের নাম</label>
@@ -442,10 +546,39 @@
           <div class="rp-filter active" id="f-all" onclick="setFilter('')">সব</div>
           <div class="rp-filter" id="f-pending" onclick="setFilter('pending')">বিক্রয় বাকি</div>
           <div class="rp-filter" id="f-sold" onclick="setFilter('sold')">বিক্রি সম্পন্ন</div>
+          <select class="publisher-select" id="f-publisher" onchange="setPublisherFilter(this.value)">
+            <option value="">সব প্রকাশনী</option>
+          </select>
         </div>
       </div>
       <div id="trade-list">
         <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+    <!-- PUBLISHER-WISE SUMMARY -->
+    <div class="pub-panel">
+      <div class="rp-header">
+        <div class="rp-title">🏢 প্রকাশনী অনুযায়ী সারাংশ</div>
+      </div>
+      <div class="pub-table-wrap">
+        <table class="pub-table" id="pub-table">
+          <thead>
+            <tr>
+              <th>প্রকাশনী</th>
+              <th class="num">ট্রেড</th>
+              <th class="num">মোট কপি</th>
+              <th class="num">গড় ক্রয় কমিশন</th>
+              <th class="num">গড় বিক্রয় কমিশন</th>
+              <th class="num">মোট ক্রয়</th>
+              <th class="num">মোট বিক্রয়</th>
+              <th class="num">লাভ</th>
+            </tr>
+          </thead>
+          <tbody id="pub-tbody">
+            <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -458,12 +591,35 @@
 <script>
 let soldMode = false;
 let currentFilter = '';
+let currentPublisherFilter = '';
+let tradesById = {};
 
 /* ══════════════════════════
    INIT
 ══════════════════════════ */
 async function init() {
-  await Promise.all([loadSummary(), loadTrades()]);
+  await Promise.all([loadSummary(), loadTrades(), loadPublisherSummary()]);
+}
+
+/* ══════════════════════════
+   LIVE PRICE CALC (বডি রেট → কমিশন % → দাম)
+══════════════════════════ */
+function recalcPurchasePrice() {
+  const bodyRate = parseFloat(document.getElementById('e-body-rate').value) || 0;
+  const commission = parseFloat(document.getElementById('e-purchase-commission').value) || 0;
+  if (bodyRate > 0) {
+    const price = bodyRate * (1 - commission / 100);
+    document.getElementById('e-purchase-price').value = Math.max(0, price).toFixed(2);
+  }
+}
+
+function recalcSellingPrice() {
+  const bodyRate = parseFloat(document.getElementById('e-body-rate').value) || 0;
+  const commission = parseFloat(document.getElementById('e-sale-commission').value) || 0;
+  if (bodyRate > 0) {
+    const price = bodyRate * (1 - commission / 100);
+    document.getElementById('e-selling-price').value = Math.max(0, price).toFixed(2);
+  }
 }
 
 /* ══════════════════════════
@@ -487,6 +643,11 @@ function setFilter(f) {
   loadTrades();
 }
 
+function setPublisherFilter(p) {
+  currentPublisherFilter = p;
+  loadTrades();
+}
+
 /* ══════════════════════════
    SUMMARY
 ══════════════════════════ */
@@ -504,14 +665,55 @@ async function loadSummary() {
 }
 
 /* ══════════════════════════
+   PUBLISHER-WISE SUMMARY
+══════════════════════════ */
+async function loadPublisherSummary() {
+  const tbody = document.getElementById('pub-tbody');
+  const sel = document.getElementById('f-publisher');
+  try {
+    const data = await api('/sales/external-trades/by_publisher/');
+    const rows = data.publishers || [];
+
+    const prevSelected = sel.value;
+    sel.innerHTML = `<option value="">সব প্রকাশনী</option>` +
+      rows.map(r => `<option value="${r.publisher}">${r.publisher}</option>`).join('');
+    if (rows.some(r => r.publisher === prevSelected)) sel.value = prevSelected;
+
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">এখনো কোনো প্রকাশনীর নাম দিয়ে ট্রেড রেকর্ড হয়নি।</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><strong>${r.publisher}</strong></td>
+        <td class="num">${r.trade_count}</td>
+        <td class="num">${num(r.total_qty)}</td>
+        <td class="num">${Number(r.avg_purchase_commission).toFixed(1)}%</td>
+        <td class="num">${Number(r.avg_sale_commission).toFixed(1)}%</td>
+        <td class="num">৳${num(r.total_purchase)}</td>
+        <td class="num">৳${num(r.total_sale)}</td>
+        <td class="num ${r.total_profit >= 0 ? 'profit-pos' : 'profit-neg'}">${r.total_profit >= 0 ? '+' : ''}৳${num(r.total_profit)}</td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">লোড হয়নি।</td></tr>`;
+  }
+}
+
+/* ══════════════════════════
    LOAD TRADES
 ══════════════════════════ */
 async function loadTrades() {
   const list = document.getElementById('trade-list');
   try {
-    const q = currentFilter ? `?status=${currentFilter}` : '';
-    const data = await api(`/sales/external-trades/${q}`);
+    const params = new URLSearchParams();
+    if (currentFilter) params.set('status', currentFilter);
+    if (currentPublisherFilter) params.set('publisher', currentPublisherFilter);
+    const qs = params.toString();
+    const data = await api(`/sales/external-trades/${qs ? '?' + qs : ''}`);
     const trades = data.results || [];
+    tradesById = {};
+    trades.forEach(t => { tradesById[t.id] = t; });
 
     if (!trades.length) {
       list.innerHTML = `
@@ -529,6 +731,14 @@ async function loadTrades() {
       });
       const pending = t.status === 'pending';
       const converted = !!t.converted_book;
+
+      const metaParts = [];
+      if (t.publisher) metaParts.push('🏢 ' + t.publisher);
+      if (Number(t.body_rate) > 0) metaParts.push('বডি রেট ৳' + num(t.body_rate));
+      if (Number(t.purchase_commission) > 0) metaParts.push('ক্রয় কমিশন ' + t.purchase_commission + '%');
+      if (!pending && Number(t.sale_commission) > 0) metaParts.push('বিক্রয় কমিশন ' + t.sale_commission + '%');
+      const metaLine = metaParts.length ? `<small>${metaParts.join(' • ')}</small>` : '';
+
       return `
         <div class="trade-row">
           <div class="tr-main">
@@ -536,6 +746,7 @@ async function loadTrades() {
             <div class="tr-info">
               <strong>${t.book_title}${t.author ? ' — '+t.author : ''}</strong>
               <small>${t.quantity} কপি &nbsp;•&nbsp; ${dt}${t.customer_name ? ' • '+t.customer_name : ''}</small>
+              ${metaLine}
             </div>
             <div class="tr-badge ${pending ? 'pending' : 'sold'}">${t.status_display}</div>
             <div class="tr-nums">
@@ -546,14 +757,47 @@ async function loadTrades() {
             ${converted
               ? `<div class="tr-stock-badge">🏪 স্টকে যোগ করা ✓${t.converted_book_title ? ' ('+t.converted_book_title+')' : ''}</div>`
               : `<button class="tr-stock-btn" onclick="toggleStockForm(${t.id})">স্থায়ীভাবে স্টকে যোগ করুন</button>`}
+            <button class="tr-icon-btn" title="এডিট করুন" onclick="toggleEditForm(${t.id})">✏️</button>
+            <button class="tr-icon-btn danger" title="মুছে ফেলুন" onclick="deleteTrade(${t.id})">🗑️</button>
+          </div>
+          <div class="tr-edit-form" id="ef-${t.id}">
+            <div class="ef-row">
+              <div class="ef-field"><label>বইয়ের নাম</label><input id="ef-title-${t.id}" value="${t.book_title}"></div>
+              <div class="ef-field"><label>লেখক</label><input id="ef-author-${t.id}" value="${t.author || ''}"></div>
+              <div class="ef-field"><label>প্রকাশনী</label><input id="ef-publisher-${t.id}" value="${t.publisher || ''}"></div>
+            </div>
+            <div class="ef-row">
+              <div class="ef-field"><label>পরিমাণ (কপি)</label><input type="number" min="1" id="ef-qty-${t.id}" value="${t.quantity}"></div>
+              <div class="ef-field"><label>বডি রেট ৳</label><input type="number" min="0" id="ef-bodyrate-${t.id}" value="${t.body_rate || 0}"></div>
+              <div class="ef-field"><label>ক্রয় কমিশন %</label><input type="number" min="0" max="100" id="ef-pcomm-${t.id}" value="${t.purchase_commission || 0}"></div>
+            </div>
+            <div class="ef-row">
+              <div class="ef-field"><label>ক্রয়মূল্য/কপি ৳</label><input type="number" min="0" id="ef-pprice-${t.id}" value="${t.purchase_price}"></div>
+              ${!pending ? `
+              <div class="ef-field"><label>বিক্রয় কমিশন %</label><input type="number" min="0" max="100" id="ef-scomm-${t.id}" value="${t.sale_commission || 0}"></div>
+              <div class="ef-field"><label>বিক্রয়মূল্য/কপি ৳</label><input type="number" min="0" id="ef-sprice-${t.id}" value="${t.selling_price}"></div>
+              ` : ''}
+            </div>
+            ${!pending ? `
+            <div class="ef-row" style="grid-template-columns:1fr 1fr;">
+              <div class="ef-field"><label>গ্রাহকের নাম</label><input id="ef-cname-${t.id}" value="${t.customer_name || ''}"></div>
+              <div class="ef-field"><label>গ্রাহকের ফোন</label><input id="ef-cphone-${t.id}" value="${t.customer_phone || ''}"></div>
+            </div>` : ''}
+            <div class="ef-field" style="margin-bottom:10px;"><label>নোট</label><textarea id="ef-note-${t.id}">${t.note || ''}</textarea></div>
+            <div class="ef-actions">
+              <button class="ef-save" onclick="saveEditTrade(${t.id})">✅ সেভ করুন</button>
+              <button class="ef-cancel" onclick="toggleEditForm(${t.id})">বাতিল</button>
+            </div>
           </div>
           ${pending ? `
           <div class="tr-complete-form" id="cf-${t.id}">
+            ${Number(t.body_rate) > 0 ? `<input type="number" min="0" max="100" id="cf-commission-${t.id}" placeholder="বিক্রয় কমিশন %" oninput="recalcCompletePrice(${t.id})" style="width:110px">` : ''}
             <input type="number" min="0" id="cf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳">
             <input type="text" id="cf-cname-${t.id}" placeholder="গ্রাহকের নাম (ঐচ্ছিক)">
             <input type="text" id="cf-cphone-${t.id}" placeholder="ফোন (ঐচ্ছিক)">
             <button onclick="completeSale(${t.id})">✅ সম্পন্ন করুন</button>
             <button class="cancel-link" onclick="toggleCompleteForm(${t.id})">বাতিল</button>
+            ${Number(t.body_rate) > 0 ? `<p style="width:100%; font-size:11px; color:var(--muted); margin:2px 0 0;">বডি রেট ৳${num(t.body_rate)} — কমিশন % দিলে দাম অটো হিসাব হবে।</p>` : ''}
           </div>` : ''}
           ${!converted ? `
           <div class="tr-stock-form" id="sf-${t.id}">
@@ -603,7 +847,10 @@ async function addTrade() {
   const payload = {
     book_title: title,
     author: document.getElementById('e-author').value,
+    publisher: document.getElementById('e-publisher').value,
     quantity: qty,
+    body_rate: document.getElementById('e-body-rate').value || 0,
+    purchase_commission: document.getElementById('e-purchase-commission').value || 0,
     purchase_price: purchasePrice,
     already_sold: soldMode,
     note: document.getElementById('e-note').value,
@@ -617,6 +864,7 @@ async function addTrade() {
       return;
     }
     payload.selling_price = sp;
+    payload.sale_commission = document.getElementById('e-sale-commission').value || 0;
     payload.customer_name = document.getElementById('e-cust-name').value;
     payload.customer_phone = document.getElementById('e-cust-phone').value;
   }
@@ -629,8 +877,12 @@ async function addTrade() {
     toast('রেকর্ড সেভ হয়েছে ✓');
     document.getElementById('e-title').value = '';
     document.getElementById('e-author').value = '';
+    document.getElementById('e-publisher').value = '';
     document.getElementById('e-qty').value = '1';
+    document.getElementById('e-body-rate').value = '';
+    document.getElementById('e-purchase-commission').value = '';
     document.getElementById('e-purchase-price').value = '';
+    document.getElementById('e-sale-commission').value = '';
     document.getElementById('e-selling-price').value = '';
     document.getElementById('e-cust-name').value = '';
     document.getElementById('e-cust-phone').value = '';
@@ -638,6 +890,7 @@ async function addTrade() {
     setSoldMode(false);
     loadSummary();
     loadTrades();
+    loadPublisherSummary();
   } catch(e) {
     const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('সেভ করা যায়নি: ' + msg, 'error');
@@ -649,6 +902,15 @@ async function addTrade() {
 /* ══════════════════════════
    COMPLETE SALE
 ══════════════════════════ */
+function recalcCompletePrice(id) {
+  const trade = tradesById[id];
+  const commissionInp = document.getElementById(`cf-commission-${id}`);
+  if (!trade || !commissionInp) return;
+  const commission = parseFloat(commissionInp.value) || 0;
+  const price = Number(trade.body_rate) * (1 - commission / 100);
+  document.getElementById(`cf-price-${id}`).value = Math.max(0, price).toFixed(2);
+}
+
 async function completeSale(id) {
   const price = document.getElementById(`cf-price-${id}`).value;
   if (!price || Number(price) <= 0) {
@@ -656,15 +918,18 @@ async function completeSale(id) {
     toast('বিক্রয়মূল্য লিখুন!', 'error');
     return;
   }
+  const commissionInp = document.getElementById(`cf-commission-${id}`);
   try {
     await api(`/sales/external-trades/${id}/complete_sale/`, 'POST', {
       selling_price: price,
+      sale_commission: (commissionInp && commissionInp.value) ? commissionInp.value : undefined,
       customer_name: document.getElementById(`cf-cname-${id}`).value,
       customer_phone: document.getElementById(`cf-cphone-${id}`).value,
     });
     toast('বিক্রি সম্পন্ন হয়েছে ✓');
     loadSummary();
     loadTrades();
+    loadPublisherSummary();
   } catch(e) {
     const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('সম্পন্ন করা যায়নি: ' + msg, 'error');
@@ -691,6 +956,73 @@ async function addToStock(id) {
   } catch(e) {
     const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('স্টকে যোগ করা যায়নি: ' + msg, 'error');
+  }
+}
+
+/* ══════════════════════════
+   EDIT / DELETE
+══════════════════════════ */
+function toggleEditForm(id) {
+  document.getElementById(`ef-${id}`)?.classList.toggle('show');
+}
+
+async function saveEditTrade(id) {
+  const trade = tradesById[id];
+  if (!trade) return;
+
+  const payload = {
+    book_title: document.getElementById(`ef-title-${id}`).value.trim(),
+    author: document.getElementById(`ef-author-${id}`).value,
+    publisher: document.getElementById(`ef-publisher-${id}`).value,
+    quantity: parseInt(document.getElementById(`ef-qty-${id}`).value) || 1,
+    body_rate: document.getElementById(`ef-bodyrate-${id}`).value || 0,
+    purchase_commission: document.getElementById(`ef-pcomm-${id}`).value || 0,
+    purchase_price: document.getElementById(`ef-pprice-${id}`).value,
+    note: document.getElementById(`ef-note-${id}`).value,
+  };
+
+  if (!payload.book_title) { shakeEl(`ef-title-${id}`); toast('বইয়ের নাম লিখুন!', 'error'); return; }
+
+  if (trade.status === 'sold') {
+    payload.sale_commission = document.getElementById(`ef-scomm-${id}`).value || 0;
+    payload.selling_price = document.getElementById(`ef-sprice-${id}`).value;
+    payload.customer_name = document.getElementById(`ef-cname-${id}`).value;
+    payload.customer_phone = document.getElementById(`ef-cphone-${id}`).value;
+  }
+
+  try {
+    await api(`/sales/external-trades/${id}/`, 'PATCH', payload);
+    toast('ট্রেড আপডেট হয়েছে ✓');
+    loadSummary();
+    loadTrades();
+    loadPublisherSummary();
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('আপডেট করা যায়নি: ' + msg, 'error');
+  }
+}
+
+async function deleteTrade(id) {
+  const trade = tradesById[id];
+  if (!trade) return;
+
+  if (trade.converted_book) {
+    toast('এই বইটি স্টকে যোগ করা হয়ে গেছে — Book তালিকা থেকে ম্যানেজ করুন, এখান থেকে মুছে ফেলা যাবে না।', 'error');
+    return;
+  }
+
+  const ok = confirm(`"${trade.book_title}" ট্রেডটি মুছে ফেলতে চান?\n\nএর সাথে যুক্ত ক্যাশ হিসাব (ক্রয়/বিক্রয়) থেকেও এন্ট্রি মুছে যাবে এবং ক্যাশ ব্যালেন্স রিক্যালকুলেট হবে। এই কাজটি বাতিল করা যাবে না।`);
+  if (!ok) return;
+
+  try {
+    await api(`/sales/external-trades/${id}/`, 'DELETE');
+    toast('ট্রেড মুছে ফেলা হয়েছে।');
+    loadSummary();
+    loadTrades();
+    loadPublisherSummary();
+  } catch(e) {
+    const msg = e && typeof e==='object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
   }
 }
 

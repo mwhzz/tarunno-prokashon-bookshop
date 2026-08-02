@@ -275,18 +275,63 @@ class SaleViewSet(viewsets.ModelViewSet):
 class ExternalTradeViewSet(viewsets.ModelViewSet):
     """বাইরে থেকে কেনা ও সরাসরি বিক্রি করা বই (দোকানের স্টকে ঢোকে না)"""
     queryset = ExternalTrade.objects.all()
-    http_method_names = ['get', 'post', 'head', 'options']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_serializer_class(self):
         if self.action == 'create':
             return ExternalTradeCreateSerializer
         return ExternalTradeSerializer
 
+    def partial_update(self, request, *args, **kwargs):
+        """
+        ট্রেড এডিট করলে সংশ্লিষ্ট cash_out/cash_in লেজার এন্ট্রিও নতুন
+        দাম/পরিমাণ অনুযায়ী সিঙ্ক করা হয়, যাতে ক্যাশ হিসাব ভুল না থাকে।
+        """
+        from accounts.models import CashTransaction, DailyCash
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        trade = serializer.save()
+
+        reference = f"ext_{trade.id}"
+        CashTransaction.objects.filter(reference_id=reference, transaction_type='cash_out').update(
+            amount=trade.total_purchase,
+            note=f"বাইরের বই ক্রয়: {trade.book_title} x{trade.quantity}",
+        )
+        if trade.status == 'sold':
+            CashTransaction.objects.filter(reference_id=reference, transaction_type='cash_in').update(
+                amount=trade.total_sale,
+                note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
+            )
+
+        daily_cash_ids = CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct()
+        for dc_id in daily_cash_ids:
+            DailyCash.objects.get(id=dc_id).update_closing_balance()
+
+        return Response(ExternalTradeSerializer(trade).data)
+
+    def destroy(self, request, *args, **kwargs):
+        """ট্রেড মুছে ফেললে সংশ্লিষ্ট ক্যাশ লেজার এন্ট্রিও মুছে হিসাব রিক্যালকুলেট হয়।"""
+        from accounts.models import CashTransaction, DailyCash
+
+        instance = self.get_object()
+        reference = f"ext_{instance.id}"
+        daily_cash_ids = list(CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct())
+        CashTransaction.objects.filter(reference_id=reference).delete()
+        instance.delete()
+        for dc_id in daily_cash_ids:
+            DailyCash.objects.get(id=dc_id).update_closing_balance()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_queryset(self):
         qs = super().get_queryset()
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
+        publisher = self.request.query_params.get('publisher')
+        if publisher:
+            qs = qs.filter(publisher=publisher)
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -305,10 +350,18 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
         if trade.status == 'sold':
             return Response({'error': 'এই ট্রেডের বিক্রয় ইতিমধ্যে সম্পন্ন হয়েছে।'}, status=status.HTTP_400_BAD_REQUEST)
 
+        sale_commission_raw = request.data.get('sale_commission')
         try:
-            selling_price = Decimal(str(request.data.get('selling_price')))
+            if sale_commission_raw not in (None, ''):
+                sale_commission = Decimal(str(sale_commission_raw))
+                if trade.body_rate <= 0:
+                    return Response({'error': 'কমিশন % দিয়ে হিসাব করতে হলে আগে বডি রেট দিতে হবে।'}, status=status.HTTP_400_BAD_REQUEST)
+                selling_price = trade.body_rate * (1 - sale_commission / Decimal('100'))
+                trade.sale_commission = sale_commission
+            else:
+                selling_price = Decimal(str(request.data.get('selling_price')))
         except (TypeError, InvalidOperation):
-            return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'সঠিক বিক্রয়মূল্য বা কমিশন % দিন।'}, status=status.HTTP_400_BAD_REQUEST)
         if selling_price < 0:
             return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -362,9 +415,11 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
         book = Book.objects.create(
             title=trade.book_title,
             author=trade.author,
+            publisher=trade.publisher,
             purchase_price=trade.purchase_price,
             selling_price=selling_price,
-            mrp=selling_price,
+            mrp=trade.body_rate if trade.body_rate > 0 else selling_price,
+            commission=trade.sale_commission,
             notes=f"বাইরের ক্রয়-বিক্রয় থেকে যোগ করা হয়েছে (External Trade #{trade.id})",
         )
 
@@ -401,7 +456,14 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
         total_purchase = qs.aggregate(
             total=Sum(F('purchase_price') * F('quantity'), output_field=DecimalField())
         )['total'] or 0
-        total_sale = qs.filter(status='sold').aggregate(
+        sold = qs.filter(status='sold')
+        # লাভ শুধু বিক্রি হওয়া ট্রেডের ক্রয়মূল্যের বিপরীতে হিসাব হবে —
+        # পেন্ডিং (এখনো বিক্রি না হওয়া) ট্রেডের ক্রয়মূল্য এখানে বাদ দিলে
+        # স্টকে পড়ে থাকা বই থাকলেই লাভ ভুলভাবে ঋণাত্মক দেখাতো।
+        total_purchase_of_sold = sold.aggregate(
+            total=Sum(F('purchase_price') * F('quantity'), output_field=DecimalField())
+        )['total'] or 0
+        total_sale = sold.aggregate(
             total=Sum(F('selling_price') * F('quantity'), output_field=DecimalField())
         )['total'] or 0
         pending = qs.filter(status='pending')
@@ -415,8 +477,47 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
             'pending_amount': pending_amount,
             'total_purchase': total_purchase,
             'total_sale': total_sale,
-            'total_profit': total_sale - total_purchase,
+            'total_profit': total_sale - total_purchase_of_sold,
         })
+
+    @action(detail=False, methods=['get'])
+    def by_publisher(self, request):
+        """প্রকাশনী অনুযায়ী কেনা বই, কমিশন ও লাভের সারাংশ"""
+        from django.db.models import F, DecimalField, Avg, Case, When
+
+        qs = self.get_queryset().exclude(publisher='')
+
+        rows = qs.values('publisher').annotate(
+            trade_count=Count('id'),
+            total_qty=Sum('quantity'),
+            total_purchase=Sum(F('purchase_price') * F('quantity'), output_field=DecimalField()),
+            total_sale=Sum(
+                Case(
+                    When(status='sold', then=F('selling_price') * F('quantity')),
+                    default=0,
+                    output_field=DecimalField(),
+                )
+            ),
+            avg_purchase_commission=Avg('purchase_commission'),
+            avg_sale_commission=Avg(Case(When(status='sold', then=F('sale_commission')))),
+        ).order_by('publisher')
+
+        results = []
+        for row in rows:
+            total_purchase = row['total_purchase'] or 0
+            total_sale = row['total_sale'] or 0
+            results.append({
+                'publisher': row['publisher'],
+                'trade_count': row['trade_count'],
+                'total_qty': row['total_qty'] or 0,
+                'total_purchase': total_purchase,
+                'total_sale': total_sale,
+                'total_profit': total_sale - total_purchase,
+                'avg_purchase_commission': row['avg_purchase_commission'] or 0,
+                'avg_sale_commission': row['avg_sale_commission'] or 0,
+            })
+
+        return Response({'publishers': results})
 
 
 class CustomerViewSet(viewsets.ModelViewSet):

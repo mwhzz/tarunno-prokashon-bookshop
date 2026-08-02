@@ -180,7 +180,8 @@ class ExternalTradeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExternalTrade
         fields = [
-            'id', 'book_title', 'author', 'quantity',
+            'id', 'book_title', 'author', 'publisher', 'quantity',
+            'body_rate', 'purchase_commission', 'sale_commission',
             'purchase_price', 'selling_price',
             'customer_name', 'customer_phone',
             'status', 'status_display', 'note',
@@ -198,7 +199,11 @@ class ExternalTradeCreateSerializer(serializers.Serializer):
     """
     book_title = serializers.CharField(max_length=500)
     author = serializers.CharField(max_length=300, required=False, allow_blank=True, default='')
+    publisher = serializers.CharField(max_length=300, required=False, allow_blank=True, default='')
     quantity = serializers.IntegerField(min_value=1, default=1)
+    body_rate = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0, min_value=0)
+    purchase_commission = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=0, min_value=0, max_value=100)
+    sale_commission = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=0, min_value=0, max_value=100)
     purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     already_sold = serializers.BooleanField(default=False)
     selling_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0, min_value=0)

@@ -805,7 +805,14 @@
       };
       if (body) opts.body = JSON.stringify(body);
       const r = await fetch(API + path, opts);
-      const data = await r.json();
+      // DELETE (and some other) responses can come back with an empty body (e.g. DRF's
+      // 204 No Content) — r.json() throws on that, so parse text first and only JSON-parse
+      // when there's actually something there.
+      const text = await r.text();
+      let data = null;
+      if (text) {
+        try { data = JSON.parse(text); } catch (_) { data = null; }
+      }
       if (!r.ok) throw data;
       return data;
     }

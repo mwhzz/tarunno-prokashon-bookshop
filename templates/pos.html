@@ -699,6 +699,49 @@
   outline: none;
 }
 
+.paid-quick-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.paid-quick-btn {
+  flex: 1;
+  min-height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--g300);
+  background: #fff;
+  color: var(--g700);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.paid-quick-btn:hover { background: var(--g100); border-color: var(--accent); }
+
+.paid-quick-btn.full {
+  flex: 1.4;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.paid-quick-btn.full:hover { background: var(--accent-dark); }
+
+.paid-warn {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fff7e6;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  line-height: 1.5;
+}
+
 /* CTA button */
 .cta-btn {
   width: 100%;
@@ -1096,11 +1139,11 @@ function renderPOS(container) {
           </div>
           <div class="bf-field">
             <label>পেমেন্ট মাধ্যম</label>
-            <select id="pay-method">
+            <select id="pay-method" onchange="onPayMethodChange()">
               <option value="cash">💵 Cash</option>
               <option value="mobile">📱 Bkash/Nagad</option>
               <option value="bank">🏦 Bank</option>
-              <option value="credit">📝 Credit</option>
+              <option value="credit">📝 Credit (এখনো টাকা পাননি)</option>
             </select>
           </div>
         </div>
@@ -1115,6 +1158,7 @@ function renderPOS(container) {
             <div id="wholesale-results"></div>
             <input type="hidden" id="selected-ws-id">
           </div>
+          <div class="bf-hint" style="margin-top:-4px">নতুন পাইকারি গ্রাহক হলে খোঁজার দরকার নেই — নিচে সরাসরি নাম ও ফোন নম্বর লিখুন।</div>
         </div>
 
         <!-- STEP 2: Customer -->
@@ -1202,7 +1246,18 @@ function renderPOS(container) {
         <!-- paid input -->
         <div class="paid-wrap">
           <label>✅ কত টাকা পেলেন? (পরিশোধিত)</label>
-          <input id="paid" type="number" value="0" min="0" placeholder="0" oninput="calcTotals()">
+          <input id="paid" type="number" value="0" min="0" placeholder="0" oninput="onPaidInput()">
+          <div class="paid-quick-row" id="paid-quick-row">
+            <button type="button" class="paid-quick-btn full" onclick="setPaidFull()">✅ সম্পূর্ণ বিল</button>
+            <button type="button" class="paid-quick-btn" onclick="setPaidAmount(500)">৳৫০০</button>
+            <button type="button" class="paid-quick-btn" onclick="setPaidAmount(1000)">৳১০০০</button>
+          </div>
+          <div class="paid-warn" id="paid-zero-warn" style="display:none">
+            ⚠️ পরিশোধিত ৳০ আছে — পুরো বিলটা "বাকি" হিসেবে সেভ হবে। টাকা নগদে পেয়ে থাকলে উপরে "সম্পূর্ণ বিল" চাপুন।
+          </div>
+          <div class="paid-warn" id="paid-overpay-warn" style="display:none">
+            ⚠️ পরিশোধিত পরিমাণ বিলের তুলনায় অনেক বেশি — টাকার অঙ্কটা আরেকবার দেখে নিন।
+          </div>
         </div>
 
         <div class="totals-box" style="margin-top:0">
@@ -1497,11 +1552,10 @@ function toggleSaleType() {
   if (type === 'wholesale') {
     savedRetailCommission = parseFloat(document.getElementById('commission')?.value || 0);
     ws.style.display = 'block';
-    n.readOnly = true; p.readOnly = true;
+    n.value = ''; p.value = '';
     document.getElementById('wholesale-search').focus();
   } else {
     ws.style.display = 'none';
-    n.readOnly = false; p.readOnly = false;
     n.value = ''; p.value = '';
     document.getElementById('commission').value = savedRetailCommission || 0;
     document.getElementById('wholesale-search').value = '';
@@ -1650,6 +1704,14 @@ function calcTotals(manualDisc = false) {
   const changeRow = document.getElementById('change-row');
   if (changeRow) changeRow.style.display = change > 0 ? 'flex' : 'none';
 
+  const payMethod = document.getElementById('pay-method')?.value;
+  const zeroWarn = document.getElementById('paid-zero-warn');
+  if (zeroWarn) zeroWarn.style.display = (cart.length > 0 && total > 0 && paid === 0 && payMethod !== 'credit') ? 'block' : 'none';
+
+  const overpayWarn = document.getElementById('paid-overpay-warn');
+  const looksLikeTypo = total > 0 && paid > total * 20 && (paid - total) > 500;
+  if (overpayWarn) overpayWarn.style.display = looksLikeTypo ? 'block' : 'none';
+
   const btn = document.getElementById('complete-btn');
   if (btn) btn.disabled = cart.length === 0;
 }
@@ -1657,6 +1719,44 @@ function calcTotals(manualDisc = false) {
 function setText(id, v) {
   const el = document.getElementById(id);
   if (el) el.textContent = v;
+}
+
+/* ══════════════════════════════════════
+   PAID AMOUNT HELPERS
+══════════════════════════════════════ */
+function onPaidInput() {
+  calcTotals();
+}
+
+function currentBillTotal() {
+  const sub  = cart.reduce((s,i) => s + itemGross(i), 0);
+  const disc = cart.reduce((s,i) => s + itemDiscount(i), 0);
+  const extra = (parseFloat(document.getElementById('pack')?.value||0))
+              + (parseFloat(document.getElementById('courier')?.value||0))
+              + (parseFloat(document.getElementById('txfee')?.value||0));
+  return Math.max(0, sub - disc + extra);
+}
+
+function setPaidFull() {
+  document.getElementById('paid').value = currentBillTotal();
+  calcTotals();
+}
+
+function setPaidAmount(v) {
+  document.getElementById('paid').value = v;
+  calcTotals();
+}
+
+function onPayMethodChange() {
+  const method = document.getElementById('pay-method')?.value;
+  const row = document.getElementById('paid-quick-row');
+  if (method === 'credit') {
+    document.getElementById('paid').value = 0;
+    if (row) row.style.display = 'none';
+  } else if (row) {
+    row.style.display = 'flex';
+  }
+  calcTotals();
 }
 
 /* ══════════════════════════════════════

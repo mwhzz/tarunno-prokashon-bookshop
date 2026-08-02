@@ -910,6 +910,15 @@ select.wiz-input { cursor: pointer; }
         <div class="sc-desc">শুধু নাম দিলেই হবে — বাকি সব পরে edit করা যাবে।</div>
       </div>
 
+      <!-- own vs external toggle -->
+      <div class="wiz-group">
+        <div class="wiz-label">বইয়ের উৎস</div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="mode-tab active" id="qa-src-own" onclick="setQASource('own')" style="border-radius:10px;">📗 নিজস্ব বই</button>
+          <button type="button" class="mode-tab" id="qa-src-external" onclick="setQASource('external')" style="border-radius:10px;">🏢 বাইরের বই</button>
+        </div>
+      </div>
+
       <!-- image upload + name side by side on desktop -->
       <div class="qa-top">
         <!-- image -->
@@ -1085,6 +1094,7 @@ select.wiz-input { cursor: pointer; }
             <tr><td><span class="col-name">group</span></td><td>ক্যাটাগরি</td><td><span class="col-opt">না</span></td><td>উপন্যাস</td></tr>
             <tr><td><span class="col-name">product_code</span></td><td>প্রোডাক্ট কোড</td><td><span class="col-opt">না</span></td><td>BK-1001</td></tr>
             <tr><td><span class="col-name">book_type</span></td><td>ধরন</td><td><span class="col-opt">না</span></td><td>single <em>বা</em> series</td></tr>
+            <tr><td><span class="col-name">source</span></td><td>নিজস্ব/বাইরের</td><td><span class="col-opt">না</span></td><td>own <em>বা</em> external (না দিলে own)</td></tr>
             <tr><td><span class="col-name">notes</span></td><td>নোট</td><td><span class="col-opt">না</span></td><td>যেকোনো মন্তব্য</td></tr>
           </tbody>
         </table>
@@ -1174,6 +1184,15 @@ select.wiz-input { cursor: pointer; }
           <option value="series">📚 Series — সেট বা সিরিজ</option>
         </select>
       </div>
+    </div>
+
+    <div class="wiz-group">
+      <div class="wiz-label">বইয়ের উৎস</div>
+      <div style="display:flex; gap:8px; max-width:400px;">
+        <button type="button" class="mode-tab active" id="b-src-own" onclick="setBSource('own')" style="border-radius:10px;">📗 নিজস্ব বই (তারুণ্য প্রকাশন)</button>
+        <button type="button" class="mode-tab" id="b-src-external" onclick="setBSource('external')" style="border-radius:10px;">🏢 বাইরের প্রকাশনী/ভেন্ডর</button>
+      </div>
+      <div class="wiz-hint">নিজেদের প্রকাশিত বই নাকি অন্য প্রকাশনী/ভেন্ডরের কাছ থেকে নেওয়া বই।</div>
     </div>
 
     <div class="step-nav">
@@ -1366,6 +1385,20 @@ select.wiz-input { cursor: pointer; }
 <script>
 let currentStep = 1;
 const TOTAL_STEPS = 5;
+let selectedSource = 'own';
+let qaSource = 'own';
+
+function setBSource(v) {
+  selectedSource = v;
+  document.getElementById('b-src-own').classList.toggle('active', v === 'own');
+  document.getElementById('b-src-external').classList.toggle('active', v === 'external');
+}
+
+function setQASource(v) {
+  qaSource = v;
+  document.getElementById('qa-src-own').classList.toggle('active', v === 'own');
+  document.getElementById('qa-src-external').classList.toggle('active', v === 'external');
+}
 
 /* ══════════════════════════════
    STEPPER NAVIGATION
@@ -1480,6 +1513,7 @@ function buildReview() {
     ['ISBN',           document.getElementById('b-isbn').value],
     ['প্রোডাক্ট কোড', document.getElementById('b-code').value],
     ['ধরন',            document.getElementById('b-type').value === 'series' ? 'Series (সিরিজ)' : 'Single (একটি বই)'],
+    ['উৎস',            selectedSource === 'external' ? '🏢 বাইরের প্রকাশনী/ভেন্ডর' : '📗 নিজস্ব বই'],
     ['MRP',            document.getElementById('b-mrp').value   ? `৳${document.getElementById('b-mrp').value}`   : null],
     ['ক্রয় মূল্য',    document.getElementById('b-cost').value  ? `৳${document.getElementById('b-cost').value}`  : null],
     ['বিক্রয় মূল্য',  document.getElementById('b-price').value ? `৳${document.getElementById('b-price').value}` : null],
@@ -1540,6 +1574,7 @@ async function submitBook() {
   fd.append('discount',      document.getElementById('b-discount').value    || 0);
   fd.append('discount_type', document.getElementById('b-discount-type').value);
   fd.append('notes',         document.getElementById('b-note').value);
+  fd.append('source',        selectedSource);
 
   const imgInput = document.getElementById('b-image');
   if (imgInput.files.length > 0) fd.append('image', imgInput.files[0]);
@@ -1662,6 +1697,7 @@ async function submitQuickAdd() {
   fd.append('discount',       0);
   fd.append('discount_type',  'amount');
   fd.append('book_type',      'single');
+  fd.append('source',         qaSource);
 
   // group — auto-create via name field trick: send as notes first, handle below
   const groupName = document.getElementById('qa-group').value.trim();
@@ -1728,6 +1764,8 @@ function resetQuickAdd() {
   // collapse more
   document.getElementById('qa-more-body').classList.remove('open');
   document.getElementById('qa-more-arrow').textContent = '▸';
+  // reset source toggle
+  setQASource('own');
   // hide success, show buttons
   document.getElementById('qa-success').classList.remove('show');
   document.getElementById('qa-save-btn').style.display = '';

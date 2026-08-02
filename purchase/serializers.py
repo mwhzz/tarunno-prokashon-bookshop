@@ -131,6 +131,7 @@ class PurchaseBillCreateSerializer(serializers.Serializer):
                     title=item_data['book_title'],
                     author=item_data.get('author', ''),
                     publisher=vendor_name,
+                    source='external',
                     mrp=item_data.get('mrp', 0),
                     purchase_price=item_data['unit_price'],
                     selling_price=item_data.get('selling_price', 0),

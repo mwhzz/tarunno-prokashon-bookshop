@@ -38,6 +38,9 @@ class StockSummaryViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.annotate(
                 total_stock=F('godown_quantity') + F('shop_quantity')
             ).filter(total_stock__gt=0)
+        book_source = self.request.query_params.get('book_source')
+        if book_source:
+            qs = qs.filter(book__source=book_source)
         return qs
 
     @action(detail=False, methods=['get'])

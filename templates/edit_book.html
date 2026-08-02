@@ -184,12 +184,14 @@
 <script>
 const bookId = "{{ book_id }}";
 let bookStatus = true;
+let bookSource = 'own';
 
 async function initEdit() {
   const root = document.getElementById('edit-root');
   try {
     const book = await api(`/books/${bookId}/`);
     bookStatus = book.is_active;
+    bookSource = book.source || 'own';
 
     root.innerHTML = `
       <!-- Book hero -->
@@ -244,6 +246,19 @@ async function initEdit() {
               <option value="single" ${book.book_type==='single'?'selected':''}>📖 Single — একটি বই</option>
               <option value="series" ${book.book_type==='series'?'selected':''}>📚 Series — সিরিজ</option>
             </select>
+          </div>
+          <div class="ec-field">
+            <label>বইয়ের উৎস</label>
+            <div class="status-toggle">
+              <div class="st-card ${book.source!=='external' ? 'sel-active' : ''}" id="src-own" onclick="setSource('own')">
+                <div class="st-icon">📗</div>
+                <div class="st-title">নিজস্ব বই</div>
+              </div>
+              <div class="st-card ${book.source==='external' ? 'sel-active' : ''}" id="src-external" onclick="setSource('external')">
+                <div class="st-icon">🏢</div>
+                <div class="st-title">বাইরের বই</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -339,6 +354,12 @@ function setStatus(active) {
   document.getElementById('st-inactive')?.classList.toggle('sel-active',  false);
 }
 
+function setSource(v) {
+  bookSource = v;
+  document.getElementById('src-own')?.classList.toggle('sel-active', v === 'own');
+  document.getElementById('src-external')?.classList.toggle('sel-active', v === 'external');
+}
+
 function previewImg(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
@@ -394,6 +415,7 @@ async function doUpdate() {
   fd.append('selling_price',  document.getElementById('b-price')?.value  || 0);
   fd.append('commission',     document.getElementById('b-commission')?.value || 0);
   fd.append('is_active',      bookStatus);
+  fd.append('source',         bookSource);
   fd.append('notes',          document.getElementById('b-note')?.value   || '');
 
   const img = document.getElementById('b-image');

@@ -22,12 +22,14 @@ class BookSerializer(serializers.ModelSerializer):
     shop_quantity = serializers.IntegerField(source='stock_summary.shop_quantity', read_only=True, default=0)
     godown_quantity = serializers.IntegerField(source='stock_summary.godown_quantity', read_only=True, default=0)
     image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
 
     class Meta:
         model = Book
         fields = [
             'id', 'title', 'product_code', 'author', 'publisher', 'isbn',
             'edition', 'group', 'group_name', 'image', 'image_url', 'book_type',
+            'source', 'source_display',
             'mrp', 'purchase_price', 'selling_price',
             'commission', 'discount', 'discount_type',
             'current_stock', 'shop_quantity', 'godown_quantity',
@@ -80,12 +82,13 @@ class BookListSerializer(serializers.ModelSerializer):
     current_stock = serializers.IntegerField(read_only=True)
     shop_quantity = serializers.IntegerField(source='stock_summary.shop_quantity', read_only=True, default=0)
     godown_quantity = serializers.IntegerField(source='stock_summary.godown_quantity', read_only=True, default=0)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
 
     class Meta:
         model = Book
         fields = [
             'id', 'title', 'product_code', 'author', 'mrp', 'selling_price',
-            'commission', 'discount', 'discount_type',
+            'commission', 'discount', 'discount_type', 'source', 'source_display',
             'current_stock', 'shop_quantity', 'godown_quantity', 'group_name',
             'is_active', 'image',
         ]

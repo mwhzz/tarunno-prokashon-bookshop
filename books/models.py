@@ -34,6 +34,12 @@ class Book(models.Model):
     ]
     book_type = models.CharField(max_length=20, choices=BOOK_TYPE_CHOICES, default='single')
 
+    SOURCE_CHOICES = [
+        ('own', 'নিজস্ব প্রকাশনা (তারুণ্য প্রকাশন)'),
+        ('external', 'বাইরের প্রকাশনী/ভেন্ডর'),
+    ]
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='own', help_text="নিজেদের বই নাকি বাইরের প্রকাশনী থেকে কেনা")
+
     # মূল্য
     mrp = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="বইয়ের গায়ে থাকা দাম")
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, default=0) # Buy Price

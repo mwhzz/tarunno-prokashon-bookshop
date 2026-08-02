@@ -40,6 +40,9 @@ class BookViewSet(viewsets.ModelViewSet):
         group = self.request.query_params.get('group')
         if group:
             qs = qs.filter(group_id=group)
+        source = self.request.query_params.get('source')
+        if source:
+            qs = qs.filter(source=source)
         active = self.request.query_params.get('active')
         if active is not None:
             qs = qs.filter(is_active=active.lower() == 'true')
@@ -79,7 +82,7 @@ CSV_HEADERS = [
     'title', 'author', 'publisher', 'isbn', 'edition',
     'mrp', 'purchase_price', 'selling_price',
     'commission', 'discount', 'discount_type',
-    'group', 'product_code', 'book_type',
+    'group', 'product_code', 'book_type', 'source',
     'stock_quantity', 'stock_godown_quantity', 'stock_shop_quantity',
     'stock_location', 'image_url', 'notes',
 ]
@@ -88,7 +91,7 @@ CSV_EXAMPLE_ROW = [
     'Hazar Bochor Dhore', 'Jahir Rayhan', 'Ananya', '9789840413232', '5th',
     '300', '210', '250',
     '0', '0', 'amount',
-    'Novel', 'BK-1001', 'single',
+    'Novel', 'BK-1001', 'single', 'own',
     '10', '0', '10', 'shop', 'https://example.com/cover.jpg', '',
 ]
 
@@ -103,7 +106,7 @@ class BookCSVTemplateView(APIView):
         writer.writerow(CSV_EXAMPLE_ROW)
         writer.writerow([
             'Amar Chelebela', 'Humayun Ahmed', 'Anyaprokash', '', '2nd',
-            '350', '245', '280', '0', '0', 'amount', 'Autobiography', '', 'single',
+            '350', '245', '280', '0', '0', 'amount', 'Autobiography', '', 'single', 'external',
             '5', '5', '0', 'godown', '', '',
         ])
         return response
@@ -199,6 +202,10 @@ class BookCSVImportView(APIView):
         if discount_type not in ('amount', 'percentage'):
             discount_type = 'amount'
 
+        source_value = row.get('source', '').strip().lower()
+        if source_value not in ('own', 'external'):
+            source_value = None
+
         data = {
             'title': title,
             'author': row.get('author', '').strip(),
@@ -220,10 +227,12 @@ class BookCSVImportView(APIView):
         if existing:
             for key, value in data.items():
                 setattr(existing, key, value)
+            if source_value:
+                existing.source = source_value
             existing.save()
             return existing, False
 
-        return Book.objects.create(**data), True
+        return Book.objects.create(source=source_value or 'own', **data), True
 
     def _normalize_row(self, row):
         normalized = dict(row)

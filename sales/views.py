@@ -416,6 +416,7 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
             title=trade.book_title,
             author=trade.author,
             publisher=trade.publisher,
+            source='external',
             purchase_price=trade.purchase_price,
             selling_price=selling_price,
             mrp=trade.body_rate if trade.body_rate > 0 else selling_price,

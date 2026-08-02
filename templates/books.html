@@ -32,6 +32,11 @@ async function initBooks() {
         <!-- টেবিলের হেডার এবং সার্চ অপশন -->
         <div class="table-header">
           <span class="table-title">📗 বইয়ের তালিকা (${r.count}টি)</span>
+          <select id="book-source-filter" onchange="filterBookList()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
+            <option value="">সব বই</option>
+            <option value="own">📗 নিজস্ব বই</option>
+            <option value="external">🏢 বাইরের বই</option>
+          </select>
           <input type="text" placeholder="বই বা লেখক খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
           <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
         </div>
@@ -44,6 +49,7 @@ async function initBooks() {
               <th>কোড</th>
               <th>বইয়ের নাম</th>
               <th>লেখক</th>
+              <th>উৎস</th>
               <th>MRP</th>
               <th>বিক্রয়মূল্য</th>
               <th>স্টক</th>
@@ -79,6 +85,7 @@ function bookRowHtml(b) {
     <td style="font-family:monospace">${b.product_code || '—'}</td>
     <td><strong>${b.title}</strong></td>
     <td>${b.author || '—'}</td>
+    <td>${b.source === 'external' ? '<span class="badge badge-yellow">🏢 বাইরের</span>' : '<span class="badge badge-green">📗 নিজস্ব</span>'}</td>
     <td style="font-family:monospace">৳${b.mrp || 0}</td>
     <td style="font-family:monospace;color:var(--accent)">৳${b.selling_price}</td>
     <td>${stockBadge}</td>
@@ -129,11 +136,13 @@ async function fetchAllBooks() {
 
 // সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন
 function filterBookList() {
-  const q = document.getElementById('book-search-list')?.value.toLowerCase();
+  const q = document.getElementById('book-search-list')?.value.toLowerCase() || '';
+  const source = document.getElementById('book-source-filter')?.value || '';
   
   // নাম অথবা লেখকের নামের সাথে মিলিয়ে ফিল্টার
   const filteredRows = allBooksList.filter(b =>
-    b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)
+    (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)) &&
+    (!source || b.source === source)
   );
   
   const tbody = document.querySelector('#books-table tbody');

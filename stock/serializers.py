@@ -33,6 +33,7 @@ class StockEntrySerializer(serializers.ModelSerializer):
 class StockSummarySerializer(serializers.ModelSerializer):
     book_title = serializers.CharField(source='book.title', read_only=True)
     book_author = serializers.CharField(source='book.author', read_only=True)
+    book_source = serializers.CharField(source='book.source', read_only=True)
     selling_price = serializers.DecimalField(
         source='book.selling_price', max_digits=10, decimal_places=2, read_only=True
     )
@@ -40,7 +41,7 @@ class StockSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StockSummary
-        fields = ['id', 'book', 'book_title', 'book_author', 'quantity',
+        fields = ['id', 'book', 'book_title', 'book_author', 'book_source', 'quantity',
                   'godown_quantity', 'shop_quantity',
                   'selling_price', 'stock_value', 'last_updated']
 

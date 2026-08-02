@@ -145,11 +145,48 @@
 
 /* book grid */
 .books-scroll {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 120px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+/* cart list — full width, below the book grid */
+.cart-table-wrap {
+  flex: 1 1 0;
+  min-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.cart-table { width: 100%; border-collapse: collapse; }
+
+.cart-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--surface2);
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.cart-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f7f3;
+  vertical-align: top;
+}
+
+.cart-table tbody tr:last-child td { border-bottom: none; }
+.cart-table tbody tr:hover td { background: var(--surface2); }
 
 .book-grid {
   display: grid;
@@ -364,17 +401,7 @@
 }
 .clear-btn:hover { background: rgba(229,62,62,.35); }
 
-/* Cart items */
-.cart-scroll {
-  flex-shrink: 0;
-  max-height: 42vh;
-  overflow-y: auto;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-
+/* Cart items (rows inside .cart-table, see .cart-table-wrap above) */
 .cart-empty {
   text-align: center;
   padding: 28px 10px;
@@ -385,24 +412,8 @@
 
 .cart-empty-icon { font-size: 36px; margin-bottom: 8px; opacity: .5; }
 
-.cart-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  margin-bottom: 7px;
-  transition: background .15s;
-}
-
-.cart-item:last-child { margin-bottom: 0; }
-.cart-item:hover { background: var(--g100); }
-
 .ci-name {
-  flex: 1;
-  min-width: 0;
+  min-width: 220px;
 }
 
 .ci-name strong {
@@ -514,6 +525,26 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+.stat-mini-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.stat-mini {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-mini span { font-size: 11px; font-weight: 700; color: var(--muted); }
+.stat-mini strong { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--g900); }
 
 /* Step labels */
 .step-label {
@@ -904,9 +935,9 @@
     overflow: visible;
   }
   .books-panel { overflow: visible; }
-  .books-scroll { overflow: visible; max-height: none; }
+  .books-scroll { overflow: visible; max-height: none; flex: none; }
+  .cart-table-wrap { overflow: visible; max-height: none; flex: none; }
   .receipt-panel { max-height: none; height: auto; }
-  .cart-scroll { max-height: none; }
   .mobile-sticky-bar { display: flex; }
 }
 
@@ -1119,6 +1150,26 @@ function renderPOS(container) {
         <div id="book-grid" class="book-grid"></div>
       </div>
 
+      <!-- cart list — full width, lives in the left column now -->
+      <div class="cart-table-wrap">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>বই</th>
+              <th>পরিমাণ</th>
+              <th style="text-align:right">মোট</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cart-scroll">
+            <tr><td colspan="4" class="cart-empty">
+              <div class="cart-empty-icon">📋</div>
+              বাম পাশ থেকে বই ক্লিক করুন
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
     <!-- ══ RIGHT: Receipt panel ══ -->
@@ -1128,23 +1179,19 @@ function renderPOS(container) {
       <div class="receipt-header">
         <div class="rh-top">
           <div>
-            <div class="rh-title">🛒 নির্বাচিত বই</div>
+            <div class="rh-title">🧾 বিলের হিসাব</div>
           </div>
           <button class="clear-btn" onclick="clearCart()">সব মুছুন</button>
         </div>
         <div class="rh-sub" id="cart-count-lbl">কোনো বই নেই — বাম থেকে বই যোগ করুন</div>
       </div>
 
-      <!-- cart items -->
-      <div class="cart-scroll" id="cart-scroll">
-        <div class="cart-empty">
-          <div class="cart-empty-icon">📋</div>
-          বাম পাশ থেকে বই ক্লিক করুন
-        </div>
-      </div>
-
       <!-- billing form -->
       <div class="billing-form">
+        <div class="stat-mini-row">
+          <div class="stat-mini"><span>মোট বই</span><strong id="t-items">০</strong></div>
+          <div class="stat-mini"><span>মোট পরিমাণ</span><strong id="t-qty">০</strong></div>
+        </div>
 
         <!-- STEP 1: Sale type -->
         <div class="step-label">
@@ -1313,7 +1360,7 @@ function renderPOS(container) {
       <strong id="msb-count">কার্ট খালি</strong>
       <span id="msb-total">৳০</span>
     </div>
-    <button class="msb-btn" onclick="document.querySelector('.receipt-panel').scrollIntoView({behavior:'smooth'})">কার্ট দেখুন ↓</button>
+    <button class="msb-btn" onclick="document.querySelector('.cart-table-wrap').scrollIntoView({behavior:'smooth'})">কার্ট দেখুন ↓</button>
   </div>`;
 
   updateGroupOptions();
@@ -1526,10 +1573,10 @@ function renderCart() {
 
   if (!cart.length) {
     el.innerHTML = `
-      <div class="cart-empty">
+      <tr><td colspan="4" class="cart-empty">
         <div class="cart-empty-icon">📋</div>
         বাম পাশ থেকে বই ক্লিক করুন
-      </div>`;
+      </td></tr>`;
     saveCartDraft();
     return;
   }
@@ -1537,29 +1584,32 @@ function renderCart() {
   const globalActive = defaultCommissionPct() > 0;
 
   el.innerHTML = cart.map(i => `
-    <div class="cart-item">
-      <div class="ci-name">
-        <strong title="${i.title}">${i.title}</strong>
-        <small>৳${money(i.price)} × ${i.qty}</small>
-        <small class="ci-breakdown">
-          ছাড় <b>${itemCommissionPct(i).toFixed(1)}%</b>
-          (${globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট'}${i.extraCommission > 0 ? ' + অতিরিক্ত' : ''})
-          — ৳${money(itemDiscount(i))} বাদ
-        </small>
-        <small class="ci-breakdown">নেট মূল্য: <b>৳${money(itemNet(i))}</b></small>
-        <div class="ci-adjust">
-          <label>Extra %</label>
-          <input type="number" min="0" max="100" step="0.1" value="${i.extraCommission || 0}" onclick="event.stopPropagation()" oninput="setExtraCommission(${i.bid}, this.value)" onchange="renderCart()">
+    <tr>
+      <td>
+        <div class="ci-name">
+          <strong title="${i.title}">${i.title}</strong>
+          <small>৳${money(i.price)} × ${i.qty}</small>
+          <small class="ci-breakdown">
+            ছাড় <b>${itemCommissionPct(i).toFixed(1)}%</b>
+            (${globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট'}${i.extraCommission > 0 ? ' + অতিরিক্ত' : ''})
+            — ৳${money(itemDiscount(i))} বাদ
+          </small>
+          <div class="ci-adjust">
+            <label>Extra %</label>
+            <input type="number" min="0" max="100" step="0.1" value="${i.extraCommission || 0}" onclick="event.stopPropagation()" oninput="setExtraCommission(${i.bid}, this.value)" onchange="renderCart()">
+          </div>
         </div>
-      </div>
-      <div class="ci-qty">
-        <button class="qb" aria-label="কমান" onclick="changeQty(${i.bid},-1)">−</button>
-        <input class="ci-count-input" type="number" min="1" max="${i.max}" value="${i.qty}" onclick="event.stopPropagation()" onchange="setQty(${i.bid}, this.value)">
-        <button class="qb" aria-label="বাড়ান" ${i.qty >= i.max ? 'disabled' : ''} onclick="changeQty(${i.bid},+1)">+</button>
-      </div>
-      <div class="ci-total">৳${money(itemNet(i))}</div>
-      <button class="ci-remove" aria-label="মুছে ফেলুন" onclick="removeItem(${i.bid})">✕</button>
-    </div>`).join('');
+      </td>
+      <td>
+        <div class="ci-qty">
+          <button class="qb" aria-label="কমান" onclick="changeQty(${i.bid},-1)">−</button>
+          <input class="ci-count-input" type="number" min="1" max="${i.max}" value="${i.qty}" onclick="event.stopPropagation()" onchange="setQty(${i.bid}, this.value)">
+          <button class="qb" aria-label="বাড়ান" ${i.qty >= i.max ? 'disabled' : ''} onclick="changeQty(${i.bid},+1)">+</button>
+        </div>
+      </td>
+      <td><div class="ci-total">৳${money(itemNet(i))}</div></td>
+      <td><button class="ci-remove" aria-label="মুছে ফেলুন" onclick="removeItem(${i.bid})">✕</button></td>
+    </tr>`).join('');
 
   saveCartDraft();
 }
@@ -1716,7 +1766,10 @@ function calcTotals(manualDisc = false) {
   const due    = Math.max(0, total - paid);
   const change = Math.max(0, paid - total);
   const grand  = currentCustomerDue + due;
+  const totalQty = cart.reduce((s,i) => s + i.qty, 0);
 
+  setText('t-items',    `${cart.length}`);
+  setText('t-qty',      `${totalQty}`);
   setText('t-sub',      `৳${money(sub)}`);
   setText('t-disc',     `−৳${money(disc)}`);
   setText('t-extra',    `+৳${money(extra)}`);

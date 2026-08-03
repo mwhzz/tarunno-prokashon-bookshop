@@ -125,28 +125,39 @@ def login_view(request):
     return render(request, 'login.html')
 
 def register_view(request):
+    from django.conf import settings
+
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    registration_open = bool(settings.STAFF_REGISTRATION_CODE)
+
     if request.method == 'POST':
+        if not registration_open:
+            messages.error(request, 'নতুন একাউন্ট তৈরি এখন বন্ধ আছে। অ্যাডমিনের সাথে যোগাযোগ করুন।')
+            return render(request, 'register.html', {'registration_open': registration_open})
+
         u = request.POST.get('username')
         e = request.POST.get('email')
         p = request.POST.get('password')
         f = request.POST.get('first_name')
         l = request.POST.get('last_name')
-        
-        if User.objects.filter(username=u).exists():
+        code = request.POST.get('registration_code', '')
+
+        if code != settings.STAFF_REGISTRATION_CODE:
+            messages.error(request, 'রেজিস্ট্রেশন কোড ভুল! সঠিক কোডের জন্য অ্যাডমিনের সাথে যোগাযোগ করুন।')
+        elif User.objects.filter(username=u).exists():
             messages.error(request, 'এই ইউজারনেম অলরেডি ব্যবহার করা হয়েছে!')
         else:
             user = User.objects.create_user(username=u, email=e, password=p, first_name=f, last_name=l)
-            # প্রোফাইল আপডেট (সিগন্যাল থেকে অলরেডি তৈরি হয়ে আছে, শুধু রোল চেঞ্জ হবে)
+            # প্রোফাইল আপডেট (সিগ্নাল থেকে অলরেডি তৈরি হয়ে আছে, শুধু রোল চেঞ্জ হবে)
             if hasattr(user, 'profile'):
                 user.profile.role = 'staff'
                 user.profile.save()
             messages.success(request, 'একাউন্ট তৈরি হয়েছে! এখন লগইন করুন।')
             return redirect('login')
-            
-    return render(request, 'register.html')
+
+    return render(request, 'register.html', {'registration_open': registration_open})
 
 def logout_view(request):
     logout(request)

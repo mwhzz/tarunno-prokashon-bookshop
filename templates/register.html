@@ -103,6 +103,7 @@ body {
     </ul>
   {% endif %}
 
+  {% if registration_open %}
   <form method="POST">
     {% csrf_token %}
 
@@ -132,6 +133,11 @@ body {
       <input type="password" name="password" placeholder="Choose a Password" required autocomplete="new-password">
     </div>
 
+    <div class="form-group">
+      <label>রেজিস্ট্রেশন কোড *</label>
+      <input type="text" name="registration_code" placeholder="অ্যাডমিনের কাছ থেকে পাওয়া কোড" required autocomplete="off">
+    </div>
+
     <div class="role-note">
       ℹ️ নতুন একাউন্ট শুরুতে <strong>স্টাফ</strong> হিসেবে তৈরি হবে। ম্যানেজার/অ্যাডমিন
       পদমর্যাদা পরে একজন অ্যাডমিন "স্টাফ ম্যানেজমেন্ট" পেজ থেকে দিতে পারবেন।
@@ -139,6 +145,12 @@ body {
 
     <button type="submit" class="btn">রেজিস্ট্রেশন করুন</button>
   </form>
+  {% else %}
+    <div class="role-note" style="background:#fef2f2; border-color:#fecaca; color:#b91c1c;">
+      🔒 নতুন একাউন্ট তৈরি বর্তমানে বন্ধ আছে। স্টাফ অ্যাকাউন্ট দরকার হলে অ্যাডমিনের সাথে যোগাযোগ করুন —
+      তিনি "স্টাফ ম্যানেজমেন্ট" পেজ থেকে সরাসরি অ্যাকাউন্ট তৈরি করে দিতে পারবেন।
+    </div>
+  {% endif %}
 
   <div class="footer-links">
     অলরেডি একাউন্ট আছে? <a href="/login/">লগইন করুন</a>

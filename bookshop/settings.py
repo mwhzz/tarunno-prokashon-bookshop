@@ -163,6 +163,11 @@ CORS_ALLOW_CREDENTIALS = env_bool('DJANGO_CORS_ALLOW_CREDENTIALS', True)
 DATA_UPLOAD_MAX_MEMORY_SIZE = env_int('DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE', 10 * 1024 * 1024)
 FILE_UPLOAD_MAX_MEMORY_SIZE = env_int('DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE', 10 * 1024 * 1024)
 
+# স্টাফ যেন কেউ URL পেলেই নিজে নিজে অ্যাকাউন্ট খুলে POS অ্যাক্সেস না পায়, তাই /register/
+# পেজে এই কোডটা সঠিকভাবে লিখলেই একাউন্ট তৈরি হবে। সেট করা না থাকলে রেজিস্ট্রেশন পুরোপুরি
+# বন্ধ থাকবে (নিরাপদ ডিফল্ট) — নতুন স্টাফ তখন শুধু অ্যাডমিন প্যানেল থেকেই তৈরি করা যাবে।
+STAFF_REGISTRATION_CODE = os.environ.get('STAFF_REGISTRATION_CODE', '')
+
 TELEGRAM_REPORT_ENABLED = env_bool('TELEGRAM_REPORT_ENABLED', False)
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')

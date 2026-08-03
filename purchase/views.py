@@ -65,6 +65,7 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
         bill = self.get_object()
         old_due = bill.due_amount
         old_paid = bill.paid_amount
+        old_account = bill.account_name
 
         for field in ['memo_number', 'discount', 'paid_amount', 'account_name', 'purchase_date', 'note']:
             if field in request.data:
@@ -77,18 +78,23 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
             bill.vendor.total_due += (bill.due_amount - old_due)
             bill.vendor.save(update_fields=['total_due'])
 
-        if bill.paid_amount != old_paid:
+        if bill.paid_amount != old_paid or bill.account_name != old_account:
+            # নগদ ছাড়া অন্য মাধ্যমে (bank ইত্যাদি) দেওয়া টাকা হাতের ক্যাশ লেজারে গণনা করা যাবে না —
+            # নাহলে ব্যাংকে পাঠানো টাকাও "ক্যাশে আছে" হিসেবে দেখাবে।
+            affected_days = list(DailyCash.objects.filter(transactions__reference_id=f"pbill_{bill.id}").distinct())
             CashTransaction.objects.filter(reference_id=f"pbill_{bill.id}").delete()
-            if bill.paid_amount > 0:
+            if bill.paid_amount > 0 and bill.account_name == 'cash':
                 daily_cash = DailyCash.get_for_today()
                 CashTransaction.objects.create(
                     daily_cash=daily_cash,
                     transaction_type='purchase',
                     amount=bill.paid_amount,
-                    note=f"ক্রয় বিল পেমেন্ট (আপডেট): {bill.vendor_name} (Bill #{bill.id})",
+                    note=f"ক্রয় বিল পেমেন্ট (আপডেট): {bill.vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
                     reference_id=f"pbill_{bill.id}",
                 )
-            for dc in DailyCash.objects.filter(transactions__reference_id=f"pbill_{bill.id}").distinct():
+                if daily_cash not in affected_days:
+                    affected_days.append(daily_cash)
+            for dc in affected_days:
                 dc.update_closing_balance()
 
         return Response(PurchaseBillSerializer(bill).data)
@@ -112,8 +118,9 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
                     note=f"Purchase Bill #{bill.id} বাতিল/মুছে ফেলার কারণে স্টক ফেরত",
                 )
 
-        affected_days = list(DailyCash.objects.filter(transactions__reference_id=f"pbill_{bill.id}").distinct())
-        CashTransaction.objects.filter(reference_id=f"pbill_{bill.id}").delete()
+        payment_refs = [f"pbill_{bill.id}"] + [f"pbill_payment_{p.id}" for p in bill.payments.all()]
+        affected_days = list(DailyCash.objects.filter(transactions__reference_id__in=payment_refs).distinct())
+        CashTransaction.objects.filter(reference_id__in=payment_refs).delete()
 
         if bill.vendor:
             bill.vendor.total_due -= bill.due_amount
@@ -162,15 +169,17 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
                 bill.vendor.total_due -= amount
                 bill.vendor.save(update_fields=['total_due'])
 
-            daily_cash = DailyCash.get_for_today()
-            CashTransaction.objects.create(
-                daily_cash=daily_cash,
-                transaction_type='purchase',
-                amount=amount,
-                note=f"ক্রয় বিল পেমেন্ট: {bill.vendor_name} (Bill #{bill.id})",
-                reference_id=f"pbill_payment_{payment.id}",
-            )
-            daily_cash.update_closing_balance()
+            # নগদ ছাড়া অন্য মাধ্যমে (bkash/nagad/bank) দেওয়া পেমেন্ট হাতের ক্যাশ লেজারে দেখানো যাবে না
+            if method == 'cash':
+                daily_cash = DailyCash.get_for_today()
+                CashTransaction.objects.create(
+                    daily_cash=daily_cash,
+                    transaction_type='purchase',
+                    amount=amount,
+                    note=f"ক্রয় বিল পেমেন্ট: {bill.vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
+                    reference_id=f"pbill_payment_{payment.id}",
+                )
+                daily_cash.update_closing_balance()
 
         return Response(PurchaseBillSerializer(bill).data)
 

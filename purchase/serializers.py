@@ -183,13 +183,14 @@ class PurchaseBillCreateSerializer(serializers.Serializer):
         vendor.total_due += bill.due_amount
         vendor.save(update_fields=['total_due'])
 
-        if bill.paid_amount > 0:
+        # নগদ ছাড়া অন্য মাধ্যমে (bank ইত্যাদি) দেওয়া টাকা হাতের ক্যাশ লেজারে গণনা করা যাবে না
+        if bill.paid_amount > 0 and bill.account_name == 'cash':
             daily_cash = DailyCash.get_for_today()
             CashTransaction.objects.create(
                 daily_cash=daily_cash,
                 transaction_type='purchase',
                 amount=bill.paid_amount,
-                note=f"ক্রয় বিল পেমেন্ট: {vendor_name} (Bill #{bill.id})",
+                note=f"ক্রয় বিল পেমেন্ট: {vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
                 reference_id=f"pbill_{bill.id}",
             )
 

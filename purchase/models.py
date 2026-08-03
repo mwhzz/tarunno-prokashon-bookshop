@@ -87,6 +87,15 @@ class PurchaseBill(models.Model):
     def __str__(self):
         return f"Purchase Bill #{self.id} - {self.vendor_name}"
 
+    def books_summary(self, limit=3):
+        """ক্যাশ লেজার নোটে দেখানোর জন্য এই বিলের বইগুলোর সংক্ষিপ্ত তালিকা"""
+        titles = list(self.items.values_list('book_title', flat=True)[:limit])
+        remaining = self.items.count() - len(titles)
+        summary = ', '.join(titles)
+        if remaining > 0:
+            summary += f" +আরও {remaining}টি"
+        return summary
+
     def save(self, *args, **kwargs):
         self.due_amount = self.total - self.paid_amount
         if self.due_amount <= 0:

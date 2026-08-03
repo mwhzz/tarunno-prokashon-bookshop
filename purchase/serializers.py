@@ -12,7 +12,7 @@ class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
         fields = ['id', 'name', 'phone', 'address', 'vendor_code', 'opening_due', 'total_due', 'created_at']
-        read_only_fields = ['vendor_code', 'total_due']
+        read_only_fields = ['vendor_code']
 
     def create(self, validated_data):
         vendor = super().create(validated_data)

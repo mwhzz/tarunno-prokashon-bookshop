@@ -43,13 +43,19 @@
   <div class="vd-shell">
 
     <div class="vd-card">
-      <div class="vd-head"><div class="vd-head-title">🏢 নতুন ভেন্ডর</div></div>
+      <div class="vd-head"><div class="vd-head-title" id="nv-form-title">🏢 নতুন ভেন্ডর</div></div>
       <div class="vd-body">
+        <input type="hidden" id="editing-id" value="">
         <div class="vd-field"><label>নাম <span style="color:var(--danger)">*</span></label><input class="vd-input" id="nv-name" placeholder="ভেন্ডর/প্রকাশনীর নাম"></div>
         <div class="vd-field"><label>ফোন</label><input class="vd-input" id="nv-phone" placeholder="ঐচ্ছিক"></div>
         <div class="vd-field"><label>ঠিকানা</label><input class="vd-input" id="nv-address" placeholder="ঐচ্ছিক"></div>
-        <div class="vd-field"><label>শুরুর বকেয়া ৳</label><input class="vd-input" id="nv-opening" type="number" min="0" placeholder="০"></div>
-        <button class="vd-save-btn" id="nv-save-btn" onclick="addVendor()">💾 ভেন্ডর যোগ করুন</button>
+        <div class="vd-field">
+          <label id="nv-opening-label">শুরুর বকেয়া ৳</label>
+          <input class="vd-input" id="nv-opening" type="number" min="0" placeholder="০">
+          <p style="font-size:11px; color:var(--muted); margin-top:4px" id="nv-opening-hint"></p>
+        </div>
+        <button class="vd-save-btn" id="nv-save-btn" onclick="saveVendor()">💾 ভেন্ডর যোগ করুন</button>
+        <button class="vd-save-btn" id="nv-cancel-btn" onclick="cancelEdit()" style="display:none; margin-top:8px; background:var(--surface2); color:var(--text2)">✕ সম্পাদনা বাতিল করুন</button>
       </div>
     </div>
 
@@ -78,6 +84,8 @@
 {% block extra_js %}
 <script>
 let searchTimer = null;
+let vendorsCache = [];
+let editingOriginalDue = null;
 function debouncedLoad() { clearTimeout(searchTimer); searchTimer = setTimeout(loadVendors, 350); }
 
 async function loadVendors() {
@@ -88,6 +96,7 @@ async function loadVendors() {
     if (q) params.set('search', q);
     const r = await api(`/purchase/vendors/?${params.toString()}`);
     const vendors = r.results || [];
+    vendorsCache = vendors;
 
     setText('stat-count', r.count ?? vendors.length);
     const totalDue = vendors.reduce((s, v) => s + Number(v.total_due || 0), 0);
@@ -107,6 +116,7 @@ async function loadVendors() {
             <th>ফোন</th>
             <th>শুরুর বকেয়া</th>
             <th>বর্তমান বকেয়া</th>
+            <th>অ্যাকশন</th>
           </tr>
         </thead>
         <tbody>
@@ -117,6 +127,10 @@ async function loadVendors() {
               <td>${v.phone || '—'}</td>
               <td style="font-family:monospace">৳${num(v.opening_due)}</td>
               <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="editVendor(${v.id})" title="সম্পাদনা">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteVendor(${v.id})" title="মুছে ফেলুন">🗑️</button>
+              </td>
             </tr>`).join('')}
         </tbody>
       </table>`;
@@ -125,30 +139,102 @@ async function loadVendors() {
   }
 }
 
-async function addVendor() {
+function editVendor(id) {
+  const v = vendorsCache.find(x => x.id === id);
+  if (!v) return;
+
+  document.getElementById('editing-id').value = v.id;
+  document.getElementById('nv-name').value = v.name;
+  document.getElementById('nv-phone').value = v.phone || '';
+  document.getElementById('nv-address').value = v.address || '';
+  document.getElementById('nv-opening').value = v.total_due;
+  editingOriginalDue = parseFloat(v.total_due) || 0;
+
+  document.getElementById('nv-form-title').textContent = `✏️ সম্পাদনা: ${v.name}`;
+  document.getElementById('nv-opening-label').textContent = 'বর্তমান মোট বকেয়া';
+  document.getElementById('nv-opening-hint').textContent = 'এখানে পরিবর্তন করলে ভেন্ডরের মোট বকেয়া সরাসরি বদলে যাবে — সাবধানে করুন।';
+  document.getElementById('nv-save-btn').textContent = '✓ পরিবর্তন সেভ করুন';
+  document.getElementById('nv-cancel-btn').style.display = 'block';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingOriginalDue = null;
+  document.getElementById('editing-id').value = '';
+  document.getElementById('nv-name').value = '';
+  document.getElementById('nv-phone').value = '';
+  document.getElementById('nv-address').value = '';
+  document.getElementById('nv-opening').value = '';
+
+  document.getElementById('nv-form-title').textContent = '🏢 নতুন ভেন্ডর';
+  document.getElementById('nv-opening-label').textContent = 'শুরুর বকেয়া ৳';
+  document.getElementById('nv-opening-hint').textContent = '';
+  document.getElementById('nv-save-btn').textContent = '💾 ভেন্ডর যোগ করুন';
+  document.getElementById('nv-cancel-btn').style.display = 'none';
+}
+
+async function deleteVendor(id) {
+  const v = vendorsCache.find(x => x.id === id);
+  if (!v) return;
+
+  let warning = `"${v.name}" ভেন্ডরকে মুছে ফেলতে চান?`;
+  if (parseFloat(v.total_due) > 0) {
+    warning += `\n\n⚠️ এই ভেন্ডরের এখনো ৳${num(v.total_due)} বকেয়া আছে। মুছে ফেললে এই বকেয়ার হিসাব আর ভেন্ডরের সাথে যুক্ত থাকবে না (তবে পুরনো ক্রয় বিলগুলো থাকবে)।`;
+  }
+  if (!confirm(warning)) return;
+
+  try {
+    await api(`/purchase/vendors/${id}/`, 'DELETE');
+    toast('ভেন্ডর মুছে ফেলা হয়েছে।');
+    if (document.getElementById('editing-id').value == id) cancelEdit();
+    loadVendors();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
+  }
+}
+
+async function saveVendor() {
+  const editingId = document.getElementById('editing-id').value;
   const name = document.getElementById('nv-name').value.trim();
   if (!name) { toast('ভেন্ডরের নাম লিখুন!', 'error'); return; }
+
+  const openingVal = document.getElementById('nv-opening').value || 0;
+
+  if (editingId && editingOriginalDue !== null && parseFloat(openingVal) !== editingOriginalDue) {
+    const ok = confirm(
+      `"${name}"-এর মোট বকেয়া ৳${num(editingOriginalDue)} থেকে সরাসরি ৳${num(openingVal)}-এ বদলে যাবে।\n\n` +
+      `এটা কোনো বিল/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বকেয়ার হিসাব হারিয়ে যাবে।\n\n` +
+      `আপনি কি নিশ্চিত?`
+    );
+    if (!ok) return;
+  }
 
   const btn = document.getElementById('nv-save-btn');
   btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
   try {
-    await api('/purchase/vendors/', 'POST', {
-      name,
-      phone: document.getElementById('nv-phone').value,
-      address: document.getElementById('nv-address').value,
-      opening_due: document.getElementById('nv-opening').value || 0,
-    });
-    toast('ভেন্ডর যোগ হয়েছে ✓');
-    document.getElementById('nv-name').value = '';
-    document.getElementById('nv-phone').value = '';
-    document.getElementById('nv-address').value = '';
-    document.getElementById('nv-opening').value = '';
+    const phone = document.getElementById('nv-phone').value;
+    const address = document.getElementById('nv-address').value;
+
+    if (editingId) {
+      await api(`/purchase/vendors/${editingId}/`, 'PATCH', {
+        name, phone, address, total_due: openingVal,
+      });
+      toast('ভেন্ডরের তথ্য আপডেট হয়েছে ✓');
+    } else {
+      await api('/purchase/vendors/', 'POST', {
+        name, phone, address, opening_due: openingVal,
+      });
+      toast('ভেন্ডর যোগ হয়েছে ✓');
+    }
+    cancelEdit();
     loadVendors();
   } catch (e) {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
-    toast('যোগ করা যায়নি: ' + msg, 'error');
+    toast('সেভ করা যায়নি: ' + msg, 'error');
   } finally {
-    btn.disabled = false; btn.innerHTML = '💾 ভেন্ডর যোগ করুন';
+    btn.disabled = false;
   }
 }
 

@@ -20,7 +20,7 @@ class VendorViewSet(viewsets.ModelViewSet):
 
 
 class PurchaseBillViewSet(viewsets.ModelViewSet):
-    queryset = PurchaseBill.objects.select_related('vendor', 'created_by').prefetch_related('items')
+    queryset = PurchaseBill.objects.select_related('vendor', 'created_by').prefetch_related('items', 'payments')
     filter_backends = [filters.SearchFilter]
     search_fields = ['vendor_name', 'memo_number']
 

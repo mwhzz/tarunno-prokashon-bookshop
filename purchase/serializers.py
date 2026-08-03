@@ -5,7 +5,7 @@ from rest_framework import serializers
 from books.models import Book
 from stock.models import StockEntry, StockSummary
 
-from .models import PurchaseBill, PurchaseBillItem, Vendor
+from .models import PurchaseBill, PurchaseBillItem, Vendor, VendorPayment
 
 
 class VendorSerializer(serializers.ModelSerializer):
@@ -49,8 +49,17 @@ class PurchaseBillItemCreateSerializer(serializers.Serializer):
         return data
 
 
+class VendorPaymentSerializer(serializers.ModelSerializer):
+    method_display = serializers.CharField(source='get_method_display', read_only=True)
+
+    class Meta:
+        model = VendorPayment
+        fields = ['id', 'amount', 'method', 'method_display', 'note', 'created_at']
+
+
 class PurchaseBillSerializer(serializers.ModelSerializer):
     items = PurchaseBillItemSerializer(many=True, read_only=True)
+    payments = VendorPaymentSerializer(many=True, read_only=True)
     vendor_code = serializers.CharField(source='vendor.vendor_code', read_only=True, default=None)
     vendor_phone = serializers.CharField(source='vendor.phone', read_only=True, default='')
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -62,7 +71,7 @@ class PurchaseBillSerializer(serializers.ModelSerializer):
             'id', 'vendor', 'vendor_name', 'vendor_code', 'vendor_phone', 'memo_number',
             'subtotal', 'discount', 'total', 'paid_amount', 'due_amount',
             'account_name', 'location', 'status', 'status_display', 'purchase_date', 'note',
-            'created_by_name', 'created_at', 'items',
+            'created_by_name', 'created_at', 'items', 'payments',
         ]
 
 

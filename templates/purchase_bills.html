@@ -87,6 +87,7 @@
 {% block extra_js %}
 <script>
 let searchTimer = null;
+let billsCache = [];
 
 function debouncedLoad() {
   clearTimeout(searchTimer);
@@ -122,6 +123,7 @@ async function loadBills() {
     params.set('page_size', 100);
     const r = await api(`/purchase/bills/?${params.toString()}`);
     const bills = r.results || [];
+    billsCache = bills;
 
     if (!bills.length) {
       w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📜</div><h3>কোনো বিল নেই</h3></div>`;
@@ -157,9 +159,40 @@ async function loadBills() {
               <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
               <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
-              <td>
-                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id}, ${b.due_amount})">৳ পেমেন্ট দিন</button>` : ''}
+              <td style="white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">👁️ বিস্তারিত</button>
+                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
                 <button class="btn btn-ghost btn-sm" onclick="deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
+              </td>
+            </tr>
+            <tr id="details-row-${b.id}" style="display:none">
+              <td colspan="10" style="background:var(--surface2); padding:14px 24px">
+                <div style="font-weight:800; font-size:12.5px; margin-bottom:6px; color:var(--text2)">📦 বিলের বইসমূহ</div>
+                <table style="width:100%; margin-bottom:${b.payments && b.payments.length ? '14px' : '0'}">
+                  <thead><tr><th style="padding:4px 8px">বই</th><th>পরিমাণ</th><th>একক দাম</th><th>মোট</th></tr></thead>
+                  <tbody>
+                    ${(b.items || []).map(i => `
+                      <tr>
+                        <td style="padding:4px 8px">${i.book_title}</td>
+                        <td>${i.quantity}</td>
+                        <td style="font-family:monospace">৳${num(i.unit_price)}</td>
+                        <td style="font-family:monospace">৳${num(i.total)}</td>
+                      </tr>`).join('')}
+                  </tbody>
+                </table>
+                ${b.payments && b.payments.length ? `
+                  <div style="font-weight:800; font-size:12.5px; margin-bottom:6px; color:var(--text2)">💰 পেমেন্ট ইতিহাস</div>
+                  <table style="width:100%">
+                    <thead><tr><th style="padding:4px 8px">তারিখ</th><th>পরিমাণ</th><th>মেথড</th></tr></thead>
+                    <tbody>
+                      ${b.payments.map(p => `
+                        <tr>
+                          <td style="padding:4px 8px; color:var(--muted); font-size:12px">${fmtDate(p.created_at)}</td>
+                          <td style="font-family:monospace; color:var(--accent2)">৳${num(p.amount)}</td>
+                          <td>${p.method_display}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>` : ''}
               </td>
             </tr>`).join('')}
         </tbody>
@@ -184,12 +217,31 @@ async function deleteBill(id) {
   }
 }
 
-async function collectVendorPayment(billId, maxAmount) {
+function toggleBillDetails(billId) {
+  const row = document.getElementById(`details-row-${billId}`);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+async function collectVendorPayment(billId) {
+  const bill = billsCache.find(x => x.id === billId);
+  if (!bill) return;
+  const maxAmount = bill.due_amount;
+
+  const itemsSummary = (bill.items || [])
+    .map(i => `${i.book_title} × ${i.quantity}`)
+    .join(', ');
+
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
-      <div class="form-card" style="width:400px; padding:24px">
+      <div class="form-card" style="width:420px; padding:24px">
         <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+        <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
+          <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
+          <div style="color:var(--text2)"><strong>ভেন্ডর:</strong> ${bill.vendor_name}</div>
+          <div style="color:var(--text2)"><strong>তারিখ:</strong> ${fmtDate(bill.purchase_date)}</div>
+          ${itemsSummary ? `<div style="color:var(--text2); margin-top:4px"><strong>বই:</strong> ${itemsSummary}</div>` : ''}
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">এই বিলের মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>পরিশোধের পরিমাণ (Amount)</label>

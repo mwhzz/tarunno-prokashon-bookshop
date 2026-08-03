@@ -43,6 +43,16 @@ class DailyCashViewSet(viewsets.ModelViewSet):
     serializer_class = DailyCashSerializer
     permission_classes = [IsAdmin]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        return qs
+
     def perform_update(self, serializer):
         instance = serializer.save()
         instance.update_closing_balance()

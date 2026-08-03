@@ -3,12 +3,32 @@
 {% block page_title %}সব ইনভয়েস{% endblock %}
 
 {% block content %}
-<!-- 
+<!--
 =============================================================================
-* সব ইনভয়েস (All Invoices)
-* এখানে বিক্রয় হওয়া সব ইনভয়েসের তালিকা দেখা যাবে।
+* সব ইনভয়েস (All Invoices)
+* এখানে বিক্রয় হওয়া সব ইনভয়েসের তালিকা দেখা যাবে।
 =============================================================================
 -->
+
+<div class="table-wrap" style="padding:14px 20px; margin-bottom:16px;">
+    <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+        <div>
+            <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরুর তারিখ</label>
+            <input type="date" id="inv-f-from" style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <div>
+            <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ তারিখ</label>
+            <input type="date" id="inv-f-to" style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <div style="flex:1; min-width:220px;">
+            <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">সার্চ (ইনভয়েস নম্বর/গ্রাহক/ফোন)</label>
+            <input type="text" id="inv-f-search" placeholder="খুঁজুন..." oninput="debouncedInvoiceLoad()"
+                   style="width:100%; height:36px; padding:0 12px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="initInvoices()">খুঁজুন</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetInvoiceFilter()">সব দেখুন</button>
+    </div>
+</div>
 
 <div id="invoices-wrapper">
     <div class="loading"><div class="spinner"></div> ইনভয়েস লোড হচ্ছে...</div>
@@ -17,24 +37,54 @@
 
 {% block extra_js %}
 <script>
+let invoiceFilterTimer = null;
+function debouncedInvoiceLoad() {
+  clearTimeout(invoiceFilterTimer);
+  invoiceFilterTimer = setTimeout(initInvoices, 350);
+}
+function resetInvoiceFilter() {
+  document.getElementById('inv-f-from').value = '';
+  document.getElementById('inv-f-to').value = '';
+  document.getElementById('inv-f-search').value = '';
+  initInvoices();
+}
+
 async function initInvoices() {
   const w = document.getElementById('invoices-wrapper');
+  w.innerHTML = '<div class="loading"><div class="spinner"></div> ইনভয়েস লোড হচ্ছে...</div>';
   try {
-    // API থেকে সব সেলস ডাটা (ইনভয়েস) আনা হচ্ছে
-    const r = await api('/sales/?page_size=100');
-    
+    const params = new URLSearchParams({ page_size: 150 });
+    const from = document.getElementById('inv-f-from').value;
+    const to = document.getElementById('inv-f-to').value;
+    const q = document.getElementById('inv-f-search').value.trim();
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    if (q) params.set('search', q);
+
+    const r = await api(`/sales/?${params.toString()}`);
+
+    if (!r.results.length) {
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">🧾</div><h3>কোনো ইনভয়েস পাওয়া যায়নি</h3><p>খোঁজার শর্ত পরিবর্তন করে আবার চেষ্টা করুন।</p></div>`;
+      return;
+    }
+
+    const truncatedNote = r.count > r.results.length
+      ? `<p style="font-size:12px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${r.results.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
+      : '';
+
     w.innerHTML = `
       <div class="table-wrap">
         <div class="table-header">
-            <span class="table-title">🧾 সব ইনভয়েসের তালিকা (${r.count}টি)</span>
+            <span class="table-title">🧾 ইনভয়েসের তালিকা (${r.count}টি)</span>
         </div>
+        ${truncatedNote}
         <table style="width:100%; border-collapse:collapse;">
           <thead>
             <tr>
                 <th>ইনভয়েস নম্বর</th>
                 <th>গ্রাহক</th>
                 <th>মোট বিল</th>
-                <th>পেমেন্ট পেয়েছি</th>
+                <th>পেমেন্ট পেয়েছি</th>
                 <th>বাকি</th>
                 <th>স্ট্যাটাস</th>
                 <th>তারিখ</th>
@@ -64,8 +114,8 @@ async function initInvoices() {
           </tbody>
         </table>
       </div>`;
-  } catch(e) { 
-      w.innerHTML = '<div class="empty">ডাটা লোড করতে সমস্যা হয়েছে।</div>'; 
+  } catch(e) {
+      w.innerHTML = '<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>ডাটা লোড করতে সমস্যা হয়েছে।</h3></div>';
   }
 }
 
@@ -82,15 +132,16 @@ async function showReturnUI(saleId, invNum) {
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border)">
                 <div style="flex:1">
                   <div style="font-size:14px; font-weight:600">${item.book_title}</div>
-                  <div style="font-size:11px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
+                  <div style="font-size:11px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
                 </div>
-                <input type="number" class="return-qty" data-id="${item.book}" value="0" min="0" max="${item.quantity}" style="width:60px; padding:4px">
+                <input type="number" class="return-qty" data-id="${item.book}" data-max="${item.quantity}" value="0" min="0" max="${item.quantity}" style="width:60px; padding:4px"
+                       oninput="if(Number(this.value)>Number(this.dataset.max))this.value=this.dataset.max; if(Number(this.value)<0)this.value=0;">
               </div>
             `).join('')}
           </div>
           <div class="form-group" style="margin-top:15px">
-            <label>ফেরত নেওয়ার কারণ (Reason)</label>
-            <input id="return-reason" placeholder="যেমন: কাস্টমার বদলে অন্য বই নিয়েছে">
+            <label>ফেরত নেওয়ার কারণ (Reason)</label>
+            <input id="return-reason" placeholder="যেমন: কাস্টমার বদলে অন্য বই নিয়েছে">
           </div>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px">
             <button class="btn btn-ghost" onclick="document.getElementById('return-modal').remove()">বাতিল</button>
@@ -100,7 +151,7 @@ async function showReturnUI(saleId, invNum) {
       </div>
     `;
     document.body.insertAdjacentHTML('beforeend', html);
-  } catch(e) { toast('ডাটা লোড করা যায়নি', 'error'); }
+  } catch(e) { toast('ডাটা লোড করা যায়নি', 'error'); }
 }
 
 async function processReturn(saleId) {
@@ -112,18 +163,18 @@ async function processReturn(saleId) {
       items.push({ book_id: input.dataset.id, quantity: qty });
     }
   });
-  
-  if (!items.length) { toast('অন্তত একটি বইয়ের পরিমাণ লিখুন', 'error'); return; }
-  
+
+  if (!items.length) { toast('অন্তত একটি বইয়ের পরিমাণ লিখুন', 'error'); return; }
+
   const reason = document.getElementById('return-reason').value;
-  
+
   try {
     await api(`/sales/${saleId}/return_items/`, 'POST', { items, reason });
-    toast('বই ফেরত নেওয়া হয়েছে এবং স্টক আপডেট হয়েছে ✓');
+    toast('বই ফেরত নেওয়া হয়েছে এবং স্টক আপডেট হয়েছে ✓');
     document.getElementById('return-modal').remove();
     initInvoices();
   } catch(e) {
-    toast(e.error || 'রিটার্ন প্রসেস করা যায়নি', 'error');
+    toast(e.error || 'রিটার্ন প্রসেস করা যায়নি', 'error');
   }
 }
 

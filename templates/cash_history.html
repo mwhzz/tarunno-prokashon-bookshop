@@ -24,10 +24,22 @@
 </div>
 
 <div class="table-wrap" style="padding:20px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:16px; color:var(--accent);">📅 প্রতিদিনের ক্যাশ রিপোর্ট তালিকা</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <h3 style="font-size:16px; color:var(--accent); margin:0;">📅 প্রতিদিনের ক্যাশ রিপোর্ট তালিকা</h3>
+        <div style="display:flex; align-items:flex-end; gap:8px;">
+            <div>
+                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
+                <input type="date" id="hist-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+            </div>
+            <div>
+                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
+                <input type="date" id="hist-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="fetchHistory()">খুঁজুন</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetHistoryFilter()">সব দেখুন</button>
+        </div>
     </div>
-    
+
     <table style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
             <tr style="border-bottom:2px solid var(--border); text-align:left;">
@@ -149,16 +161,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 document.addEventListener('DOMContentLoaded', fetchHistory);
 
+function resetHistoryFilter() {
+    document.getElementById('hist-from').value = '';
+    document.getElementById('hist-to').value = '';
+    fetchHistory();
+}
+
 async function fetchHistory() {
     const list = document.getElementById('history-list');
     const loader = document.getElementById('loading');
     list.innerHTML = '';
     loader.style.display = 'flex';
-    
+
     try {
-        const data = await api('/accounts/daily/');
+        const params = new URLSearchParams({ page_size: 366 });
+        const from = document.getElementById('hist-from').value;
+        const to = document.getElementById('hist-to').value;
+        if (from) params.set('date_from', from);
+        if (to) params.set('date_to', to);
+
+        const data = await api(`/accounts/daily/?${params.toString()}`);
         loader.style.display = 'none';
-        
+
         if (data.results.length === 0) {
             list.innerHTML = '<tr><td colspan="5" class="empty">কোনো ইতিহাস পাওয়া যায়নি।</td></tr>';
             return;

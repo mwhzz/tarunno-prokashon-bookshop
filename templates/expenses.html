@@ -309,6 +309,23 @@
         <div class="rp-title">📜 খরচের ইতিহাস</div>
         <div class="rp-total" id="rp-total">—</div>
       </div>
+      <div style="display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; padding:0 0 14px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরু</label>
+          <input type="date" id="exp-f-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ</label>
+          <input type="date" id="exp-f-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">খুঁজুন</label>
+          <input type="text" id="exp-f-search" placeholder="খাত বা নোট দিয়ে খুঁজুন" oninput="debouncedLoadExpenses()"
+                 style="width:100%; height:34px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadExpenses()">খুঁজুন</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetExpenseFilter()">সব দেখুন</button>
+      </div>
       <div id="exp-list">
         <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
       </div>
@@ -371,33 +388,44 @@ function selectCat(id) {
 /* ══════════════════════════
    LOAD EXPENSES
 ══════════════════════════ */
+let expenseFilterTimer = null;
+function debouncedLoadExpenses() {
+  clearTimeout(expenseFilterTimer);
+  expenseFilterTimer = setTimeout(loadExpenses, 350);
+}
+function resetExpenseFilter() {
+  document.getElementById('exp-f-from').value = '';
+  document.getElementById('exp-f-to').value = '';
+  document.getElementById('exp-f-search').value = '';
+  loadExpenses();
+}
+
+async function loadSummaryCards() {
+  try {
+    const s = await api('/expenses/records/summary/');
+    setText('es-today',       `৳${num(s.today_total)}`);
+    setText('es-today-count', `${s.today_count}টি আজকে`);
+    setText('es-top-cat',     s.top_category ? s.top_category.name : '—');
+    setText('es-top-amt',     s.top_category ? `৳${num(s.top_category.amount)}` : '—');
+    setText('es-total-count', `${s.all_time_count}`);
+    setText('rp-total',       `সর্বমোট: ৳${num(s.all_time_total)}`);
+  } catch (e) { /* summary cards are a nice-to-have; list load below reports real errors */ }
+}
+
 async function loadExpenses() {
   const list = document.getElementById('exp-list');
+  loadSummaryCards();
   try {
-    const data   = await api('/expenses/records/');
+    const params = new URLSearchParams({ page_size: 500 });
+    const from = document.getElementById('exp-f-from').value;
+    const to = document.getElementById('exp-f-to').value;
+    const q = document.getElementById('exp-f-search').value.trim();
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    if (q) params.set('search', q);
+
+    const data   = await api(`/expenses/records/?${params.toString()}`);
     const records = data.results || [];
-
-    /* summary */
-    const today = new Date().toISOString().split('T')[0];
-    const todayRecs = records.filter(e => (e.date||'').startsWith(today));
-    const todayTotal = todayRecs.reduce((s,e) => s + parseFloat(e.amount), 0);
-
-    /* top category */
-    const byCat = {};
-    records.forEach(e => {
-      byCat[e.category_name] = (byCat[e.category_name]||0) + parseFloat(e.amount);
-    });
-    const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
-
-    /* all-time total */
-    const grandTotal = records.reduce((s,e) => s + parseFloat(e.amount), 0);
-
-    setText('es-today',       `৳${num(todayTotal)}`);
-    setText('es-today-count', `${todayRecs.length}টি আজকে`);
-    setText('es-top-cat',     topCat ? topCat[0] : '—');
-    setText('es-top-amt',     topCat ? `৳${num(topCat[1])}` : '—');
-    setText('es-total-count', `${records.length}`);
-    setText('rp-total',       `মোট: ৳${num(grandTotal)}`);
 
     if (!records.length) {
       list.innerHTML = `

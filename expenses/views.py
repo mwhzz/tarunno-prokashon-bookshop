@@ -25,7 +25,43 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         category_id = self.request.query_params.get('category')
         if category_id:
             qs = qs.filter(category_id=category_id)
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(date__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__date__lte=date_to)
         return qs
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """স্ট্যাট কার্ডের জন্য সঠিক (পেজিনেশনের ঊর্ধ্বে না গিয়ে) সারাংশ —
+        আজকের মোট/সংখ্যা এবং সর্বমোট (all-time) মোট/সংখ্যা/সবচেয়ে বড় খাত।"""
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        all_expenses = Expense.objects.all()
+        today_expenses = all_expenses.filter(date__date=today)
+
+        all_time_total = all_expenses.aggregate(t=Sum('amount'))['t'] or 0
+        all_time_count = all_expenses.count()
+        today_total = today_expenses.aggregate(t=Sum('amount'))['t'] or 0
+        today_count = today_expenses.count()
+
+        top = (
+            all_expenses.values('category__name')
+            .annotate(total=Sum('amount'))
+            .order_by('-total')
+            .first()
+        )
+
+        return Response({
+            'today_total': float(today_total),
+            'today_count': today_count,
+            'all_time_total': float(all_time_total),
+            'all_time_count': all_time_count,
+            'top_category': {'name': top['category__name'], 'amount': float(top['total'])} if top else None,
+        })
 
     @action(detail=False, methods=['get'])
     def report(self, request):

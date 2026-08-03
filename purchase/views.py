@@ -18,6 +18,17 @@ class VendorViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'phone', 'vendor_code']
 
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """সার্চ যাই হোক, প্রকৃত মোট বকেয়া (সব ভেন্ডর মিলিয়ে) — লোড হওয়া পেজের উপর
+        নির্ভরশীল না, তাই ভেন্ডরের সংখ্যা বেশি হলেও সংখ্যাটা সঠিক থাকে।"""
+        qs = self.filter_queryset(self.get_queryset())
+        agg = qs.aggregate(total_due=Sum('total_due'))
+        return Response({
+            'count': qs.count(),
+            'total_due': agg['total_due'] or 0,
+        })
+
 
 class PurchaseBillViewSet(viewsets.ModelViewSet):
     queryset = PurchaseBill.objects.select_related('vendor', 'created_by').prefetch_related('items', 'payments')

@@ -142,7 +142,7 @@ async function loadBills() {
   w.innerHTML = `<div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>`;
   try {
     const params = buildParams();
-    params.set('page_size', 100);
+    params.set('page_size', 200);
     const r = await api(`/purchase/bills/?${params.toString()}`);
     const bills = r.results || [];
     billsCache = bills;
@@ -153,7 +153,12 @@ async function loadBills() {
       return;
     }
 
+    const truncatedNote = r.count > bills.length
+      ? `<p style="font-size:12px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${bills.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
+      : '';
+
     w.innerHTML = `
+      ${truncatedNote}
       <table>
         <thead>
           <tr>

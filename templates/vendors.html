@@ -99,8 +99,16 @@ async function loadVendors() {
     vendorsCache = vendors;
 
     setText('stat-count', r.count ?? vendors.length);
-    const totalDue = vendors.reduce((s, v) => s + Number(v.total_due || 0), 0);
-    setText('stat-due', `৳${num(totalDue)}`);
+    // পেজে যতটা ভেন্ডর লোড হয়েছে তার উপর নির্ভর না করে, ব্যাকএন্ড থেকে প্রকৃত মোট বকেয়া আনা হচ্ছে —
+    // নাহলে ভেন্ডরের সংখ্যা ২০০-র বেশি হলে এই সংখ্যাটা ভুল দেখাতো।
+    try {
+      const summaryParams = q ? `?search=${encodeURIComponent(q)}` : '';
+      const summary = await api(`/purchase/vendors/summary/${summaryParams}`);
+      setText('stat-due', `৳${num(summary.total_due)}`);
+    } catch (e) {
+      const totalDue = vendors.reduce((s, v) => s + Number(v.total_due || 0), 0);
+      setText('stat-due', `৳${num(totalDue)}`);
+    }
 
     if (!vendors.length) {
       w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">🏢</div><h3>কোনো ভেন্ডর নেই</h3></div>`;

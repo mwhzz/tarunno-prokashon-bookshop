@@ -3,6 +3,26 @@
 {% block page_title %}হিসাব ইতিহাস ও পূর্ববর্তী রিপোর্ট (Cash History){% endblock %}
 
 {% block content %}
+<div class="table-wrap" style="padding:20px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <h3 style="font-size:16px; color:var(--accent);">💳 মেথড অনুযায়ী হিসাব (নগদ ছাড়া ব্যাংক/বিকাশ/মোবাইলে যাওয়া টাকা এখানে দেখুন)</h3>
+        <div style="display:flex; align-items:flex-end; gap:8px;">
+            <div>
+                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
+                <input type="date" id="ms-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+            </div>
+            <div>
+                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
+                <input type="date" id="ms-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="loadMethodSummary()">খুঁজুন</button>
+        </div>
+    </div>
+    <div id="method-summary-wrapper">
+        <div class="loading" style="padding:20px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+    </div>
+</div>
+
 <div class="table-wrap" style="padding:20px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h3 style="font-size:16px; color:var(--accent);">📅 প্রতিদিনের ক্যাশ রিপোর্ট তালিকা</h3>
@@ -70,6 +90,63 @@
 
 {% block extra_js %}
 <script>
+const METHOD_LABELS = {
+    cash: '💵 নগদ', bank: '🏦 ব্যাংক', mobile: '📱 মোবাইল ব্যাংকিং',
+    bkash: '📱 বিকাশ', nagad: '📱 নগদ (Nagad)', credit: '📝 বাকি',
+};
+function methodLabel(m) { return METHOD_LABELS[m] || m; }
+
+function firstOfThisMonth() {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+function renderMethodRows(items, emptyMsg) {
+    if (!items || !items.length) return `<div style="color:var(--muted); font-size:13px; padding:8px 0;">${emptyMsg}</div>`;
+    const total = items.reduce((s, i) => s + Number(i.amount || 0), 0);
+    return `
+        ${items.map(i => `
+            <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:13.5px;">
+                <span>${methodLabel(i.method)}</span>
+                <strong style="font-family:'JetBrains Mono',monospace;">৳${num(i.amount)}</strong>
+            </div>`).join('')}
+        <div style="display:flex; justify-content:space-between; padding:8px 0 0; font-weight:800; font-size:13.5px;">
+            <span>মোট</span><strong style="font-family:'JetBrains Mono',monospace;">৳${num(total)}</strong>
+        </div>`;
+}
+
+async function loadMethodSummary() {
+    const w = document.getElementById('method-summary-wrapper');
+    w.innerHTML = `<div class="loading" style="padding:20px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>`;
+    try {
+        const from = document.getElementById('ms-from').value;
+        const to = document.getElementById('ms-to').value;
+        const params = new URLSearchParams();
+        if (from) params.set('date_from', from);
+        if (to) params.set('date_to', to);
+        const data = await api(`/accounts/daily/method_summary/?${params.toString()}`);
+        w.innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div>
+                    <div style="font-weight:800; font-size:12.5px; color:var(--text2); margin-bottom:6px;">🧾 বিক্রয় থেকে আদায় (গ্রাহকের কাছ থেকে)</div>
+                    ${renderMethodRows(data.collections, 'এই সময়ে কোনো আদায় নেই।')}
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:12.5px; color:var(--text2); margin-bottom:6px;">🏢 ভেন্ডরকে পরিশোধ</div>
+                    ${renderMethodRows(data.vendor_payments, 'এই সময়ে কোনো পেমেন্ট নেই।')}
+                </div>
+            </div>`;
+    } catch (e) {
+        w.innerHTML = `<div class="empty" style="padding:20px">মেথড অনুযায়ী হিসাব লোড করা যায়নি।</div>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('ms-from').value = firstOfThisMonth();
+    document.getElementById('ms-to').value = todayISO();
+    loadMethodSummary();
+});
 document.addEventListener('DOMContentLoaded', fetchHistory);
 
 async function fetchHistory() {
@@ -116,15 +193,31 @@ async function viewDetails(id) {
     content.innerHTML = '<div class="loading"><div class="spinner"></div> লোড হচ্ছে...</div>';
     
     try {
-        const d = await api(`/accounts/daily/${id}/`);
+        const [d, mb] = await Promise.all([
+            api(`/accounts/daily/${id}/`),
+            api(`/accounts/daily/${id}/method_breakdown/`).catch(() => null),
+        ]);
         title.innerText = `${fmtDate(d.date)} - এর লেনদেন বিবরণী`;
         
+        const methodSection = mb ? `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+                <div>
+                    <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">আদায় (মেথড অনুযায়ী)</div>
+                    ${renderMethodRows(mb.collections, 'এই দিনে কোনো আদায় নেই।')}
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">ভেন্ডর পেমেন্ট (মেথড অনুযায়ী)</div>
+                    ${renderMethodRows(mb.vendor_payments, 'এই দিনে কোনো পেমেন্ট নেই।')}
+                </div>
+            </div>` : '';
+
         if (d.transactions.length === 0) {
-            content.innerHTML = '<div class="empty">এই দিনে কোনো লেনদেন হয়নি।</div>';
+            content.innerHTML = methodSection + '<div class="empty">এই দিনে হাতের ক্যাশে কোনো লেনদেন হয়নি।</div>';
             return;
         }
         
-        content.innerHTML = `
+        content.innerHTML = methodSection + `
+            <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">হাতের ক্যাশ লেনদেন</div>
             <table style="width:100%; border-collapse: collapse; font-size:13px;">
                 <thead>
                     <tr style="border-bottom:2px solid var(--border); text-align:left;">

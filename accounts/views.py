@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.db.models import Sum
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +11,32 @@ from .serializers import DailyCashSerializer, CashTransactionSerializer
 from users.permissions import IsAdmin
 
 logger = logging.getLogger(__name__)
+
+
+def _method_breakdown(date_from=None, date_to=None):
+    """বিক্রয়ে গ্রাহকের কাছ থেকে আদায় আর ভেন্ডরকে দেওয়া পেমেন্ট — দুটোই মেথড (নগদ/ব্যাংক/
+    বিকাশ/নগদ) অনুযায়ী ভাগ করে দেখায়। ক্যাশ লেজার শুধু হাতের নগদ ট্র্যাক করে, তাই ব্যাংক/
+    মোবাইলে যাওয়া টাকা দেখতে এই দুটো লেজার (sales.Payment, purchase.VendorPayment) থেকেই
+    সরাসরি হিসাব করতে হয়।"""
+    from purchase.models import VendorPayment
+    from sales.models import Payment as SalePayment
+
+    collections = SalePayment.objects.all()
+    vendor_payments = VendorPayment.objects.all()
+    if date_from:
+        collections = collections.filter(created_at__date__gte=date_from)
+        vendor_payments = vendor_payments.filter(created_at__date__gte=date_from)
+    if date_to:
+        collections = collections.filter(created_at__date__lte=date_to)
+        vendor_payments = vendor_payments.filter(created_at__date__lte=date_to)
+
+    collections = collections.values('method').annotate(total=Sum('amount')).order_by('method')
+    vendor_payments = vendor_payments.values('method').annotate(total=Sum('amount')).order_by('method')
+
+    return {
+        'collections': [{'method': c['method'], 'amount': c['total'] or 0} for c in collections],
+        'vendor_payments': [{'method': v['method'], 'amount': v['total'] or 0} for v in vendor_payments],
+    }
 
 class DailyCashViewSet(viewsets.ModelViewSet):
     queryset = DailyCash.objects.all().order_by('-date')
@@ -27,6 +54,22 @@ class DailyCashViewSet(viewsets.ModelViewSet):
         obj.update_closing_balance()
         serializer = self.get_serializer(obj)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def method_breakdown(self, request, pk=None):
+        """এই নির্দিষ্ট দিনের বিক্রয়-আদায় ও ভেন্ডর-পেমেন্ট মেথড অনুযায়ী ভাগ করে দেখায়
+        (ব্যাংক/বিকাশ/নগদে যাওয়া টাকা, যা ক্যাশ লেজারে দেখা যায় না)।"""
+        daily_cash = self.get_object()
+        data = _method_breakdown(date_from=daily_cash.date, date_to=daily_cash.date)
+        data['date'] = daily_cash.date
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def method_summary(self, request):
+        """একটা সময়সীমার (ডিফল্ট: এই মাস) জন্য মেথড অনুযায়ী মোট আদায়/পেমেন্ট।"""
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        return Response(_method_breakdown(date_from=date_from, date_to=date_to))
 
     @action(detail=True, methods=['post'])
     def close_day(self, request, pk=None):

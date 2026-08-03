@@ -58,16 +58,15 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def partial_update(self, request, *args, **kwargs):
-        """শুধু বিল-লেভেল তথ্য (মেমো, ডিসকাউন্ট, পেইড অ্যামাউন্ট, নোট) এডিট করা যাবে —
-        বইয়ের লাইন পরিবর্তন করলে স্টক এলোমেলো হয়ে যেতে পারে, তাই সেটা এখানে সাপোর্ট করা হয়নি।"""
-        from accounts.models import CashTransaction, DailyCash
-
+        """শুধু বিল-লেভেল তথ্য (মেমো, ডিসকাউন্ট, তারিখ, নোট) এডিট করা যাবে — বইয়ের লাইন
+        পরিবর্তন করলে স্টক এলোমেলো হয়ে যেতে পারে, তাই সেটা এখানে সাপোর্ট করা হয়নি।
+        paid_amount/account_name ইচ্ছাকৃতভাবে এখানে এডিটযোগ্য না — পেমেন্ট শুধু add_payment
+        দিয়েই যোগ করা যাবে, যাতে প্রতিটা পেমেন্টের মেথড (নগদ/ব্যাংক/বিকাশ) সবসময় VendorPayment
+        লেজারে সঠিকভাবে রেকর্ড হয় এবং ক্যাশ লেজারে দ্বিগুণ গণনা না হয়।"""
         bill = self.get_object()
         old_due = bill.due_amount
-        old_paid = bill.paid_amount
-        old_account = bill.account_name
 
-        for field in ['memo_number', 'discount', 'paid_amount', 'account_name', 'purchase_date', 'note']:
+        for field in ['memo_number', 'discount', 'purchase_date', 'note']:
             if field in request.data:
                 setattr(bill, field, request.data[field])
 
@@ -77,25 +76,6 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
         if bill.vendor:
             bill.vendor.total_due += (bill.due_amount - old_due)
             bill.vendor.save(update_fields=['total_due'])
-
-        if bill.paid_amount != old_paid or bill.account_name != old_account:
-            # নগদ ছাড়া অন্য মাধ্যমে (bank ইত্যাদি) দেওয়া টাকা হাতের ক্যাশ লেজারে গণনা করা যাবে না —
-            # নাহলে ব্যাংকে পাঠানো টাকাও "ক্যাশে আছে" হিসেবে দেখাবে।
-            affected_days = list(DailyCash.objects.filter(transactions__reference_id=f"pbill_{bill.id}").distinct())
-            CashTransaction.objects.filter(reference_id=f"pbill_{bill.id}").delete()
-            if bill.paid_amount > 0 and bill.account_name == 'cash':
-                daily_cash = DailyCash.get_for_today()
-                CashTransaction.objects.create(
-                    daily_cash=daily_cash,
-                    transaction_type='purchase',
-                    amount=bill.paid_amount,
-                    note=f"ক্রয় বিল পেমেন্ট (আপডেট): {bill.vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
-                    reference_id=f"pbill_{bill.id}",
-                )
-                if daily_cash not in affected_days:
-                    affected_days.append(daily_cash)
-            for dc in affected_days:
-                dc.update_closing_balance()
 
         return Response(PurchaseBillSerializer(bill).data)
 
@@ -118,7 +98,7 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
                     note=f"Purchase Bill #{bill.id} বাতিল/মুছে ফেলার কারণে স্টক ফেরত",
                 )
 
-        payment_refs = [f"pbill_{bill.id}"] + [f"pbill_payment_{p.id}" for p in bill.payments.all()]
+        payment_refs = [f"pbill_payment_{p.id}" for p in bill.payments.all()]
         affected_days = list(DailyCash.objects.filter(transactions__reference_id__in=payment_refs).distinct())
         CashTransaction.objects.filter(reference_id__in=payment_refs).delete()
 

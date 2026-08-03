@@ -183,15 +183,22 @@ class PurchaseBillCreateSerializer(serializers.Serializer):
         vendor.total_due += bill.due_amount
         vendor.save(update_fields=['total_due'])
 
-        # নগদ ছাড়া অন্য মাধ্যমে (bank ইত্যাদি) দেওয়া টাকা হাতের ক্যাশ লেজারে গণনা করা যাবে না
-        if bill.paid_amount > 0 and bill.account_name == 'cash':
-            daily_cash = DailyCash.get_for_today()
-            CashTransaction.objects.create(
-                daily_cash=daily_cash,
-                transaction_type='purchase',
-                amount=bill.paid_amount,
-                note=f"ক্রয় বিল পেমেন্ট: {vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
-                reference_id=f"pbill_{bill.id}",
+        if bill.paid_amount > 0:
+            # VendorPayment-ই এখন ভেন্ডরকে দেওয়া সব পেমেন্টের (তৈরির সময়ের এবং পরের কিস্তি —
+            # উভয়) একমাত্র উৎস, যাতে মেথড-ভিত্তিক (নগদ/ব্যাংক/বিকাশ/নগদ) হিসাব সবসময় সঠিক থাকে।
+            payment = VendorPayment.objects.create(
+                bill=bill, amount=bill.paid_amount, method=bill.account_name,
+                note="বিল তৈরির সময়ের পেমেন্ট",
             )
+            # নগদ ছাড়া অন্য মাধ্যমে (bank ইত্যাদি) দেওয়া টাকা হাতের ক্যাশ লেজারে গণনা করা যাবে না
+            if bill.account_name == 'cash':
+                daily_cash = DailyCash.get_for_today()
+                CashTransaction.objects.create(
+                    daily_cash=daily_cash,
+                    transaction_type='purchase',
+                    amount=bill.paid_amount,
+                    note=f"ক্রয় বিল পেমেন্ট: {vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
+                    reference_id=f"pbill_payment_{payment.id}",
+                )
 
         return bill

@@ -1,10 +1,15 @@
 from django.contrib import admin
 
-from .models import PurchaseBill, PurchaseBillItem, Vendor
+from .models import PurchaseBill, PurchaseBillItem, Vendor, VendorPayment
 
 
 class PurchaseBillItemInline(admin.TabularInline):
     model = PurchaseBillItem
+    extra = 0
+
+
+class VendorPaymentInline(admin.TabularInline):
+    model = VendorPayment
     extra = 0
 
 
@@ -19,4 +24,4 @@ class PurchaseBillAdmin(admin.ModelAdmin):
     list_display = ['id', 'vendor_name', 'total', 'paid_amount', 'due_amount', 'status', 'purchase_date']
     list_filter = ['status', 'account_name', 'location']
     search_fields = ['vendor_name', 'memo_number']
-    inlines = [PurchaseBillItemInline]
+    inlines = [PurchaseBillItemInline, VendorPaymentInline]

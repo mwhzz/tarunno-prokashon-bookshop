@@ -126,6 +126,54 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['post'])
+    def add_payment(self, request, pk=None):
+        """ক্রয় বিলের বকেয়ার বিপরীতে ভেন্ডরকে দেওয়া পেমেন্ট জমা করা"""
+        from decimal import Decimal, InvalidOperation
+
+        from accounts.models import CashTransaction, DailyCash
+
+        from .models import VendorPayment
+
+        bill = self.get_object()
+        amount_str = request.data.get('amount')
+        method = request.data.get('method', 'cash')
+
+        if not amount_str:
+            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            amount = Decimal(str(amount_str))
+        except InvalidOperation:
+            return Response({'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({'error': 'Amount must be positive'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount > bill.due_amount:
+            return Response({'error': 'Amount exceeds due balance'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            payment = VendorPayment.objects.create(bill=bill, amount=amount, method=method)
+
+            bill.paid_amount += amount
+            bill.save()  # save() recomputes due_amount/status
+
+            if bill.vendor:
+                bill.vendor.total_due -= amount
+                bill.vendor.save(update_fields=['total_due'])
+
+            daily_cash = DailyCash.get_for_today()
+            CashTransaction.objects.create(
+                daily_cash=daily_cash,
+                transaction_type='purchase',
+                amount=amount,
+                note=f"ক্রয় বিল পেমেন্ট: {bill.vendor_name} (Bill #{bill.id})",
+                reference_id=f"pbill_payment_{payment.id}",
+            )
+            daily_cash.update_closing_balance()
+
+        return Response(PurchaseBillSerializer(bill).data)
+
     @action(detail=False, methods=['get'])
     def summary(self, request):
         qs = self.filter_queryset(self.get_queryset())

@@ -98,6 +98,27 @@ class PurchaseBill(models.Model):
         super().save(*args, **kwargs)
 
 
+class VendorPayment(models.Model):
+    """একটি ক্রয় বিলের বকেয়ার বিপরীতে জমা দেওয়া পেমেন্টের রেকর্ড (নগদ, বিকাশ, ব্যাংক ইত্যাদি)"""
+    METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('bkash', 'bKash'),
+        ('nagad', 'Nagad'),
+        ('bank', 'Bank'),
+    ]
+    bill = models.ForeignKey(PurchaseBill, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='cash')
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.amount} via {self.method} for Bill #{self.bill_id}"
+
+
 class PurchaseBillItem(models.Model):
     """একটি ক্রয় বিলের প্রতিটি বই"""
     bill = models.ForeignKey(PurchaseBill, on_delete=models.CASCADE, related_name='items')

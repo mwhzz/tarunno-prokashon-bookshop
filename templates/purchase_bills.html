@@ -158,6 +158,7 @@ async function loadBills() {
               <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td>
+                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id}, ${b.due_amount})">৳ পেমেন্ট দিন</button>` : ''}
                 <button class="btn btn-ghost btn-sm" onclick="deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
               </td>
             </tr>`).join('')}
@@ -181,6 +182,58 @@ async function deleteBill(id) {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('মুছে ফেলা যায়নি: ' + msg, 'error');
   }
+}
+
+async function collectVendorPayment(billId, maxAmount) {
+  let html = `
+    <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+      <div class="form-card" style="width:400px; padding:24px">
+        <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+
+        <div class="form-group">
+          <label>পরিশোধের পরিমাণ (Amount)</label>
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>পেমেন্ট মেথড</label>
+          <select id="pay-method" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border)">
+            <option value="cash">Cash (নগদ)</option>
+            <option value="bkash">bKash (বিকাশ)</option>
+            <option value="nagad">Nagad (নগদ)</option>
+            <option value="bank">Bank (ব্যাংক)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
+          <button class="btn btn-ghost" onclick="document.getElementById('payment-modal').remove()">বাতিল</button>
+          <button class="btn btn-success" id="confirm-pay-btn">পেমেন্ট কনফার্ম</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('confirm-pay-btn').onclick = async () => {
+    const amount = document.getElementById('pay-amount').value;
+    const method = document.getElementById('pay-method').value;
+
+    if (!amount || amount <= 0 || amount > maxAmount) {
+      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+      return;
+    }
+
+    try {
+      await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      document.getElementById('payment-modal').remove();
+      loadBills();
+    } catch (e) {
+      const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+      toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
+    }
+  };
 }
 
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }

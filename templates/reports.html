@@ -10,6 +10,15 @@
   to   { opacity:1; transform:translateY(0); }
 }
 
+/* হাতে ধরিয়ে দেওয়ার/অ্যাকাউন্টেন্টকে দেখানোর জন্য প্রিন্ট করলে শুধু রিপোর্টটাই দেখাবে,
+   সাইডবার/ফিল্টার বাটন ইত্যাদি বাদ পড়বে */
+@media print {
+  #sidebar, #topbar, .no-print { display: none !important; }
+  #content { padding: 0 !important; overflow: visible !important; }
+  #main { min-height: 0 !important; }
+  body, html { background: #fff !important; }
+}
+
 /* ─── PERIOD FILTER BAR ─── */
 .filter-bar {
   background: #fff;
@@ -426,7 +435,7 @@
 <div class="report-page">
 
   <!-- ─── FILTER BAR ─── -->
-  <div class="filter-bar">
+  <div class="filter-bar no-print">
     <span class="filter-label">সময়কাল:</span>
 
     <button class="period-btn" id="pb-today" onclick="load('today')">
@@ -446,6 +455,7 @@
     <span class="date-sep">→</span>
     <input type="date" class="date-input" id="r-to">
     <button class="view-btn" onclick="load('custom')">🔍 দেখুন</button>
+    <button class="view-btn" style="background:var(--surface); color:var(--text); border:1.5px solid var(--border);" onclick="window.print()">🖨️ প্রিন্ট করুন</button>
     <small id="r-date-warn" style="display:none; color:var(--warning); width:100%; margin-top:6px;">⚠️ শুরু ও শেষের তারিখ একই — শুধু ওই একদিনের রিপোর্ট দেখানো হচ্ছে।</small>
   </div>
 

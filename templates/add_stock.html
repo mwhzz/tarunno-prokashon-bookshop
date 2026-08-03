@@ -939,14 +939,23 @@ let addStep      = 1;
 ══════════════════════════════ */
 async function initPage() {
   try {
-    let page = 1;
-    while (true) {
-      const r = await api(`/books/?page=${page}&page_size=100`);
-      allBooks = allBooks.concat(r.results);
-      if (!r.next) break; page++;
-    }
+    // প্রথম পেজ আসার সাথে সাথেই লিস্ট দেখানো ও সার্চ চালু হয়ে যায় — বাকি পেজগুলো
+    // ব্যাকগ্রাউন্ডে লোড হতে থাকে, পুরো ক্যাটালগ না আসা পর্যন্ত অপেক্ষা করতে হয় না।
+    const first = await api('/books/?page=1&page_size=100');
+    allBooks = first.results.slice();
     renderBookList('book-list', 'book-search', b => selectBook(b));
     renderBookList('t-book-list', 't-book-search', b => selectTrBook(b), true);
+
+    let next = first.next;
+    let page = 2;
+    while (next) {
+      const r = await api(`/books/?page=${page}&page_size=100`);
+      allBooks = allBooks.concat(r.results);
+      renderBookList('book-list', 'book-search', b => selectBook(b));
+      renderBookList('t-book-list', 't-book-search', b => selectTrBook(b), true);
+      next = r.next;
+      page++;
+    }
   } catch(e) {
     toast('বই লোড হয়নি। সার্ভার চালু আছে কিনা দেখুন।', 'error');
   }

@@ -37,6 +37,7 @@ async function initBooks() {
             <option value="external">🏢 বাইরের বই</option>
           </select>
           <input type="text" placeholder="বই, লেখক বা কোড খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="exportBooksCSV()">⬇️ CSV এক্সপোর্ট</button>
           <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
         </div>
 
@@ -163,6 +164,35 @@ function getFilteredBookList() {
 function filterBookList() {
   booksRenderedCount = BOOKS_RENDER_STEP;
   renderBooksTable(getFilteredBookList());
+}
+
+function csvEscape(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function exportBooksCSV() {
+  const rows = getFilteredBookList();
+  if (!rows.length) { toast('এক্সপোর্ট করার মতো কোনো বই নেই।', 'error'); return; }
+
+  // এই কলামগুলো CSV Import ফিচারের সাথে মিলিয়ে রাখা হয়েছে, যাতে এক্সপোর্ট করে এডিট করে
+  // আবার ইমপোর্ট করা যায়।
+  const headers = ['title', 'author', 'publisher', 'isbn', 'edition', 'product_code', 'mrp', 'purchase_price', 'selling_price', 'commission', 'current_stock'];
+  const lines = [headers.join(',')];
+  rows.forEach(b => {
+    lines.push(headers.map(h => csvEscape(b[h])).join(','));
+  });
+
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `books-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast(`${rows.length}টি বই CSV হিসেবে ডাউনলোড হয়েছে ✓`);
 }
 
 document.addEventListener('DOMContentLoaded', initBooks);

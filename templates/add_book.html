@@ -1559,6 +1559,15 @@ async function submitBook() {
   const title = document.getElementById('b-title').value.trim();
   if (!title) { toast('বইয়ের নাম দিতে হবে!','error'); btn.disabled=false; btn.textContent='✅ বই সংরক্ষণ করুন'; return; }
 
+  try {
+    const dup = await api(`/books/?search=${encodeURIComponent(title)}&page_size=5`);
+    const exactMatch = (dup.results || []).find(b => b.title.trim().toLowerCase() === title.toLowerCase());
+    if (exactMatch) {
+      const ok = await confirmModal(`"${title}" নামে একটা বই ইতিমধ্যেই তালিকায় আছে (কোড: ${exactMatch.product_code || 'N/A'})।\n\nআবার নতুন করে যোগ করলে একই বইয়ের দুইটা আলাদা এন্ট্রি তৈরি হবে। তবুও নতুন করে যোগ করতে চান?`, { danger: true, confirmText: 'তবুও নতুন যোগ করুন' });
+      if (!ok) { btn.disabled = false; btn.textContent = '✅ বই সংরক্ষণ করুন'; return; }
+    }
+  } catch (e) { /* duplicate-check failing shouldn't block adding the book */ }
+
   const fd = new FormData();
   fd.append('title',         title);
   fd.append('author',        document.getElementById('b-author').value);

@@ -3,396 +3,206 @@
 
 {% block extra_css %}
 <style>
-/* ─── page fade-in ─── */
-#dash { animation: fadeUp .35s ease both; }
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(14px); }
-  to   { opacity:1; transform:translateY(0); }
+#dash {
+  --dv-bg: #F8FAF9;
+  --dv-card: #FFFFFF;
+  --dv-primary: #157347;
+  --dv-primary-dark: #146C43;
+  --dv-primary-soft: #E7F5EE;
+  --dv-border: #E5E7EB;
+  --dv-text: #111827;
+  --dv-text2: #6B7280;
+  --dv-danger: #DC2626;
+  --dv-danger-soft: #FEE2E2;
+  --dv-warning: #F59E0B;
+  --dv-warning-soft: #FEF3C7;
+  --dv-blue: #2563EB;
+  --dv-blue-soft: #DBEAFE;
+  --dv-success: #16A34A;
+  --dv-radius: 12px;
+  --dv-shadow: 0 2px 8px rgba(0,0,0,.04);
+  max-width: 1600px;
+  margin: 0 auto;
+  color: var(--dv-text);
+  animation: fadeUp .35s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+#dash .dv-grid { display: flex; flex-direction: column; gap: 24px; }
+
+#dash .dv-card {
+  background: var(--dv-card);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius);
+  box-shadow: var(--dv-shadow);
+  padding: 24px;
 }
 
-/* ─── TOP HERO ROW ─── */
-.hero-row {
-  display: grid;
-  grid-template-columns: 1.45fr 1fr 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
+#dash .dv-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 12px;
 }
+#dash .dv-card-head h3 { font-size: 15px; font-weight: 600; color: var(--dv-text); }
 
-/* big dark card */
-.hero-card {
-  background: linear-gradient(140deg, #0d3a28 0%, #1a5c3e 55%, #1f7a55 100%);
-  border-radius: 16px;
-  padding: 18px 20px;
-  color: #fff;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 12px 40px rgba(13,51,38,.3);
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+#dash .dv-link {
+  font-size: 13px; font-weight: 600; color: var(--dv-primary);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
 }
+#dash .dv-link:hover { color: var(--dv-primary-dark); }
+#dash .dv-link.block { margin-top: 14px; justify-content: center; width: 100%; }
 
-/* decorative circles */
-.hero-card::before,
-.hero-card::after {
-  content:'';
-  position:absolute;
-  border-radius:50%;
-  background: rgba(144,230,107,.12);
+/* ── Stat cards (top row) ── */
+#dash .dv-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+#dash .dv-stat {
+  background: var(--dv-card); border: 1px solid var(--dv-border); border-radius: var(--dv-radius);
+  padding: 20px; box-shadow: var(--dv-shadow); min-height: 110px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.hero-card::before { width:200px; height:200px; top:-60px; right:-50px; }
-.hero-card::after  { width:120px; height:120px; bottom:-40px; right:60px; }
-
-.hero-kicker {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.55);
-  margin-bottom: 4px;
+#dash .dv-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.07); }
+#dash .dv-stat-top { display: flex; align-items: center; justify-content: space-between; }
+#dash .dv-stat-label { font-size: 13px; font-weight: 500; color: var(--dv-text2); }
+#dash .dv-stat-icon {
+  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
 }
-
-.hero-amount {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1;
-  color: #fff;
-  margin-bottom: 6px;
+#dash .dv-stat-value {
+  font-family: 'JetBrains Mono', monospace; font-size: 27px; font-weight: 700; color: var(--dv-text);
+  margin-top: 10px; line-height: 1.1;
 }
+#dash .dv-stat-delta { font-size: 12.5px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+#dash .dv-stat-delta.up { color: var(--dv-success); }
+#dash .dv-stat-delta.down { color: var(--dv-danger); }
+#dash .dv-stat-delta small { color: var(--dv-text2); font-weight: 500; }
+#dash .dv-stat-delta.neutral small { color: var(--dv-text2); }
 
-.hero-foot {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 12px;
-  color: rgba(255,255,255,.62);
-  font-weight: 600;
+/* ── Quick actions ── */
+#dash .dv-section-title { font-size: 13px; font-weight: 700; color: var(--dv-text2); text-transform: uppercase; letter-spacing: .04em; }
+#dash .dv-qa-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 14px; }
+#dash .dv-qa-btn {
+  height: 56px; border-radius: 10px; border: 1px solid var(--dv-border); background: #fff; color: var(--dv-text);
+  display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 600; font-size: 14px;
+  text-decoration: none; transition: transform .2s ease, background .2s ease, border-color .2s ease;
 }
+#dash .dv-qa-btn:hover { border-color: var(--dv-primary); background: var(--dv-primary-soft); transform: translateY(-2px); }
+#dash .dv-qa-btn.primary { background: var(--dv-primary); color: #fff; border-color: var(--dv-primary); }
+#dash .dv-qa-btn.primary:hover { background: var(--dv-primary-dark); }
+#dash .dv-qa-btn svg { flex-shrink: 0; }
 
-.hero-foot-tag {
-  background: rgba(255,255,255,.12);
-  border-radius: 99px;
-  padding: 4px 10px;
-  color: rgba(255,255,255,.8);
+/* ── Main + side layout ── */
+#dash .dv-main-row { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+#dash .dv-main-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+#dash .dv-side-col { display: flex; flex-direction: column; gap: 24px; }
+#dash .dv-chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+
+/* ── Bar chart ── */
+#dash .dv-chart-card { min-height: 340px; display: flex; flex-direction: column; }
+#dash .dv-select {
+  display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--dv-text2);
+  border: 1px solid var(--dv-border); border-radius: 8px; padding: 6px 10px; cursor: default;
 }
-
-/* small metric cards */
-.metric-card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 16px;
-  box-shadow: 0 2px 12px rgba(13,51,38,.05);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 120px;
-  position: relative;
-  overflow: hidden;
-  transition: box-shadow .2s, transform .18s;
+#dash .dv-bars {
+  flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; gap: 14px; min-height: 240px;
 }
-
-.metric-card:hover {
-  box-shadow: 0 8px 28px rgba(13,51,38,.1);
-  transform: translateY(-2px);
+#dash .dv-bar-col { display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; justify-content: flex-end; }
+#dash .dv-bar-track { display: flex; align-items: flex-end; height: 220px; }
+#dash .dv-bar-fill {
+  width: 34px; border-radius: 7px 7px 3px 3px; background: var(--dv-primary); min-height: 4px;
+  transition: height .5s ease; cursor: default;
 }
+#dash .dv-bar-fill:hover { background: var(--dv-primary-dark); }
+#dash .dv-bar-lbl { font-size: 12px; font-weight: 600; color: var(--dv-text2); }
 
-/* left accent line */
-.metric-card::before {
-  content:'';
-  position: absolute;
-  left:0; top:20%; bottom:20%;
-  width: 3px;
-  border-radius: 99px;
-  background: var(--accent);
+/* ── Donut ── */
+#dash .dv-donut-card { min-height: 340px; display: flex; flex-direction: column; }
+#dash .dv-donut-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+#dash .dv-donut { width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
+#dash .dv-donut-hole {
+  width: 96px; aspect-ratio: 1; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center;
 }
-.metric-card.red::before  { background: var(--danger); }
-.metric-card.blue::before { background: var(--info); }
-.metric-card.teal::before { background: #0891b2; }
+#dash .dv-donut-hole strong { display: block; font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--dv-text); }
+#dash .dv-donut-hole small { font-size: 11px; color: var(--dv-text2); font-weight: 600; }
+#dash .dv-donut-legend { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+#dash .dv-leg { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--dv-text); }
+#dash .dv-leg .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-.m-kicker {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* ── Recent sales table ── */
+#dash .dv-table-card { padding: 24px 0 0; }
+#dash .dv-table-card .dv-card-head { padding: 0 24px; }
+#dash .dv-table-scroll { max-height: 350px; overflow-y: auto; margin-top: 12px; }
+#dash table.dv-table { width: 100%; border-collapse: collapse; }
+#dash table.dv-table thead th {
+  position: sticky; top: 0; background: var(--dv-bg); z-index: 1;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dv-text2);
+  padding: 12px 24px; border-bottom: 1px solid var(--dv-border); text-align: left; white-space: nowrap;
 }
-
-.m-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--g900);
-  margin: 5px 0 2px;
-  line-height: 1;
+#dash table.dv-table tbody td {
+  padding: 0 24px; height: 60px; font-size: 13.5px; color: var(--dv-text); border-bottom: 1px solid #F3F4F6; vertical-align: middle;
 }
+#dash table.dv-table tbody tr:hover td { background: var(--dv-primary-soft); }
+#dash table.dv-table tbody tr:last-child td { border-bottom: none; }
+#dash .dv-empty-row { text-align: center; color: var(--dv-text2); height: 100px !important; }
 
-.metric-card.red .m-value  { color: var(--danger); }
-.metric-card.blue .m-value { color: var(--info); }
-.metric-card.teal .m-value { color: #0891b2; }
-
-.m-sub {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
+#dash .dv-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700;
 }
+#dash .dv-badge.green { background: #DCFCE7; color: var(--dv-success); }
+#dash .dv-badge.red   { background: var(--dv-danger-soft); color: var(--dv-danger); }
 
-.m-icon {
-  position: absolute;
-  top: 16px; right: 18px;
-  font-size: 32px;
-  opacity: .1;
+/* ── Right rail rows ── */
+#dash .dv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size: 13.5px; }
+#dash .dv-row:last-of-type { border-bottom: none; }
+#dash .dv-row span { color: var(--dv-text2); }
+#dash .dv-row strong { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--dv-text); }
+#dash .dv-row strong.ok { color: var(--dv-success); }
+#dash .dv-row strong.bad { color: var(--dv-danger); }
+#dash .dv-row.sub span, #dash .dv-row.sub strong { font-size: 12.5px; }
+
+#dash .dv-progress { height: 7px; background: #F3F4F6; border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+#dash .dv-progress-fill { height: 100%; border-radius: 99px; background: var(--dv-success); transition: width .5s ease; }
+
+#dash .dv-task {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F3F4F6;
+  text-decoration: none; color: inherit; transition: opacity .15s ease;
 }
-
-/* ─── QUICK ACTIONS ─── */
-.quick-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
+#dash .dv-task:last-child { border-bottom: none; }
+#dash .dv-task:hover { opacity: .7; }
+#dash .dv-task-icon {
+  width: 36px; height: 36px; border-radius: 9px; background: var(--dv-primary-soft); color: var(--dv-primary);
+  display: grid; place-items: center; flex-shrink: 0;
 }
+#dash .dv-task-icon.warn { background: var(--dv-warning-soft); color: var(--dv-warning); }
+#dash .dv-task strong { display: block; font-size: 13.5px; font-weight: 600; color: var(--dv-text); }
+#dash .dv-task small { font-size: 12px; color: var(--dv-text2); }
 
-.q-action {
-  background: #fff;
-  border: 1.5px solid var(--border);
-  border-radius: 13px;
-  padding: 13px 12px;
-  text-align: center;
-  cursor: pointer;
-  text-decoration: none;
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  font-weight: 700;
-  transition: all .2s;
-  box-shadow: 0 1px 6px rgba(13,51,38,.04);
+/* ── Monthly summary ── */
+#dash .dv-month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+#dash .dv-month-card {
+  padding: 18px 16px; background: var(--dv-bg); border: 1px solid var(--dv-border); border-radius: 10px; text-align: center;
 }
+#dash .dv-month-card .dv-stat-label { text-transform: uppercase; letter-spacing: .04em; font-size: 11px; font-weight: 700; }
+#dash .dv-month-card .dv-stat-value { font-size: 22px; margin-top: 8px; }
+#dash .dv-month-card .dv-stat-delta { justify-content: center; }
 
-.q-action:hover {
-  border-color: var(--accent);
-  background: var(--g100);
-  color: var(--accent);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px rgba(27,122,85,.15);
+/* ── Empty state ── */
+#dash .dv-empty { text-align: center; padding: 50px 20px; color: var(--dv-text2); }
+#dash .dv-empty .dv-empty-icon { font-size: 40px; margin-bottom: 10px; opacity: .5; }
+
+/* ── Responsive ── */
+@media (max-width: 1280px) {
+  #dash .dv-main-row { grid-template-columns: 1fr; }
+  #dash .dv-side-col { display: grid; grid-template-columns: repeat(2, 1fr); }
 }
-
-.q-action .qa-icon {
-  width: 42px; height: 42px;
-  border-radius: 12px;
-  background: var(--g100);
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  transition: background .2s;
+@media (max-width: 1024px) {
+  #dash .dv-stats-row { grid-template-columns: repeat(2, 1fr); }
+  #dash .dv-chart-row { grid-template-columns: 1fr; }
+  #dash .dv-month-grid { grid-template-columns: repeat(2, 1fr); }
 }
-.q-action:hover .qa-icon { background: var(--g200); }
-
-/* ─── BODY: chart + side ─── */
-.dash-body {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 300px;
-  gap: 14px;
+@media (max-width: 768px) {
+  #dash .dv-qa-row { grid-template-columns: repeat(2, 1fr); }
+  #dash .dv-side-col { grid-template-columns: 1fr; }
 }
-
-.dash-col { display: grid; gap: 14px; }
-
-/* ─── Panel base ─── */
-.d-panel {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(13,51,38,.05);
-}
-
-.panel-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.panel-hd h3 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--g900);
-}
-
-/* ─── Bar chart ─── */
-.bar-chart {
-  display: grid;
-  grid-template-columns: repeat(7,1fr);
-  align-items: end;
-  gap: 10px;
-  height: 160px;
-}
-
-.bc-col {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 7px;
-  height: 100%;
-  text-align: center;
-}
-
-.bc-stack {
-  align-self: end;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 3px;
-}
-
-.bc-bar {
-  border-radius: 6px 6px 2px 2px;
-  min-height: 6px;
-  background: var(--g600);
-  transition: height .5s ease;
-}
-.bc-bar.b2 { background: var(--g300); }
-
-.bc-lbl {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-/* ─── Collection donut ─── */
-.donut-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  padding: 8px 0;
-}
-
-.donut-ring {
-  width: 148px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-}
-
-.donut-hole {
-  width: 94px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  text-align: center;
-}
-
-.donut-hole strong {
-  display: block;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--g900);
-}
-
-.donut-hole small {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.donut-legs {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.dleg {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text2);
-}
-
-.dleg-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-}
-
-/* ─── Side panels ─── */
-.list-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 0;
-  border-bottom: 1px solid #f0f7f3;
-  gap: 10px;
-}
-.list-row:last-child { border-bottom: none; padding-bottom: 0; }
-
-.lr-left strong { display: block; font-size: 14px; color: var(--g900); font-weight: 700; }
-.lr-left small  { font-size: 12px; color: var(--muted); }
-
-/* Next moves */
-.move-row {
-  display: flex;
-  align-items: center;
-  padding: 9px 0;
-  border-bottom: 1px solid #f0f7f3;
-  gap: 12px;
-}
-.move-row:last-child { border-bottom: none; }
-
-.move-icon-box {
-  width: 38px; height: 38px;
-  border-radius: 10px;
-  background: var(--g100);
-  display: grid;
-  place-items: center;
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.move-text { flex: 1; min-width: 0; }
-.move-text strong { font-size: 13px; font-weight: 700; color: var(--g900); display: block; }
-.move-text small  { font-size: 12px; color: var(--muted); }
-
-/* Progress */
-.prog-bar {
-  height: 7px;
-  background: var(--border);
-  border-radius: 99px;
-  overflow: hidden;
-  margin: 8px 0 14px;
-}
-.prog-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--accent);
-  transition: width .5s ease;
-}
-.prog-fill.red { background: var(--danger); }
-
-/* ─── Responsive ─── */
-@media (max-width:1280px) {
-  .dash-body { grid-template-columns: 1fr; }
-  .dash-col.side { display: grid; grid-template-columns: repeat(2,1fr); }
-}
-
-@media (max-width:1000px) {
-  .hero-row { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width:720px) {
-  .hero-row { grid-template-columns: 1fr; }
-  .quick-row { grid-template-columns: repeat(2,1fr); }
-  .dash-col.side { grid-template-columns: 1fr; }
+@media (max-width: 560px) {
+  #dash .dv-stats-row, #dash .dv-month-grid { grid-template-columns: 1fr; }
 }
 </style>
 {% endblock %}
@@ -405,206 +215,306 @@
 
 {% block extra_js %}
 <script>
+/* ── Icon set (Lucide-style inline SVG, 1.8 stroke, 20px default) ── */
+const DV_ICON = {
+  sales:   '<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  profit:  '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  due:     '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+  inventory: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
+  cart:    '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+  bookPlus: '<path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20"/><path d="M9 7h6M12 4v6"/>',
+  packagePlus: '<path d="M16 16h6M19 13v6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l1.5-.86"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
+  chart:   '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  alert:   '<path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  arrow:   '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>',
+  chevDown: '<polyline points="6 9 12 15 18 9"/>',
+};
+function dvSvg(name, size) {
+  size = size || 20;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${DV_ICON[name] || ''}</svg>`;
+}
+
+const DAY_PARTS = ['সকাল', 'দুপুর', 'বিকাল', 'সন্ধ্যা', 'রাত'];
+function dayPartOf(dateObj) {
+  const h = dateObj.getHours();
+  if (h >= 6 && h < 12) return 'সকাল';
+  if (h >= 12 && h < 16) return 'দুপুর';
+  if (h >= 16 && h < 18) return 'বিকাল';
+  if (h >= 18 && h < 21) return 'সন্ধ্যা';
+  return 'রাত';
+}
+function bucketByDayPart(sales) {
+  const buckets = Object.fromEntries(DAY_PARTS.map(p => [p, 0]));
+  (sales || []).forEach(s => { buckets[dayPartOf(new Date(s.created_at))] += Number(s.total) || 0; });
+  return DAY_PARTS.map(p => ({ label: p, value: buckets[p] }));
+}
+
+function dvDelta(curr, prev) {
+  curr = Number(curr) || 0; prev = Number(prev) || 0;
+  if (!prev) return null;
+  const pct = ((curr - prev) / prev) * 100;
+  return { pct: Math.abs(pct).toFixed(1), up: pct >= 0 };
+}
+function isoDate(d) { return d.toISOString().slice(0, 10); }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function firstOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function lastMonthRange(d) {
+  const lastPrevEnd = addDays(firstOfMonth(d), -1);
+  return [firstOfMonth(lastPrevEnd), lastPrevEnd];
+}
+
+function itemsSummary(items) {
+  if (!items || !items.length) return '—';
+  const shown = items.slice(0, 2).map(i => `${i.book_title} ×${i.quantity}`).join(', ');
+  const extra = items.length - 2;
+  return extra > 0 ? `${shown} +${extra}` : shown;
+}
+const METHOD_MAP = {
+  cash:   ['নগদ', '#DCFCE7', '#16A34A'],
+  bank:   ['ব্যাংক', '#DBEAFE', '#2563EB'],
+  mobile: ['মোবাইল', '#FEF3C7', '#B45309'],
+  credit: ['বাকি', '#FEE2E2', '#DC2626'],
+};
+function methodBadge(method) {
+  const [label, bg, color] = METHOD_MAP[method] || [method || '—', '#F3F4F6', '#6B7280'];
+  return `<span class="dv-badge" style="background:${bg};color:${color}">${label}</span>`;
+}
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }); }
+
+function statCard(opts) {
+  let deltaHtml = '';
+  if (opts.deltaObj) {
+    const good = opts.invert ? !opts.deltaObj.up : opts.deltaObj.up;
+    deltaHtml = `<div class="dv-stat-delta ${good ? 'up' : 'down'}">${opts.deltaObj.up ? '▲' : '▼'} ${opts.deltaObj.pct}% <small>${opts.deltaSuffix}</small></div>`;
+  } else if (opts.sub) {
+    deltaHtml = `<div class="dv-stat-delta neutral"><small>${opts.sub}</small></div>`;
+  }
+  return `
+    <div class="dv-stat">
+      <div class="dv-stat-top">
+        <span class="dv-stat-label">${opts.label}</span>
+        <span class="dv-stat-icon" style="background:${opts.iconBg};color:${opts.iconColor}">${dvSvg(opts.icon)}</span>
+      </div>
+      <div>
+        <div class="dv-stat-value">৳${num(opts.value)}</div>
+        ${deltaHtml}
+      </div>
+    </div>`;
+}
+
+function monthCard(label, value, deltaObj, color, invert) {
+  let deltaHtml = '';
+  if (deltaObj) {
+    const good = invert ? !deltaObj.up : deltaObj.up;
+    deltaHtml = `<div class="dv-stat-delta ${good ? 'up' : 'down'}">${deltaObj.up ? '▲' : '▼'} ${deltaObj.pct}% <small>আগের মাস থেকে</small></div>`;
+  }
+  return `
+    <div class="dv-month-card">
+      <div class="dv-stat-label">${label}</div>
+      <div class="dv-stat-value" style="color:${color}">৳${num(value)}</div>
+      ${deltaHtml}
+    </div>`;
+}
+
 async function loadDash() {
   const root = document.getElementById('dash');
   try {
-    const [d, s] = await Promise.all([api('/sales/dashboard/'), api('/stock/summary/report/')]);
+    const today = new Date();
+    const todayISO = isoDate(today);
+    const yestISO = isoDate(addDays(today, -1));
+    const monthStartISO = isoDate(firstOfMonth(today));
+    const [lmStart, lmEnd] = lastMonthRange(today);
+    const lmStartISO = isoDate(lmStart), lmEndISO = isoDate(lmEnd);
+
+    const [d, s, recentRes, todayRes, purchMonth] = await Promise.all([
+      api('/sales/dashboard/'),
+      api('/stock/summary/report/'),
+      api('/sales/?page_size=6'),
+      api(`/sales/?date_from=${todayISO}&date_to=${todayISO}&page_size=200`),
+      api(`/purchase/bills/summary/?date_from=${monthStartISO}&date_to=${todayISO}`),
+    ]);
+
+    const [yestR, lmSalesR, lmPurchR] = await Promise.allSettled([
+      api(`/sales/reports/summary/?period=custom&date_from=${yestISO}&date_to=${yestISO}`),
+      api(`/sales/reports/summary/?period=custom&date_from=${lmStartISO}&date_to=${lmEndISO}`),
+      api(`/purchase/bills/summary/?date_from=${lmStartISO}&date_to=${lmEndISO}`),
+    ]);
+    const yest = yestR.status === 'fulfilled' ? yestR.value.summary : null;
+    const lmSales = lmSalesR.status === 'fulfilled' ? lmSalesR.value.summary : null;
+    const lmPurch = lmPurchR.status === 'fulfilled' ? lmPurchR.value : null;
+
     const t = d.today || {}, m = d.this_month || {};
+    const recentSales = recentRes.results || [];
+    const todaySales = todayRes.results || [];
+    const bars = bucketByDayPart(todaySales);
+    const maxBar = Math.max(1, ...bars.map(b => b.value));
+    const hasTodaySales = todaySales.length > 0;
 
-    const paidPct  = t.total_revenue ? Math.min(100, Math.round(t.total_paid    / t.total_revenue * 100)) : 0;
-    const duePct   = t.total_revenue ? Math.min(100, Math.round(t.total_due     / t.total_revenue * 100)) : 0;
-    const sh       = s.total_book_types ? Math.max(0, Math.round((s.total_book_types - s.out_of_stock_count) / s.total_book_types * 100)) : 0;
-    const pDeg     = Math.round(paidPct / 100 * 360);
+    const profitPct = t.total_revenue ? Math.min(100, Math.round((t.realized_profit / t.total_revenue) * 100)) : 0;
+    const donutDeg = Math.round((profitPct / 100) * 360);
+    const costPortion = Math.max(0, (Number(t.total_revenue) || 0) - (Number(t.realized_profit) || 0));
 
-    const bars = [
-      { l:'বিক্রয়',  a:t.total_revenue,       b:t.total_paid },
-      { l:'আদায়',    a:t.total_paid,           b:t.realized_profit },
-      { l:'লাভ',     a:t.realized_profit,      b:null },
-      { l:'বাকি',    a:t.total_due,            b:null },
-      { l:'স্টক৳',   a:s.total_stock_value,   b:null },
-      { l:'ধরন',     a:s.total_book_types,     b:s.out_of_stock_count },
-      { l:'কপি',     a:s.total_quantity,       b:null },
-    ];
-    const maxB = Math.max(1, ...bars.flatMap(b => [Number(b.a)||0, Number(b.b)||0]));
+    const stockNormal = Math.max(0, (s.total_book_types || 0) - (s.out_of_stock_count || 0));
+    const stockHealthPct = s.total_book_types ? Math.round((stockNormal / s.total_book_types) * 100) : 0;
+
+    const dueCustomers = (d.stats && d.stats.top_due_customers) || [];
 
     root.innerHTML = `
-      <!-- HERO ROW -->
-      <div class="hero-row">
-        <div class="hero-card">
-          <div>
-            <div class="hero-kicker">আজকের মোট বিক্রয়</div>
-            <div class="hero-amount">৳${num(t.total_revenue)}</div>
+      <div class="dv-grid">
+
+        <!-- TOP STATS -->
+        <div class="dv-stats-row">
+          ${statCard({
+            icon: 'sales', iconBg: 'var(--dv-primary-soft)', iconColor: 'var(--dv-primary)',
+            label: 'আজকের মোট বিক্রয়', value: t.total_revenue,
+            deltaObj: yest ? dvDelta(t.total_revenue, yest.total_revenue) : null, deltaSuffix: 'গতকাল থেকে',
+          })}
+          ${statCard({
+            icon: 'profit', iconBg: 'var(--dv-blue-soft)', iconColor: 'var(--dv-blue)',
+            label: 'আজকের লাভ', value: t.realized_profit,
+            deltaObj: yest ? dvDelta(t.realized_profit, yest.realized_profit) : null, deltaSuffix: 'গতকাল থেকে',
+          })}
+          ${statCard({
+            icon: 'due', iconBg: 'var(--dv-danger-soft)', iconColor: 'var(--dv-danger)',
+            label: 'মোট বাকি', value: t.total_due, invert: true,
+            deltaObj: yest ? dvDelta(t.total_due, yest.total_due) : null, deltaSuffix: 'গতকাল থেকে',
+          })}
+          ${statCard({
+            icon: 'inventory', iconBg: 'var(--dv-blue-soft)', iconColor: 'var(--dv-blue)',
+            label: 'ইনভেন্টরির মূল্য', value: s.total_stock_value,
+            sub: `মোট ${num(s.total_book_types)} ধরনের বই`,
+          })}
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="dv-card">
+          <div class="dv-section-title">দ্রুত কাজ করুন</div>
+          <div class="dv-qa-row">
+            <a href="/pos/" class="dv-qa-btn primary">${dvSvg('cart')} নতুন বিক্রয় (POS)</a>
+            <a href="/books/add/" class="dv-qa-btn">${dvSvg('bookPlus')} নতুন বই যোগ</a>
+            <a href="/stock/add/" class="dv-qa-btn">${dvSvg('packagePlus')} স্টক বাড়ান</a>
+            <a href="/reports/" class="dv-qa-btn">${dvSvg('chart')} রিপোর্ট দেখুন</a>
           </div>
-          <div class="hero-foot">
-            <span class="hero-foot-tag">${t.total_invoices||0}টি ইনভয়েস</span>
-            <span>আদায় ৳${num(t.total_paid)}</span>
-          </div>
         </div>
-        <div class="metric-card">
-          <span class="m-icon">💹</span>
-          <div class="m-kicker">আজকের লাভ</div>
-          <div class="m-value">৳${num(t.realized_profit)}</div>
-          <div class="m-sub">আদায়কৃত অংশ ${t.external_trade_profit ? `(বাইরের বই ৳${num(t.external_trade_profit)} সহ)` : ''}</div>
-        </div>
-        <div class="metric-card red">
-          <span class="m-icon">⚠️</span>
-          <div class="m-kicker">মোট বাকি</div>
-          <div class="m-value">৳${num(t.total_due)}</div>
-          <div class="m-sub">${d.due_invoices||0}টি মেমো বাকি</div>
-        </div>
-        <div class="metric-card teal">
-          <span class="m-icon">📦</span>
-          <div class="m-kicker">স্টক মূল্য</div>
-          <div class="m-value">৳${num(s.total_stock_value)}</div>
-          <div class="m-sub">${num(s.total_quantity)} কপি স্টকে</div>
-        </div>
-      </div>
 
-      <!-- QUICK ACTIONS -->
-      <div class="quick-row">
-        <a href="/pos/" class="q-action">
-          <div class="qa-icon">🛒</div>নতুন বিক্রয়
-        </a>
-        <a href="/books/add/" class="q-action">
-          <div class="qa-icon">📗</div>নতুন বই যোগ
-        </a>
-        <a href="/stock/add/" class="q-action">
-          <div class="qa-icon">📦</div>স্টক বাড়ান
-        </a>
-        <a href="/reports/" class="q-action">
-          <div class="qa-icon">📊</div>রিপোর্ট দেখুন
-        </a>
-      </div>
+        <!-- MAIN + SIDE -->
+        <div class="dv-main-row">
+          <div class="dv-main-col">
 
-      <!-- BODY -->
-      <div class="dash-body">
-        <!-- LEFT col -->
-        <div class="dash-col main">
-
-          <!-- bar + donut -->
-          <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:18px;">
-            <div class="d-panel">
-              <div class="panel-hd">
-                <h3>আজকের বিক্রয় চিত্র</h3>
-                <span class="badge badge-green">আজ</span>
+            <div class="dv-chart-row">
+              <div class="dv-card dv-chart-card">
+                <div class="dv-card-head">
+                  <h3>আজকের বিক্রয় চার্ট</h3>
+                  <div class="dv-select">আজ ${dvSvg('chevDown', 14)}</div>
+                </div>
+                ${hasTodaySales ? `
+                  <div class="dv-bars">
+                    ${bars.map(b => `
+                      <div class="dv-bar-col">
+                        <div class="dv-bar-track">
+                          <div class="dv-bar-fill" style="height:${Math.max(4, (b.value / maxBar) * 220)}px" title="${b.label}: ৳${num(b.value)}"></div>
+                        </div>
+                        <div class="dv-bar-lbl">${b.label}</div>
+                      </div>`).join('')}
+                  </div>` : `
+                  <div class="dv-empty">
+                    <div class="dv-empty-icon">📊</div>
+                    <div>আজ এখনো কোনো বিক্রয় হয়নি</div>
+                  </div>`}
               </div>
-              <div class="bar-chart">
-                ${bars.map(({l,a,b})=>`
-                  <div class="bc-col">
-                    <div class="bc-stack">
-                      <div class="bc-bar" style="height:${Math.max(6,(Number(a)||0)/maxB*130)}px"></div>
-                      ${Number(b)>0?`<div class="bc-bar b2" style="height:${Math.max(4,(Number(b)||0)/maxB*65)}px"></div>`:''}
-                    </div>
-                    <div class="bc-lbl">${l}</div>
-                  </div>`).join('')}
-              </div>
-            </div>
 
-            <div class="d-panel">
-              <div class="panel-hd">
-                <h3>আদায় হার</h3>
-                <span class="badge badge-blue">${paidPct}%</span>
-              </div>
-              <div class="donut-wrap">
-                <div class="donut-ring" style="background:conic-gradient(var(--g600) 0 ${pDeg}deg,var(--g300) ${pDeg}deg 360deg)">
-                  <div class="donut-hole">
-                    <div><strong>${paidPct}%</strong><small>আদায়</small></div>
+              <div class="dv-card dv-donut-card">
+                <div class="dv-card-head"><h3>লাভের হার</h3></div>
+                <div class="dv-donut-wrap">
+                  <div class="dv-donut" style="background:conic-gradient(var(--dv-success) 0deg ${donutDeg}deg, #EEF2F1 ${donutDeg}deg 360deg)">
+                    <div class="dv-donut-hole"><strong>${profitPct}%</strong><small>লাভ</small></div>
+                  </div>
+                  <div class="dv-donut-legend">
+                    <div class="dv-leg"><span class="dot" style="background:var(--dv-success)"></span>লাভ ৳${num(t.realized_profit)} (${profitPct}%)</div>
+                    <div class="dv-leg"><span class="dot" style="background:#EEF2F1;border:1px solid var(--dv-border)"></span>খরচ ৳${num(costPortion)} (${100 - profitPct}%)</div>
                   </div>
                 </div>
-                <div class="donut-legs">
-                  <div class="dleg"><div class="dleg-dot" style="background:var(--g600)"></div>আদায় ${paidPct}%</div>
-                  <div class="dleg"><div class="dleg-dot" style="background:var(--g300)"></div>বাকি ${100-paidPct}%</div>
-                </div>
               </div>
             </div>
+
+            <div class="dv-card dv-table-card">
+              <div class="dv-card-head">
+                <h3>সাম্প্রতিক বিক্রয়</h3>
+                <a href="/sales/" class="dv-link">সব দেখুন ${dvSvg('arrow', 14)}</a>
+              </div>
+              <div class="dv-table-scroll">
+                <table class="dv-table">
+                  <thead>
+                    <tr><th>ইনভয়েস</th><th>গ্রাহক</th><th>পণ্য</th><th>মোট</th><th>মেথড</th><th>সময়</th></tr>
+                  </thead>
+                  <tbody>
+                    ${recentSales.length ? recentSales.map(sale => `
+                      <tr>
+                        <td style="font-family:'JetBrains Mono',monospace">${sale.invoice_number}</td>
+                        <td>${sale.customer_name}</td>
+                        <td style="color:var(--dv-text2)">${itemsSummary(sale.items)}</td>
+                        <td style="font-family:'JetBrains Mono',monospace;font-weight:700">৳${num(sale.total)}</td>
+                        <td>${methodBadge(sale.payment_method)}</td>
+                        <td style="color:var(--dv-text2)">${fmtTime(sale.created_at)}</td>
+                      </tr>`).join('') : `<tr><td colspan="6" class="dv-empty-row">এখনো কোনো বিক্রয় নেই</td></tr>`}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
 
-          <!-- this-month summary -->
-          <div class="d-panel">
-            <div class="panel-hd">
-              <h3>এই মাসের সংক্ষিপ্ত হিসাব</h3>
-              <span class="badge badge-gray">মাস</span>
+          <div class="dv-side-col">
+
+            <div class="dv-card">
+              <div class="dv-card-head"><h3>📦 স্টক অবস্থা</h3><span class="dv-badge green">${stockHealthPct}%</span></div>
+              <div class="dv-progress"><div class="dv-progress-fill" style="width:${stockHealthPct}%"></div></div>
+              <div class="dv-row"><span>মোট আইটেম</span><strong>${num(s.total_book_types)}</strong></div>
+              <div class="dv-row"><span>স্বাভাবিক স্টক</span><strong class="ok">${num(stockNormal)}</strong></div>
+              <div class="dv-row"><span>স্টক নেই</span><strong class="bad">${num(s.out_of_stock_count)}</strong></div>
             </div>
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
-              ${[
-                ['মোট বিক্রয়',  m.total_revenue,  'var(--g600)'],
-                ['মোট আদায়',    m.total_paid,     'var(--info)'],
-                ['মোট বাকি',    m.total_due,      'var(--danger)'],
-              ].map(([l,v,c])=>`
-                <div style="text-align:center; padding:16px 10px; background:var(--surface2); border-radius:12px; border:1px solid var(--border);">
-                  <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${l}</div>
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${c}">৳${num(v||0)}</div>
-                </div>`).join('')}
+
+            <div class="dv-card">
+              <div class="dv-card-head"><h3>⚠️ বাকির অবস্থা</h3><span class="dv-badge red">${d.due_invoices || 0}টি বিল</span></div>
+              <div class="dv-row"><span>আজকের নতুন বাকি</span><strong class="bad">৳${num(t.total_due)}</strong></div>
+              ${dueCustomers.slice(0, 3).map(c => `
+                <div class="dv-row sub"><span>${c.name}</span><strong>৳${num(c.due)}</strong></div>`).join('')}
+              <a href="/sales/due/" class="dv-link block">সব বাকি দেখুন ${dvSvg('arrow', 14)}</a>
             </div>
+
+            <div class="dv-card">
+              <div class="dv-card-head"><h3>🚀 আজ যে কাজগুলো করতে পারেন</h3></div>
+              <a href="/pos/" class="dv-task">
+                <span class="dv-task-icon">${dvSvg('cart', 18)}</span>
+                <div><strong>বিক্রয় শুরু করুন</strong><small>POS খুলুন</small></div>
+              </a>
+              <a href="/sales/due/" class="dv-task">
+                <span class="dv-task-icon warn">${dvSvg('alert', 18)}</span>
+                <div><strong>বাকি আদায় করুন</strong><small>৳${num(t.total_due)} আজকের বাকি</small></div>
+              </a>
+              <a href="/reports/" class="dv-task">
+                <span class="dv-task-icon">${dvSvg('chart', 18)}</span>
+                <div><strong>রিপোর্ট দেখুন</strong><small>লাভ-ক্ষতি বিশ্লেষণ</small></div>
+              </a>
+            </div>
+
           </div>
+        </div>
 
-        </div><!-- /main col -->
-
-        <!-- RIGHT col (sidebar) -->
-        <div class="dash-col side">
-
-          <!-- stock health -->
-          <div class="d-panel">
-            <div class="panel-hd">
-              <h3>📦 স্টক অবস্থা</h3>
-              <span class="badge badge-green">${sh}%</span>
-            </div>
-            <div class="prog-bar"><div class="prog-fill" style="width:${sh}%"></div></div>
-            <div class="list-row">
-              <div class="lr-left"><strong>${num(s.total_book_types)}</strong><small>বইয়ের ধরন</small></div>
-              <span class="badge badge-green">চালু</span>
-            </div>
-            <div class="list-row">
-              <div class="lr-left"><strong>${num(s.out_of_stock_count)}</strong><small>স্টক শেষ</small></div>
-              <span class="badge badge-red">দরকার</span>
-            </div>
-            <div class="list-row">
-              <div class="lr-left"><strong>${num(s.total_quantity)}</strong><small>মোট কপি</small></div>
-              <span class="badge badge-blue">স্টকে</span>
-            </div>
+        <!-- MONTHLY SUMMARY -->
+        <div class="dv-card">
+          <div class="dv-card-head"><h3>মাসিক সারাংশ (এই মাস)</h3></div>
+          <div class="dv-month-grid">
+            ${monthCard('মোট বিক্রয়', m.total_revenue, lmSales ? dvDelta(m.total_revenue, lmSales.total_revenue) : null, 'var(--dv-success)')}
+            ${monthCard('মোট লাভ', m.realized_profit, lmSales ? dvDelta(m.realized_profit, lmSales.realized_profit) : null, 'var(--dv-blue)')}
+            ${monthCard('মোট বাকি', m.total_due, lmSales ? dvDelta(m.total_due, lmSales.total_due) : null, 'var(--dv-danger)', true)}
+            ${monthCard('মোট ক্রয়', purchMonth.total_price, lmPurch ? dvDelta(purchMonth.total_price, lmPurch.total_price) : null, 'var(--dv-text)')}
           </div>
+        </div>
 
-          <!-- payment risk -->
-          <div class="d-panel">
-            <div class="panel-hd">
-              <h3>⚠️ বাকির অবস্থা</h3>
-              <span class="badge badge-yellow">${duePct}%</span>
-            </div>
-            <div class="prog-bar"><div class="prog-fill red" style="width:${duePct}%"></div></div>
-            <div class="list-row">
-              <div class="lr-left"><strong>৳${num(t.total_due)}</strong><small>আজকের বাকি</small></div>
-              <span class="badge badge-yellow">${d.due_invoices||0}টি বিল</span>
-            </div>
-            <div class="list-row">
-              <div class="lr-left"><strong>৳${num(m.total_revenue||0)}</strong><small>এই মাসের বিক্রয়</small></div>
-              <span class="badge badge-blue">মাস</span>
-            </div>
-          </div>
-
-          <!-- next moves -->
-          <div class="d-panel">
-            <div class="panel-hd"><h3>🚀 এখন কী করবেন?</h3></div>
-            <div class="move-row">
-              <div class="move-icon-box">🛒</div>
-              <div class="move-text"><strong>বিক্রয় শুরু করুন</strong><small>POS খুলুন</small></div>
-              <a href="/pos/" class="btn btn-primary btn-sm">খুলুন</a>
-            </div>
-            <div class="move-row">
-              <div class="move-icon-box">⚠️</div>
-              <div class="move-text"><strong>বাকি আদায় করুন</strong><small>পেমেন্ট নিন</small></div>
-              <a href="/sales/due/" class="btn btn-ghost btn-sm">দেখুন</a>
-            </div>
-            <div class="move-row">
-              <div class="move-icon-box">📊</div>
-              <div class="move-text"><strong>রিপোর্ট দেখুন</strong><small>লাভ-ক্ষতি</small></div>
-              <a href="/reports/" class="btn btn-ghost btn-sm">দেখুন</a>
-            </div>
-          </div>
-
-        </div><!-- /side col -->
       </div>`;
 
-  } catch(e) {
+  } catch (e) {
     root.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>ডাটা লোড হয়নি</h3><p>সার্ভার চালু আছে কিনা দেখুন।</p></div>`;
     console.error(e);
   }

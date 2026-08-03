@@ -182,7 +182,8 @@ async function deleteVendor(id) {
   if (parseFloat(v.total_due) > 0) {
     warning += `\n\n⚠️ এই ভেন্ডরের এখনো ৳${num(v.total_due)} বকেয়া আছে। মুছে ফেললে এই বকেয়ার হিসাব আর ভেন্ডরের সাথে যুক্ত থাকবে না (তবে পুরনো ক্রয় বিলগুলো থাকবে)।`;
   }
-  if (!confirm(warning)) return;
+  const ok = await confirmModal(warning, { danger: true });
+  if (!ok) return;
 
   try {
     await api(`/purchase/vendors/${id}/`, 'DELETE');
@@ -203,10 +204,10 @@ async function saveVendor() {
   const openingVal = document.getElementById('nv-opening').value || 0;
 
   if (editingId && editingOriginalDue !== null && parseFloat(openingVal) !== editingOriginalDue) {
-    const ok = confirm(
+    const ok = await confirmModal(
       `"${name}"-এর মোট বকেয়া ৳${num(editingOriginalDue)} থেকে সরাসরি ৳${num(openingVal)}-এ বদলে যাবে।\n\n` +
-      `এটা কোনো বিল/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বকেয়ার হিসাব হারিয়ে যাবে।\n\n` +
-      `আপনি কি নিশ্চিত?`
+      `এটা কোনো বিল/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বকেয়ার হিসাব হারিয়ে যাবে।`,
+      { danger: true, requireText: 'CONFIRM' }
     );
     if (!ok) return;
   }

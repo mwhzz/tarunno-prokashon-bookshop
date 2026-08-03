@@ -306,6 +306,17 @@
       font-size: 28px; opacity: .15;
     }
 
+    /* Color variants used by urgent/status stat cards (due amounts, low stock, etc.) */
+    .stat-card.red, .stat-card.green, .stat-card.blue {
+      border-left-width: 4px;
+    }
+    .stat-card.red   { border-left-color: var(--danger); }
+    .stat-card.green { border-left-color: var(--accent); }
+    .stat-card.blue  { border-left-color: var(--info); }
+    .stat-card.red   .stat-value { color: var(--danger); }
+    .stat-card.green .stat-value { color: var(--accent); }
+    .stat-card.blue  .stat-value { color: var(--info); }
+
     /* Form card */
     .form-card {
       background: var(--surface);
@@ -313,6 +324,26 @@
       border-radius: var(--radius-lg);
       padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 20px;
     }
+
+    /* Shared confirm modal (see confirmModal() in GLOBAL JS below) */
+    .cm-overlay {
+      position: fixed; inset: 0; background: rgba(13,51,38,.45);
+      display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+      animation: cmFade .15s ease both;
+    }
+    @keyframes cmFade { from { opacity: 0; } to { opacity: 1; } }
+    .cm-box { width: 100%; max-width: 420px; margin-bottom: 0; animation: cmPop .18s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes cmPop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .cm-message { font-size: 14px; color: var(--text2); line-height: 1.65; white-space: pre-line; margin: 0; }
+    .cm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+    .cm-require {
+      width: 100%; margin-top: 8px; padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: inherit; font-size: 14px; outline: none;
+    }
+    .cm-require:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(27,122,85,.1); }
+    .cm-require-label { display: block; font-size: 12px; font-weight: 700; color: var(--text2); margin-top: 16px; }
+    .cm-confirm:disabled { opacity: .45; cursor: not-allowed; }
+    .cm-confirm:disabled:hover { transform: none; }
 
     .form-card h3, .card-title {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -559,6 +590,9 @@
     .empty-state h3 { font-size: 16px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
     .empty-state p { font-size: 13px; }
 
+    /* Lighter-weight empty-state used inline (e.g. inside a table cell or narrow panel) */
+    .empty { text-align: center; padding: 24px 16px; color: var(--muted); font-size: 13.5px; font-weight: 600; }
+
     /* Divider */
     .divider { height: 1px; background: var(--border); margin: 18px 0; }
 
@@ -797,6 +831,75 @@
         el.style.transform = 'translateX(60px)';
         setTimeout(() => el.remove(), 300);
       }, 3200);
+    }
+
+    /**
+     * Styled replacement for the native confirm() dialog used across the app for
+     * destructive/irreversible actions. Closes on Escape or backdrop click (resolves
+     * false), restores focus to whatever triggered it, and — for the most severe
+     * actions — can require typing an exact word before the confirm button enables
+     * (mirroring the data-reset flow in settings.html).
+     *
+     * await confirmModal('বিল #12 মুছে ফেলতে চান?', { danger: true })
+     * await confirmModal('আজকের ক্যাশ হিসাব ক্লোজ করবেন?', { danger: true, requireText: 'CLOSE' })
+     */
+    function confirmModal(message, options = {}) {
+      const {
+        title = options.danger ? 'নিশ্চিত করুন' : 'নিশ্চিত করুন',
+        confirmText = options.danger ? 'হ্যাঁ, মুছে ফেলুন' : 'নিশ্চিত করুন',
+        cancelText = 'বাতিল',
+        danger = false,
+        requireText = null,
+      } = options;
+
+      return new Promise((resolve) => {
+        const uid = 'cm-' + Math.random().toString(36).slice(2);
+        const html = `
+          <div id="${uid}" class="cm-overlay">
+            <div class="form-card cm-box" role="alertdialog" aria-modal="true" aria-labelledby="${uid}-t">
+              <h3 id="${uid}-t">${danger ? '⚠️ ' : ''}${title}</h3>
+              <p class="cm-message">${message}</p>
+              ${requireText ? `
+                <label class="cm-require-label">নিশ্চিত করতে <strong>${requireText}</strong> লিখুন</label>
+                <input type="text" class="cm-require" autocomplete="off">
+              ` : ''}
+              <div class="cm-actions">
+                <button type="button" class="btn btn-ghost cm-cancel">${cancelText}</button>
+                <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'} cm-confirm" ${requireText ? 'disabled' : ''}>${confirmText}</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const overlay = document.getElementById(uid);
+        const confirmBtn = overlay.querySelector('.cm-confirm');
+        const cancelBtn = overlay.querySelector('.cm-cancel');
+        const requireInput = overlay.querySelector('.cm-require');
+        const previouslyFocused = document.activeElement;
+
+        function cleanup(result) {
+          overlay.remove();
+          document.removeEventListener('keydown', onKeydown);
+          if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+          resolve(result);
+        }
+        function onKeydown(e) {
+          if (e.key === 'Escape') cleanup(false);
+        }
+        overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) cleanup(false); });
+        cancelBtn.addEventListener('click', () => cleanup(false));
+        confirmBtn.addEventListener('click', () => { if (!confirmBtn.disabled) cleanup(true); });
+        if (requireInput) {
+          requireInput.addEventListener('input', () => {
+            confirmBtn.disabled = requireInput.value !== requireText;
+          });
+          requireInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !confirmBtn.disabled) cleanup(true);
+          });
+        }
+        document.addEventListener('keydown', onKeydown);
+        (requireInput || confirmBtn).focus();
+      });
     }
 
     function getCookie(name) {

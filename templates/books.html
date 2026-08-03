@@ -37,7 +37,7 @@ async function initBooks() {
             <option value="own">📗 নিজস্ব বই</option>
             <option value="external">🏢 বাইরের বই</option>
           </select>
-          <input type="text" placeholder="বই বা লেখক খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" placeholder="বই, লেখক বা কোড খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
           <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
         </div>
         
@@ -92,29 +92,26 @@ function bookRowHtml(b) {
     <td>${b.is_active ? '<span class="badge badge-green">সক্রিয়</span>' : '<span class="badge badge-red">বন্ধ</span>'}</td>
     <td style="text-align:right">
       <a href="/books/edit/${b.id}/" class="btn btn-ghost btn-sm" style="text-decoration:none">✎ এডিট</a>
-      <button type="button" class="btn btn-danger btn-sm" onclick="deleteBook(${b.id})">Delete</button>
+      <button type="button" class="btn btn-danger btn-sm" onclick="deleteBook(${b.id})">🗑️ মুছুন</button>
     </td>
   </tr>`;
 }
 
 async function deleteBook(id) {
   const book = allBooksList.find(b => b.id === id);
-  const name = book?.title || 'this book';
-  if (!confirm(`Delete "${name}"?`)) return;
+  const name = book?.title || 'এই বইটি';
+  const ok = await confirmModal(`"${name}" মুছে ফেলতে চান?`, { danger: true });
+  if (!ok) return;
 
   try {
-    const r = await fetch(`${API}/books/${id}/`, {
-      method: 'DELETE',
-      headers: { 'X-CSRFToken': getCookie('csrftoken') },
-    });
-    if (!r.ok) throw await r.json().catch(() => ({}));
-
+    await api(`/books/${id}/`, 'DELETE');
     allBooksList = allBooksList.filter(b => b.id !== id);
     const tbody = document.querySelector('#books-table tbody');
     if (tbody) tbody.innerHTML = allBooksList.map(bookRowHtml).join('');
-    toast('Book deleted');
+    toast('বই মুছে ফেলা হয়েছে।');
   } catch (e) {
-    toast('Delete failed: ' + (e?.detail || JSON.stringify(e)), 'error');
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
   }
 }
 
@@ -139,9 +136,9 @@ function filterBookList() {
   const q = document.getElementById('book-search-list')?.value.toLowerCase() || '';
   const source = document.getElementById('book-source-filter')?.value || '';
   
-  // নাম অথবা লেখকের নামের সাথে মিলিয়ে ফিল্টার
+  // নাম, লেখক অথবা প্রোডাক্ট কোডের সাথে মিলিয়ে ফিল্টার
   const filteredRows = allBooksList.filter(b =>
-    (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)) &&
+    (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.product_code||'').toLowerCase().includes(q)) &&
     (!source || b.source === source)
   );
   

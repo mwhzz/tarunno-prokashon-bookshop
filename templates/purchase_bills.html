@@ -222,7 +222,7 @@ async function loadBills() {
 }
 
 async function deleteBill(id) {
-  const ok = confirm(`বিল #${id} মুছে ফেলতে চান?\n\nএর সাথে যুক্ত স্টক ও ক্যাশ হিসাব রিভার্স হয়ে যাবে। এই কাজটি বাতিল করা যাবে না।`);
+  const ok = await confirmModal(`বিল #${id} মুছে ফেলতে চান?\n\nএর সাথে যুক্ত স্টক ও ক্যাশ হিসাব রিভার্স হয়ে যাবে। এই কাজটি বাতিল করা যাবে না।`, { danger: true });
   if (!ok) return;
   try {
     await api(`/purchase/bills/${id}/`, 'DELETE');

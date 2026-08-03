@@ -4,11 +4,11 @@
 
 {% block content %}
 <div class="table-wrap" style="padding:20px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:16px; color:var(--accent);">👥 স্টাফ তালিকা</h3>
-        <p style="font-size:12px; color:var(--muted);">অ্যাডমিন প্যানেল থেকে নতুন ইউজার তৈরি করুন, এখান থেকে শুধু পদমর্যাদা পরিবর্তন করা যাবে।</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <h3 style="font-size:16px; color:var(--accent); margin:0;">👥 স্টাফ তালিকা</h3>
+        <a href="/admin/auth/user/add/" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন ইউজার তৈরি করুন (অ্যাডমিন প্যানেল)</a>
     </div>
-    
+
     <table style="width:100%; border-collapse: collapse; font-size:14px;">
         <thead>
             <tr style="border-bottom:2px solid var(--border); text-align:left;">
@@ -16,6 +16,7 @@
                 <th style="padding:12px 8px;">নাম</th>
                 <th style="padding:12px 8px;">ফোন</th>
                 <th style="padding:12px 8px;">বর্তমান পদমর্যাদা</th>
+                <th style="padding:12px 8px;">অবস্থা</th>
                 <th style="padding:12px 8px; text-align:right;">অ্যাকশন</th>
             </tr>
         </thead>
@@ -83,8 +84,12 @@ async function fetchUsers() {
                         ${u.profile.role.toUpperCase()}
                     </span>
                 </td>
-                <td style="padding:12px 8px; text-align:right;">
+                <td style="padding:12px 8px;">
+                    <span class="badge ${u.is_active ? 'badge-green' : 'badge-red'}">${u.is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}</span>
+                </td>
+                <td style="padding:12px 8px; text-align:right; white-space:nowrap;">
                     <button class="btn btn-ghost btn-sm" onclick='openEditModal(${JSON.stringify(u)})'>✎ এডিট রোল</button>
+                    <button class="btn btn-ghost btn-sm" onclick='toggleActive(${JSON.stringify(u)})'>${u.is_active ? '🚫 নিষ্ক্রিয় করুন' : '✓ সক্রিয় করুন'}</button>
                 </td>
             </tr>
         `).join('');
@@ -117,8 +122,18 @@ async function updateUserRole() {
     if (role === editUserCurrentRole) { closeModal(); return; }
 
     const roleLabel = { admin: 'Admin (অ্যাডমিন)', manager: 'Manager (ম্যানেজার)', staff: 'Staff (স্টাফ)' }[role] || role;
-    const warn = role === 'admin' ? '\n\n⚠️ Admin হলে পুরো সিস্টেমে সম্পূর্ণ অ্যাক্সেস পাবে (ডেটা রিসেট সহ)।' : '';
-    if (!confirm(`"${editUserName}"-এর পদমর্যাদা বদলে ${roleLabel} করতে চান?${warn}`)) return;
+    let ok;
+    if (role === 'admin') {
+        ok = await confirmModal(
+            `"${editUserName}"-কে Admin করতে চান?
+
+Admin হলে পুরো সিস্টেমে সম্পূর্ণ অ্যাক্সেস পাবে — ডেটা রিসেট, ক্যাশ হিসাব, সব স্টাফের পদমর্যাদা পরিবর্তন সহ।`,
+            { danger: true, requireText: 'CONFIRM' }
+        );
+    } else {
+        ok = await confirmModal(`"${editUserName}"-এর পদমর্যাদা বদলে ${roleLabel} করতে চান?`, { danger: true });
+    }
+    if (!ok) return;
 
     try {
         await api(`/users/manage/${id}/`, 'PATCH', {
@@ -128,7 +143,30 @@ async function updateUserRole() {
         closeModal();
         fetchUsers();
     } catch (e) {
-        toast('আপডেট করা যায়নি।', 'error');
+        const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+        toast('আপডেট করা যায়নি: ' + msg, 'error');
+    }
+}
+
+async function toggleActive(u) {
+    const name = (u.first_name + ' ' + u.last_name).trim() || u.username;
+    const willActivate = !u.is_active;
+    const message = willActivate
+        ? `"${name}"-কে আবার সক্রিয় করবেন? সে আবার লগইন করতে পারবে।`
+        : `"${name}"-কে নিষ্ক্রিয় করবেন?
+
+নিষ্ক্রিয় করলে সে আর লগইন করতে পারবে না, কিন্তু তার আগের সব রেকর্ড (বিক্রয়/এন্ট্রি) ঠিকই থাকবে।`;
+
+    const ok = await confirmModal(message, { danger: !willActivate });
+    if (!ok) return;
+
+    try {
+        await api(`/users/manage/${u.id}/`, 'PATCH', { is_active: willActivate });
+        toast(willActivate ? 'ইউজার সক্রিয় করা হয়েছে।' : 'ইউজার নিষ্ক্রিয় করা হয়েছে।');
+        fetchUsers();
+    } catch (e) {
+        const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+        toast('আপডেট করা যায়নি: ' + msg, 'error');
     }
 }
 </script>

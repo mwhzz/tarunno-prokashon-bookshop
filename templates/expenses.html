@@ -476,12 +476,16 @@ async function addExpense() {
    DELETE
 ══════════════════════════ */
 async function deleteExp(id) {
-  if (!confirm('এই খরচের রেকর্ড ডিলিট করবেন?')) return;
+  const ok = await confirmModal('এই খরচের রেকর্ড ডিলিট করবেন?', { danger: true });
+  if (!ok) return;
   try {
     await api(`/expenses/records/${id}/`, 'DELETE');
     toast('রেকর্ড ডিলিট হয়েছে।');
     loadExpenses();
-  } catch(e) { toast('ডিলিট হয়নি।','error'); }
+  } catch(e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('ডিলিট হয়নি: ' + msg, 'error');
+  }
 }
 
 function setText(id, v) { const el=document.getElementById(id); if(el) el.textContent=v; }

@@ -695,14 +695,19 @@ async function addTransaction() {
    CLOSE DAY
 ══════════════════════════ */
 async function closeDay() {
-  if (!confirm('আপনি কি নিশ্চিত?\n\nআজকের ক্যাশ হিসাব ক্লোজ করলে আর কোনো এন্ট্রি দেওয়া যাবে না।')) return;
+  const ok = await confirmModal(
+    'আজকের ক্যাশ হিসাব ক্লোজ করলে আর কোনো এন্ট্রি দেওয়া যাবে না — এই কাজটি বাতিল করা যাবে না।',
+    { danger: true, requireText: 'CLOSE' }
+  );
+  if (!ok) return;
 
   try {
     await api(`/accounts/daily/${currentDay.id}/close_day/`, 'POST');
     toast('আজকের হিসাব সফলভাবে ক্লোজ করা হয়েছে 🔒');
     fetchTodayCash();
   } catch(e) {
-    toast('ক্লোজ করা যায়নি।','error');
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('ক্লোজ করা যায়নি: ' + msg, 'error');
   }
 }
 

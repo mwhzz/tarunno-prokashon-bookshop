@@ -46,7 +46,11 @@
 
     <!-- গ্রাহকদের তালিকা -->
     <div class="table-wrap" style="padding:20px;">
-        <h3 style="margin-bottom:16px; font-size:16px; color:var(--accent);">👥 পাইকারি গ্রাহক তালিকা</h3>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+            <h3 style="font-size:16px; color:var(--accent); margin:0;">👥 পাইকারি গ্রাহক তালিকা</h3>
+            <input type="text" id="c-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন" oninput="renderCustomerList()"
+                   style="height:36px; padding:0 12px; border:1.5px solid var(--border); border-radius:8px; font-family:'Hind Siliguri',sans-serif; font-size:13px; outline:none; min-width:220px;">
+        </div>
 
         <table style="width:100%; border-collapse: collapse; font-size:14px;">
             <thead>
@@ -87,29 +91,40 @@ async function fetchCustomers() {
         const data = await api('/sales/customers/?page_size=1000&customer_type=wholesale');
         loader.style.display = 'none';
         wholesaleCustomers = data.results;
-
-        if (wholesaleCustomers.length === 0) {
-            list.innerHTML = '<tr><td colspan="6" class="empty">কোনো পাইকারি গ্রাহক পাওয়া যায়নি।</td></tr>';
-            return;
-        }
-
-        list.innerHTML = wholesaleCustomers.map(c => `
-            <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:12px 8px; font-family:'JetBrains Mono'; font-weight:600; color:var(--accent);">${c.customer_code || '-'}</td>
-                <td style="padding:12px 8px; font-weight:600;">${c.name}</td>
-                <td style="padding:12px 8px;">${c.phone}</td>
-                <td style="padding:12px 8px;">${c.default_commission}%</td>
-                <td style="padding:12px 8px; text-align:right; font-weight:700; color:var(--danger);">৳${num(c.total_due)}</td>
-                <td style="padding:12px 8px; text-align:right; white-space:nowrap;">
-                    <button class="btn btn-ghost btn-sm" onclick="editCustomer(${c.id})" title="সম্পাদনা">✏️</button>
-                    <button class="btn btn-ghost btn-sm" onclick="deleteCustomer(${c.id})" title="মুছে ফেলুন">🗑️</button>
-                </td>
-            </tr>
-        `).join('');
+        renderCustomerList();
     } catch (e) {
         loader.style.display = 'none';
         toast('গ্রাহক তালিকা লোড করা যায়নি।', 'error');
     }
+}
+
+function renderCustomerList() {
+    const list = document.getElementById('customer-list');
+    const q = (document.getElementById('c-search').value || '').trim().toLowerCase();
+    const filtered = !q ? wholesaleCustomers : wholesaleCustomers.filter(c =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.phone || '').toLowerCase().includes(q) ||
+        (c.customer_code || '').toLowerCase().includes(q)
+    );
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding:30px;">${wholesaleCustomers.length === 0 ? 'কোনো পাইকারি গ্রাহক পাওয়া যায়নি।' : 'খোঁজার সাথে মিলে এমন কোনো গ্রাহক নেই।'}</td></tr>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(c => `
+        <tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:12px 8px; font-family:'JetBrains Mono'; font-weight:600; color:var(--accent);">${c.customer_code || '-'}</td>
+            <td style="padding:12px 8px; font-weight:600;">${c.name}</td>
+            <td style="padding:12px 8px;">${c.phone}</td>
+            <td style="padding:12px 8px;">${c.default_commission}%</td>
+            <td style="padding:12px 8px; text-align:right; font-weight:700; color:var(--danger);">৳${num(c.total_due)}</td>
+            <td style="padding:12px 8px; text-align:right; white-space:nowrap;">
+                <button class="btn btn-ghost btn-sm" onclick="editCustomer(${c.id})" title="সম্পাদনা">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="deleteCustomer(${c.id})" title="মুছে ফেলুন">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 function editCustomer(id) {
@@ -158,7 +173,8 @@ async function deleteCustomer(id) {
         warning += `\n\n⚠️ এই গ্রাহকের এখনো ৳${num(c.total_due)} বাকি আছে। মুছে ফেললে এই বাকির হিসাব আর গ্রাহকের সাথে যুক্ত থাকবে না।`;
     }
 
-    if (!confirm(warning)) return;
+    const ok = await confirmModal(warning, { danger: true });
+    if (!ok) return;
 
     try {
         await api(`/sales/customers/${id}/`, 'DELETE');
@@ -166,7 +182,8 @@ async function deleteCustomer(id) {
         if (document.getElementById('editing-id').value == id) cancelEdit();
         fetchCustomers();
     } catch (e) {
-        toast('গ্রাহক মুছে ফেলা যায়নি।', 'error');
+        const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+        toast('গ্রাহক মুছে ফেলা যায়নি: ' + msg, 'error');
     }
 }
 
@@ -183,11 +200,17 @@ async function saveCustomer() {
         return;
     }
 
+    const duplicatePhone = wholesaleCustomers.find(c => c.phone === phone && String(c.id) !== String(editingId));
+    if (duplicatePhone) {
+        toast(`এই ফোন নম্বর "${duplicatePhone.name}"-এর নামে ইতিমধ্যে আছে!`, 'error');
+        return;
+    }
+
     if (editingId && editingOriginalDue !== null && parseFloat(openingDue || 0) !== editingOriginalDue) {
-        const ok = confirm(
+        const ok = await confirmModal(
             `"${name}"-এর মোট বাকি ৳${num(editingOriginalDue)} থেকে সরাসরি ৳${num(openingDue || 0)}-এ বদলে যাবে।\n\n` +
-            `এটা কোনো ইনভয়েস/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বাকির হিসাব হারিয়ে যাবে।\n\n` +
-            `আপনি কি নিশ্চিত?`
+            `এটা কোনো ইনভয়েস/পেমেন্টের হিসাব ছাড়াই সরাসরি ওভাররাইট — ভুল হলে আগের সঠিক বাকির হিসাব হারিয়ে যাবে।`,
+            { danger: true, requireText: 'CONFIRM' }
         );
         if (!ok) return;
     }

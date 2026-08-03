@@ -1531,9 +1531,10 @@ function setExtraCommission(id, value) {
   calcTotals();
 }
 
-function clearCart() {
+async function clearCart() {
   if (!cart.length) return;
-  if (!confirm('কার্টের সব বই মুছে ফেলতে চান? এই কাজটি বাতিল করা যাবে না।')) return;
+  const ok = await confirmModal('কার্টের সব বই মুছে ফেলতে চান? এই কাজটি বাতিল করা যাবে না।', { danger: true });
+  if (!ok) return;
   cart = [];
   clearCartDraft();
   renderCart();

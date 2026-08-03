@@ -87,13 +87,11 @@ async function downloadBackup() {
 }
 
 async function resetAllData() {
-    if (!confirm('⚠️ এটি অপরিবর্তনীয়! সব বই, স্টক, বিক্রয়, গ্রাহক, খরচ ও হিসাব স্থায়ীভাবে মুছে যাবে। আপনি কি নিশ্চিত?')) return;
-
-    const typed = prompt('নিশ্চিত করতে বড় হাতের অক্ষরে RESET লিখুন:');
-    if (typed !== 'RESET') {
-        if (typed !== null) toast('নিশ্চিতকরণ টেক্সট মেলেনি, রিসেট বাতিল করা হয়েছে।', 'error');
-        return;
-    }
+    const ok = await confirmModal(
+        'এটি অপরিবর্তনীয়! সব বই, স্টক, বিক্রয়, গ্রাহক, খরচ ও হিসাব স্থায়ীভাবে মুছে যাবে।',
+        { danger: true, requireText: 'RESET' }
+    );
+    if (!ok) return;
 
     const btn = document.getElementById('reset-btn');
     btn.disabled = true;

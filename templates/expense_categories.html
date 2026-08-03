@@ -288,12 +288,19 @@ function resetForm() {
 }
 
 async function deleteCat(id) {
-  if (!confirm('এই খাতটি ডিলিট করলে এর সাথে যুক্ত সব খরচও মুছে যেতে পারে।\nনিশ্চিত?')) return;
+  const ok = await confirmModal(
+    'এই খাতটি ডিলিট করলে এর সাথে যুক্ত সব খরচের রেকর্ডও স্থায়ীভাবে মুছে যাবে (নিশ্চিতভাবে, "হয়তো" না) — এই কাজটি বাতিল করা যাবে না।',
+    { danger: true, requireText: 'CONFIRM' }
+  );
+  if (!ok) return;
   try {
     await api(`/expenses/categories/${id}/`, 'DELETE');
     toast('খাত ডিলিট হয়েছে।');
     fetchCats();
-  } catch(e) { toast('ডিলিট করা যায়নি।','error'); }
+  } catch(e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('ডিলিট করা যায়নি: ' + msg, 'error');
+  }
 }
 
 function shake(id) {

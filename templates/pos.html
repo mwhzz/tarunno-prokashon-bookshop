@@ -1938,6 +1938,9 @@ function showSuccessModal(sale) {
           <button class="btn btn-ghost" onclick="closeModal()" style="border-radius:12px; min-height:44px;">
             নতুন বিক্রয় শুরু করুন →
           </button>
+          <button class="btn btn-ghost" onclick="undoLastSale(${sale.id})" style="border-radius:12px; min-height:40px; color:var(--danger); font-size:13px;">
+            ❌ ভুল হয়েছে? এই বিক্রয় বাতিল করুন
+          </button>
         </div>
       </div>
     </div>`;
@@ -1946,6 +1949,25 @@ function showSuccessModal(sale) {
 
 function closeModal() {
   document.getElementById('sale-modal')?.remove();
+}
+
+async function undoLastSale(saleId) {
+  // বিক্রয় রেকর্ড সরাসরি ডিলিট করা হয় না (হিসাব/অডিট ট্রেইল ঠিক রাখতে) — বরং সব বই
+  // return_items দিয়ে ফেরত নেওয়া হয়, যা স্টক ও বাকির হিসাব ঠিকভাবে রিভার্স করে এবং
+  // ইনভয়েসে একটা রিটার্ন রেকর্ড হিসেবে থেকে যায় (invoices.html-এর মতোই)।
+  const ok = await confirmModal('এই পুরো বিক্রয়টা বাতিল করতে চান? সব বই স্টকে ফিরে যাবে এবং বাকির হিসাব সমন্বয় হবে।', { danger: true });
+  if (!ok) return;
+  try {
+    const sale = await api(`/sales/${saleId}/`);
+    const items = (sale.items || []).map(i => ({ book_id: i.book, quantity: i.quantity }));
+    if (!items.length) { toast('ফেরত দেওয়ার মতো কোনো বই পাওয়া যায়নি।', 'error'); return; }
+    await api(`/sales/${saleId}/return_items/`, 'POST', { items, reason: 'POS-এ তাৎক্ষণিক ভুল সংশোধন' });
+    toast('বিক্রয়টি বাতিল করা হয়েছে, বই স্টকে ফিরে গেছে ✓');
+    closeModal();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('বাতিল করা যায়নি: ' + msg, 'error');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initPOS);

@@ -195,13 +195,7 @@
 
 {% block extra_js %}
 <script>
-const catIcons = ['🏠','💡','🚌','📦','🧑‍💼','📞','🖥️','🔧','🍽️','📝','💰','🏥','🎓','🚗','🌐'];
-
-function catIcon(name) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xff;
-  return catIcons[h % catIcons.length];
-}
+function catIcon(name) { return categoryIconFor(name); }
 
 async function fetchCats() {
   const list  = document.getElementById('cat-list');

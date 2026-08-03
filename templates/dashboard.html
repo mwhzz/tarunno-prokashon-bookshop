@@ -204,12 +204,28 @@
 @media (max-width: 560px) {
   #dash .dv-stats-row, #dash .dv-month-grid { grid-template-columns: 1fr; }
 }
+
+/* Skeleton loading state — mirrors the real layout instead of a blank spinner */
+@keyframes dvShimmer { 0% { opacity: .5; } 50% { opacity: .9; } 100% { opacity: .5; } }
+#dash .dv-skel { animation: dvShimmer 1.3s ease-in-out infinite; }
+#dash .dv-skel-stat { height: 110px; border-radius: var(--dv-radius); background: var(--dv-border); }
+#dash .dv-skel-row { height: 56px; border-radius: 10px; background: var(--dv-border); }
+#dash .dv-skel-block { border-radius: var(--dv-radius); background: var(--dv-border); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="dash">
-  <div class="loading"><div class="spinner"></div>&nbsp; লোড হচ্ছে...</div>
+  <div class="dv-grid">
+    <div class="dv-stats-row">
+      <div class="dv-skel dv-skel-stat"></div>
+      <div class="dv-skel dv-skel-stat"></div>
+      <div class="dv-skel dv-skel-stat"></div>
+      <div class="dv-skel dv-skel-stat"></div>
+    </div>
+    <div class="dv-skel dv-skel-row"></div>
+    <div class="dv-skel dv-skel-block" style="height:340px"></div>
+  </div>
 </div>
 {% endblock %}
 
@@ -330,7 +346,7 @@ async function loadDash() {
       api('/sales/dashboard/'),
       api('/stock/summary/report/'),
       api('/sales/?page_size=6'),
-      api(`/sales/?date_from=${todayISO}&date_to=${todayISO}&page_size=200`),
+      api(`/sales/?date_from=${todayISO}&date_to=${todayISO}&page_size=1000`),
       api(`/purchase/bills/summary/?date_from=${monthStartISO}&date_to=${todayISO}`),
     ]);
 

@@ -185,6 +185,8 @@
 const bookId = "{{ book_id }}";
 let bookStatus = true;
 let bookSource = 'own';
+let originalBookStatus = true;
+let originalBookSource = 'own';
 
 async function initEdit() {
   const root = document.getElementById('edit-root');
@@ -192,6 +194,8 @@ async function initEdit() {
     const book = await api(`/books/${bookId}/`);
     bookStatus = book.is_active;
     bookSource = book.source || 'own';
+    originalBookStatus = bookStatus;
+    originalBookSource = bookSource;
 
     root.innerHTML = `
       <!-- Book hero -->
@@ -398,6 +402,20 @@ function livePriceCalc() {
 async function doUpdate() {
   const title = document.getElementById('b-title')?.value.trim();
   if (!title) { shake('b-title'); toast('বইয়ের নাম দিতে হবে!','error'); return; }
+
+  if (bookStatus !== originalBookStatus) {
+    const ok = await confirmModal(
+      bookStatus
+        ? 'বইটি আবার "সক্রিয়" করবেন? এটা আবার বিক্রির জন্য দেখানো শুরু হবে।'
+        : 'বইটি "বন্ধ" করবেন? এটা আর POS-এ বিক্রির জন্য খুঁজে পাওয়া যাবে না।',
+      { danger: !bookStatus }
+    );
+    if (!ok) return;
+  }
+  if (bookSource !== originalBookSource) {
+    const ok = await confirmModal(`বইয়ের উৎস "${originalBookSource === 'own' ? 'নিজস্ব' : 'বাইরের'}" থেকে "${bookSource === 'own' ? 'নিজস্ব' : 'বাইরের'}"-এ বদলাতে চান?`, { danger: true });
+    if (!ok) return;
+  }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '⏳ আপডেট হচ্ছে...';

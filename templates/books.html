@@ -18,20 +18,19 @@
 {% block extra_js %}
 <script>
 let allBooksList = [];
+const BOOKS_RENDER_STEP = 150;
+let booksRenderedCount = BOOKS_RENDER_STEP;
 
 async function initBooks() {
   const w = document.getElementById('books-wrapper');
   try {
-    // API থেকে সব বই আনা হচ্ছে
     const r = await fetchAllBooks();
     allBooksList = r.results;
-    
-    // টেবিল তৈরি করে ডাটা দেখানো
+
     w.innerHTML = `
       <div class="table-wrap">
-        <!-- টেবিলের হেডার এবং সার্চ অপশন -->
         <div class="table-header">
-          <span class="table-title">📗 বইয়ের তালিকা (${r.count}টি)</span>
+          <span class="table-title">📗 বইয়ের তালিকা (${r.count}টি)</span>
           <select id="book-source-filter" onchange="filterBookList()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
             <option value="">সব বই</option>
             <option value="own">📗 নিজস্ব বই</option>
@@ -40,31 +39,49 @@ async function initBooks() {
           <input type="text" placeholder="বই, লেখক বা কোড খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
           <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
         </div>
-        
-        <!-- বইয়ের লিস্ট টেবিল -->
+
         <table id="books-table" style="width:100%; border-collapse:collapse;">
           <thead>
             <tr>
               <th>ছবি</th>
               <th>কোড</th>
-              <th>বইয়ের নাম</th>
+              <th>বইয়ের নাম</th>
               <th>লেখক</th>
               <th>উৎস</th>
               <th>MRP</th>
-              <th>বিক্রয়মূল্য</th>
+              <th>বিক্রয়মূল্য</th>
               <th>স্টক</th>
               <th>স্ট্যাটাস</th>
               <th style="text-align:right">অ্যাকশন</th>
             </tr>
           </thead>
-          <tbody>
-            ${allBooksList.map(b => bookRowHtml(b)).join('')}
-          </tbody>
+          <tbody></tbody>
         </table>
+        <div id="books-load-more-wrap" style="padding:14px 20px; text-align:center;"></div>
       </div>`;
+    renderBooksTable(allBooksList);
   } catch(e) {
     w.innerHTML = '<div class="empty">সার্ভার থেকে ডাটা পাওয়া যায়নি।</div>';
   }
+}
+
+function renderBooksTable(list) {
+  const tbody = document.querySelector('#books-table tbody');
+  const moreWrap = document.getElementById('books-load-more-wrap');
+  if (!tbody) return;
+  const visible = list.slice(0, booksRenderedCount);
+  tbody.innerHTML = visible.map(bookRowHtml).join('');
+  if (moreWrap) {
+    const remaining = list.length - visible.length;
+    moreWrap.innerHTML = remaining > 0
+      ? `<button class="btn btn-ghost btn-sm" onclick="loadMoreBooks()">আরও ${num(remaining)}টি দেখুন</button>`
+      : '';
+  }
+}
+
+function loadMoreBooks() {
+  booksRenderedCount += BOOKS_RENDER_STEP;
+  renderBooksTable(getFilteredBookList());
 }
 
 // প্রতিটি বইয়ের জন্য টেবিলের একটা সারি (Row) তৈরি করার ফাংশন
@@ -132,20 +149,20 @@ async function fetchAllBooks() {
 }
 
 // সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন
-function filterBookList() {
+function getFilteredBookList() {
   const q = document.getElementById('book-search-list')?.value.toLowerCase() || '';
   const source = document.getElementById('book-source-filter')?.value || '';
-  
+
   // নাম, লেখক অথবা প্রোডাক্ট কোডের সাথে মিলিয়ে ফিল্টার
-  const filteredRows = allBooksList.filter(b =>
+  return allBooksList.filter(b =>
     (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.product_code||'').toLowerCase().includes(q)) &&
     (!source || b.source === source)
   );
-  
-  const tbody = document.querySelector('#books-table tbody');
-  if (tbody) {
-    tbody.innerHTML = filteredRows.map(bookRowHtml).join('');
-  }
+}
+
+function filterBookList() {
+  booksRenderedCount = BOOKS_RENDER_STEP;
+  renderBooksTable(getFilteredBookList());
 }
 
 document.addEventListener('DOMContentLoaded', initBooks);

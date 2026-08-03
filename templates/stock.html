@@ -18,6 +18,8 @@
 {% block extra_js %}
 <script>
 let allStockRows = [];
+const STOCK_RENDER_STEP = 150;
+let stockRenderedCount = STOCK_RENDER_STEP;
 
 async function initStock() {
   const w = document.getElementById('stock-wrapper');
@@ -58,7 +60,7 @@ async function initStock() {
       <div class="table-wrap">
         <div class="table-header">
           <span class="table-title">📦 বর্তমান স্টক বিস্তারিত</span>
-          <select id="stock-source-filter" onchange="renderStockRows()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
+          <select id="stock-source-filter" onchange="stockRenderedCount = STOCK_RENDER_STEP; renderStockRows()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
             <option value="">সব বই</option>
             <option value="own">📗 নিজস্ব বই</option>
             <option value="external">🏢 বাইরের বই</option>
@@ -81,6 +83,7 @@ async function initStock() {
           </thead>
           <tbody id="stock-tbody"></tbody>
         </table>
+        <div id="stock-load-more-wrap" style="padding:14px 20px; text-align:center;"></div>
       </div>`;
     renderStockRows();
   } catch(e) {
@@ -115,10 +118,23 @@ function stockRowHtml(s) {
 
 function renderStockRows() {
   const tbody = document.getElementById('stock-tbody');
+  const moreWrap = document.getElementById('stock-load-more-wrap');
   if (!tbody) return;
   const source = document.getElementById('stock-source-filter')?.value || '';
   const rows = allStockRows.filter(s => !source || s.book_source === source);
-  tbody.innerHTML = rows.map(stockRowHtml).join('');
+  const visible = rows.slice(0, stockRenderedCount);
+  tbody.innerHTML = visible.map(stockRowHtml).join('');
+  if (moreWrap) {
+    const remaining = rows.length - visible.length;
+    moreWrap.innerHTML = remaining > 0
+      ? `<button class="btn btn-ghost btn-sm" onclick="loadMoreStock()">আরও ${num(remaining)}টি দেখুন</button>`
+      : '';
+  }
+}
+
+function loadMoreStock() {
+  stockRenderedCount += STOCK_RENDER_STEP;
+  renderStockRows();
 }
 
 async function recordDamage(bookId, location, bookTitle, currentQty) {

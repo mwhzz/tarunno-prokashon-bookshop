@@ -958,6 +958,16 @@
     function num(v)     { return parseFloat(v || 0).toLocaleString('bn-BD'); }
     function fmtDate(s) { return new Date(s).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }); }
 
+    // এক্সপেন্স ক্যাটাগরির নামের সাথে একটা স্থায়ী ইমোজি মিলিয়ে দেয় (নাম না বদলালে আইকনও বদলাবে না)।
+    // expenses.html ও expense_categories.html দুই জায়গাতেই ব্যবহৃত হয় — আগে দুইটা পেজে আলাদাভাবে
+    // একই লজিক লেখা ছিল, এক জায়গায় বদলালে অন্যটা মিস হয়ে যেতে পারতো।
+    const CATEGORY_ICONS = ['🏠','💡','🚌','📦','🧑‍💼','📞','🖥️','🔧','🍽️','📝','💰','🏥','🎓','🚗','🌐'];
+    function categoryIconFor(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xff;
+      return CATEGORY_ICONS[h % CATEGORY_ICONS.length];
+    }
+
     function statusBadge(s) {
       const map = {
         paid:    ['badge-green',  'পরিশোধিত'],

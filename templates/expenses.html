@@ -338,12 +338,7 @@
 
 {% block extra_js %}
 <script>
-const catIconMap = ['🏠','💡','🚌','📦','🧑‍💼','📞','🖥️','🔧','🍽️','📝','💰','🏥','🎓','🚗','🌐'];
-function iconFor(name) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h*31 + name.charCodeAt(i)) & 0xff;
-  return catIconMap[h % catIconMap.length];
-}
+function iconFor(name) { return categoryIconFor(name); }
 
 let categories = [];
 let selectedCatId = null;

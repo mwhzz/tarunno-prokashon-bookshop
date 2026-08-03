@@ -446,6 +446,7 @@
     <span class="date-sep">→</span>
     <input type="date" class="date-input" id="r-to">
     <button class="view-btn" onclick="load('custom')">🔍 দেখুন</button>
+    <small id="r-date-warn" style="display:none; color:var(--warning); width:100%; margin-top:6px;">⚠️ শুরু ও শেষের তারিখ একই — শুধু ওই একদিনের রিপোর্ট দেখানো হচ্ছে।</small>
   </div>
 
   <!-- ─── DYNAMIC CONTENT ─── -->
@@ -477,11 +478,15 @@ async function load(period) {
   try {
     let url = `/sales/reports/summary/?period=${period}`;
 
+    const dateWarn = document.getElementById('r-date-warn');
     if (period === 'custom') {
       const from = document.getElementById('r-from')?.value;
       const to   = document.getElementById('r-to')?.value;
       if (!from || !to) { toast('শুরুর ও শেষের তারিখ দিন!','error'); return; }
+      if (dateWarn) dateWarn.style.display = (from === to) ? 'block' : 'none';
       url += `&date_from=${from}&date_to=${to}`;
+    } else if (dateWarn) {
+      dateWarn.style.display = 'none';
     }
 
     const d  = await api(url);

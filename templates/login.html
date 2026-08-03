@@ -189,6 +189,22 @@ body {
 
 .input-box input::placeholder { color: #a8b8cc; }
 
+.input-box .toggle-pass {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #8fa3bd;
+  display: flex;
+  align-items: center;
+}
+.input-box .toggle-pass:hover { color: var(--navy); }
+.input-box:has(.toggle-pass) input { padding-right: 40px; }
+
 .input-box input:focus {
   outline: none;
   border-color: var(--navy);
@@ -339,6 +355,9 @@ body {
             </svg>
             <input type="password" id="id_password" name="password"
               placeholder="আপনার পাসওয়ার্ড লিখুন" required autocomplete="current-password">
+            <button type="button" class="toggle-pass" onclick="togglePasswordVisibility('id_password', this)" aria-label="পাসওয়ার্ড দেখান/লুকান">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
         </div>
 
@@ -360,6 +379,14 @@ body {
 
   <div class="copy">© তারুণ্য প্রকাশন · সর্বস্বত্ব সংরক্ষিত</div>
 </div>
+
+<script>
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+</script>
 
 </body>
 </html>

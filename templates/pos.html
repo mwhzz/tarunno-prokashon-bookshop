@@ -963,7 +963,9 @@ window.addEventListener('beforeunload', function (e) {
 
 /* ৳ amounts everywhere in POS: whole taka, Bengali numerals — matches rest of the app */
 function money(v) {
-  return Math.round(parseFloat(v) || 0).toLocaleString('bn-BD');
+  // অন্য সব পেজে ব্যবহৃত num()-এর সাথে মিলিয়ে রাখা হয়েছে, নাহলে একই বিক্রয়ের টাকার
+  // অঙ্ক POS-এ এক রকম আর ইনভয়েস/ড্যাশবোর্ডে অন্য রকম (রাউন্ড করা) দেখাতো।
+  return num(v);
 }
 
 function coverFallback(img) {
@@ -1131,7 +1133,7 @@ function renderPOS(container) {
       </div>
 
       <div class="books-scroll">
-        <div id="book-grid" class="book-grid"></div>
+        <div id="book-grid" class="book-grid" onkeydown="handleGridKey(event)"></div>
       </div>
 
       <!-- cart list — full width, lives in the left column now -->
@@ -1411,6 +1413,11 @@ function getFilteredBooks() {
 }
 
 function handleSearchKey(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    document.querySelector('#book-grid .book-row')?.focus();
+    return;
+  }
   if (e.key !== 'Enter') return;
   e.preventDefault();
   const matches = getFilteredBooks();
@@ -1419,9 +1426,25 @@ function handleSearchKey(e) {
     const s = document.getElementById('book-search');
     if (s) { s.value = ''; filterBooks(); s.focus(); }
   } else if (matches.length > 1) {
-    toast(`${matches.length}টি বই মিলেছে — আরও নির্দিষ্ট করে লিখুন`, 'error');
+    // একাধিক বই মিললে তীর-চিহ্ন (↓) দিয়ে লিস্ট থেকে বেছে নেওয়া যাবে, মাউস ছাড়াই
+    document.querySelector('#book-grid .book-row')?.focus();
   } else {
     toast('কোনো বই পাওয়া যায়নি', 'error');
+  }
+}
+
+function handleGridKey(e) {
+  const row = e.target.closest('.book-row');
+  if (!row) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const rows = Array.from(document.querySelectorAll('#book-grid .book-row'));
+    const idx = rows.indexOf(row);
+    const next = e.key === 'ArrowDown' ? rows[idx + 1] : rows[idx - 1];
+    if (next) next.focus();
+    else if (e.key === 'ArrowUp') document.getElementById('book-search')?.focus();
+  } else if (e.key === 'Escape') {
+    document.getElementById('book-search')?.focus();
   }
 }
 
@@ -1787,6 +1810,8 @@ function setText(id, v) {
    PAID AMOUNT HELPERS
 ══════════════════════════════════════ */
 function onPaidInput() {
+  const paidInput = document.getElementById('paid');
+  if (paidInput && parseFloat(paidInput.value) < 0) paidInput.value = 0;
   calcTotals();
 }
 
@@ -1834,6 +1859,10 @@ async function completeSale() {
   const payload = {
     customer_name:     document.getElementById('cus-name')?.value || 'Walk-in Customer',
     customer_phone:    document.getElementById('cus-phone')?.value || '',
+    // "ডিসকাউন্ট ৳" ফিল্ডটা এখানে সরাসরি পাঠানো হয় না — সেটা ইতিমধ্যে প্রতিটা বইয়ের
+    // commission%-এ রূপান্তরিত হয়ে items[].discount-এ চলে গেছে (দেখুন itemDiscount())।
+    // এখানে সেই একই ছাড় আবার পাঠালে total-এ দ্বিগুণ বিয়োগ হয়ে যাবে (Sale.subtotal ইতিমধ্যে
+    // item-discount নেট করে ফেলে, তারপর Sale.discount আবার বিয়োগ হয়)।
     discount:          0,
     packaging_charge:  parseFloat(document.getElementById('pack')?.value||0),
     courier_charge:    parseFloat(document.getElementById('courier')?.value||0),

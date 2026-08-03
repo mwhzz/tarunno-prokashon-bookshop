@@ -94,6 +94,14 @@ class Sale(models.Model):
     def __str__(self):
         return f"Invoice #{self.invoice_number} - {self.customer_name}"
 
+    @property
+    def total_discount(self):
+        """POS থেকে বিক্রয় করলে ছাড় সাধারণত প্রতিটা লাইন-আইটেমেই বসানো হয় (Sale.discount
+        তখন ০ থাকে, নাহলে total-এ দ্বিগুণ বিয়োগ হয়ে যেত) — তাই প্রিন্ট করা ইনভয়েসে
+        "মোট ছাড়" দেখানোর সময় শুধু Sale.discount না, আইটেমগুলোর ছাড়ও যোগ করে দেখাতে হয়।"""
+        item_discount = self.items.aggregate(total=Sum('discount'))['total'] or 0
+        return self.discount + item_discount
+
     def save(self, *args, **kwargs):
         if not self.invoice_number:
             self.invoice_number = self._generate_invoice_number()

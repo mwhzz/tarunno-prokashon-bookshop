@@ -40,12 +40,13 @@ class SaleSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, read_only=True)
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     realized_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    total_discount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
 
     class Meta:
         model = Sale
         fields = [
             'id', 'invoice_number', 'customer_name', 'customer_phone',
-            'subtotal', 'discount', 
+            'subtotal', 'discount', 'total_discount',
             'packaging_charge', 'courier_charge', 'transaction_fee',
             'total', 'total_cost', 'paid_amount', 'due_amount',
             'payment_method', 'status', 'note', 'total_profit', 'realized_profit',

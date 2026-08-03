@@ -1679,6 +1679,15 @@ async function submitQuickAdd() {
   const title = document.getElementById('qa-title').value.trim();
   if (!title) { shake('qa-title'); toast('বইয়ের নাম দিতে হবে!', 'error'); return; }
 
+  try {
+    const dup = await api(`/books/?search=${encodeURIComponent(title)}&page_size=5`);
+    const exactMatch = (dup.results || []).find(b => b.title.trim().toLowerCase() === title.toLowerCase());
+    if (exactMatch) {
+      const ok = await confirmModal(`"${title}" নামে একটা বই ইতিমধ্যেই তালিকায় আছে (কোড: ${exactMatch.product_code || 'N/A'})।\n\nআবার নতুন করে যোগ করলে একই বইয়ের দুইটা আলাদা এন্ট্রি তৈরি হবে। তবুও নতুন করে যোগ করতে চান?`, { danger: true, confirmText: 'তবুও নতুন যোগ করুন' });
+      if (!ok) return;
+    }
+  } catch (e) { /* duplicate-check failing shouldn't block adding the book */ }
+
   const btn = document.getElementById('qa-save-btn');
   btn.disabled = true;
   btn.textContent = '⏳ সংরক্ষণ হচ্ছে...';
@@ -1713,7 +1722,9 @@ async function submitQuickAdd() {
       // try search first
       const srResp = await fetch(API + '/books/groups/?search=' + encodeURIComponent(groupName));
       const srData = await srResp.json();
-      const match  = (srData.results || srData).find(g => g.name === groupName);
+      // কেস/স্পেস আলাদা হলেও একই ক্যাটাগরি হিসেবে গণ্য করা হচ্ছে, নাহলে সামান্য
+      // টাইপোতেও (যেমন ট্রেইলিং স্পেস) ডুপ্লিকেট ক্যাটাগরি তৈরি হয়ে যেত।
+      const match  = (srData.results || srData).find(g => g.name.trim().toLowerCase() === groupName.toLowerCase());
       if (match) {
         gId = match.id;
       } else {

@@ -390,12 +390,17 @@ function selectBook(b) {
 /* ══════════════════════════
    CART
 ══════════════════════════ */
-function addToCart() {
+async function addToCart() {
   const title = document.getElementById('b-search').value.trim();
   if (!title) { shakeEl('b-search'); toast('বইয়ের নাম লিখুন বা খুঁজে সিলেক্ট করুন!', 'error'); return; }
 
   const price = document.getElementById('b-price').value;
   if (!price || Number(price) <= 0) { shakeEl('b-price'); toast('ক্রয়মূল্য লিখুন!', 'error'); return; }
+
+  if (!selectedBook) {
+    const ok = await confirmModal(`"${title}" নামে তালিকা থেকে কোনো বই বেছে নেওয়া হয়নি — এই নামে একদম নতুন বই তৈরি হবে। এগোতে চান?`, { confirmText: 'নতুন বই যোগ করুন' });
+    if (!ok) return;
+  }
 
   const qty = parseInt(document.getElementById('b-qty').value) || 1;
 
@@ -481,6 +486,15 @@ async function submitPurchase() {
 
   const vendorInput = document.getElementById('v-search').value.trim();
   if (!vendorInput) { shakeEl('v-search'); toast('ভেন্ডরের নাম লিখুন!', 'error'); return; }
+
+  if (!selectedVendor) {
+    const similar = allVendors.filter(v => v.name.toLowerCase().includes(vendorInput.toLowerCase())).slice(0, 3);
+    const hint = similar.length
+      ? `\n\nকাছাকাছি নামের ভেন্ডর ইতিমধ্যে আছে: ${similar.map(v => v.name).join(', ')}। এদের একজন কি?`
+      : '';
+    const ok = await confirmModal(`"${vendorInput}" নামে কোনো ভেন্ডর তালিকা থেকে বেছে নেওয়া হয়নি — এই নামে একদম নতুন ভেন্ডর তৈরি হবে।${hint}`, { confirmText: 'নতুন ভেন্ডর তৈরি করুন' });
+    if (!ok) return;
+  }
 
   const payload = {
     vendor: selectedVendor ? selectedVendor.id : null,

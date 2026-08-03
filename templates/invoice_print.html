@@ -482,7 +482,7 @@
           <div class="label">ইনভয়েস নম্বর</div>
           <div class="value">#{{ sale.invoice_number }}</div>
           <div class="label">তারিখ</div>
-          <div class="value">{{ sale.created_at|date:"d F, Y, h:i A" }}</div>
+          <div class="value" id="invoice-date" data-iso="{{ sale.created_at|date:'c' }}">{{ sale.created_at|date:"d F, Y, h:i A" }}</div>
           <div class="label">পেমেন্ট</div>
           <div class="value">
             {% if sale.payment_method == 'cash' %}নগদ{% elif sale.payment_method == 'bank' %}ব্যাংক ট্রান্সফার{% elif sale.payment_method == 'mobile' %}মোবাইল ব্যাংকিং{% else %}ক্রেডিট{% endif %}
@@ -595,9 +595,22 @@
       if (node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT", "STYLE"].includes(node.tagName)) return;
       node.childNodes.forEach(convertTextNodes);
     }
+    function renderBengaliInvoiceDate() {
+      const el = document.getElementById('invoice-date');
+      if (!el || !el.dataset.iso) return;
+      const d = new Date(el.dataset.iso);
+      if (isNaN(d)) return;
+      const datePart = d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
+      const timePart = d.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit', hour12: true });
+      el.textContent = `${datePart}, ${timePart}`;
+    }
+
     window.addEventListener("load", () => {
       convertTextNodes(document.body);
-      setTimeout(() => window.print(), 450);
+      renderBengaliInvoiceDate();
+      // এখানে আগে window.print() স্বয়ংক্রিয়ভাবে চালু হতো প্রতিবার পেজ খোলার সাথে সাথে —
+      // পুরনো একটা ইনভয়েস শুধু দেখার জন্য খুললেও প্রতিবার প্রিন্ট ডায়ালগ চালু হয়ে যেত।
+      // উপরের টুলবারে আগে থেকেই "প্রিন্ট করুন" বাটন আছে, তাই এখন সেটাই একমাত্র ট্রিগার।
     });
   </script>
 </body>

@@ -14,6 +14,22 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 import os
 
+BENGALI_DIGITS = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+BENGALI_MONTHS = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর',
+]
+
+
+def bengali_date_str(dt):
+    """সার্ভার-সাইড PDF জেনারেশনে (invoice_pdf.html) JS-এর মতো Intl locale ফরম্যাটিং পাওয়া
+    যায় না, তাই এখানে ম্যানুয়ালি ইংরেজি মাসের নাম/সংখ্যা বাংলায় রূপান্তর করা হচ্ছে —
+    নাহলে PDF-এ "০৩ August, ২০২৬"-এর মতো মিশ্র বাংলা-ইংরেজি তারিখ দেখাতো।"""
+    day = str(dt.day).translate(BENGALI_DIGITS)
+    month = BENGALI_MONTHS[dt.month - 1]
+    year = str(dt.year).translate(BENGALI_DIGITS)
+    return f"{day} {month}, {year}"
+
 
 
 class SaleViewSet(viewsets.ModelViewSet):
@@ -247,6 +263,7 @@ class SaleViewSet(viewsets.ModelViewSet):
             'sale': sale,
             'logo_path': logo_path,
             'font_path': font_uri,
+            'invoice_date_bn': bengali_date_str(sale.created_at),
         }
         
         # Render HTML to string

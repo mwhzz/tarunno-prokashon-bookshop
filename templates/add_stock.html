@@ -738,7 +738,7 @@
       <div class="wiz-group">
         <div class="wiz-label">পরিমাণ (কপি) <span class="req">*</span></div>
         <input class="wiz-input big" id="s-qty" type="number" min="1" placeholder="০" oninput="validateQty()">
-        <div class="wiz-hint">কতটি বই যোগ হবে সেই সংখ্যা।</div>
+        <div class="wiz-hint" id="s-qty-hint">কতটি বই যোগ হবে সেই সংখ্যা।</div>
       </div>
 
       <div class="wiz-group">
@@ -1154,7 +1154,22 @@ function buildAddReview() {
     </div>`;
 }
 
-function validateQty() {} // placeholder for real-time feedback
+function validateQty() {
+  const input = document.getElementById('s-qty');
+  const hint = document.getElementById('s-qty-hint');
+  if (!input || !hint) return;
+  const v = input.value;
+  const invalid = v !== '' && (!Number.isInteger(Number(v)) || Number(v) < 1);
+  if (invalid) {
+    input.style.borderColor = 'var(--danger)';
+    hint.textContent = '১ বা তার বেশি একটি পূর্ণ সংখ্যা লিখুন।';
+    hint.style.color = 'var(--danger)';
+  } else {
+    input.style.borderColor = '';
+    hint.textContent = 'কতটি বই যোগ হবে সেই সংখ্যা।';
+    hint.style.color = '';
+  }
+}
 
 /* ══════════════════════════════
    SUBMIT STOCK

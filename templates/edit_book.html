@@ -426,6 +426,8 @@ async function doUpdate() {
   }
 
   try {
+    // FormData দিয়ে ছবি আপলোড হয়, তাই এখানে JSON-only শেয়ার্ড api() হেল্পার ব্যবহার করা যায় না —
+    // raw fetch() ব্যবহার করা হচ্ছে, কিন্তু নিচে এখন প্রতিটা ফিল্ডের আসল এরর দেখানো হয়।
     const r = await fetch(`${API}/books/${bookId}/`, {
       method: 'PATCH',
       headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -435,7 +437,20 @@ async function doUpdate() {
     toast('বইয়ের তথ্য আপডেট করা হয়েছে ✓');
     setTimeout(() => { window.location.href = '/books/'; }, 900);
   } catch(e) {
-    toast('আপডেট করতে সমস্যা: ' + (e?.detail || JSON.stringify(e)), 'error');
+    let msg = 'আপডেট করতে সমস্যা হয়েছে';
+    if (e && typeof e === 'object') {
+      if (e.detail) {
+        msg = e.detail;
+      } else {
+        const fieldErrors = Object.entries(e)
+          .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
+          .join(' | ');
+        if (fieldErrors) msg = fieldErrors;
+      }
+    } else if (e) {
+      msg = String(e);
+    }
+    toast(msg, 'error');
     btn.disabled = false; btn.innerHTML = '✅ আপডেট করুন';
   }
 }

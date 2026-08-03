@@ -144,6 +144,8 @@ async function collectPayment(saleId, maxAmount) {
     </div>
   `;
   document.body.insertAdjacentHTML('beforeend', html);
+  const modalEl = document.getElementById('payment-modal');
+  wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
     const amount = document.getElementById('pay-amount').value;
@@ -157,10 +159,11 @@ async function collectPayment(saleId, maxAmount) {
     try {
       await api(`/sales/${saleId}/add_payment/`, 'POST', { amount, method });
       toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
-      document.getElementById('payment-modal').remove();
+      modalEl.remove();
       initDue();
     } catch(e) {
-      toast('পেমেন্ট জমা নেওয়া যায়নি', 'error');
+      const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+      toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
     }
   };
 }
@@ -185,6 +188,8 @@ async function collectCustomerDue(customerId, maxAmount) {
     </div>
   `;
   document.body.insertAdjacentHTML('beforeend', html);
+  const modalEl2 = document.getElementById('payment-modal');
+  wireModalDismiss(modalEl2, () => modalEl2.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
     const amount = document.getElementById('pay-amount').value;
@@ -197,10 +202,11 @@ async function collectCustomerDue(customerId, maxAmount) {
     try {
       await api(`/sales/customers/${customerId}/collect_other_due/`, 'POST', { amount });
       toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
-      document.getElementById('payment-modal').remove();
+      modalEl2.remove();
       initDue();
     } catch(e) {
-      toast('পেমেন্ট জমা নেওয়া যায়নি', 'error');
+      const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+      toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
     }
   };
 }

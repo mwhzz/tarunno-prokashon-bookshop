@@ -902,6 +902,29 @@
       });
     }
 
+    /**
+     * Wires Escape-key and backdrop-click dismissal onto a hand-built modal overlay
+     * (the payment/edit forms across the app that pre-date confirmModal() and can't
+     * use it directly since they collect input, not just a yes/no).
+     *
+     * const overlay = document.getElementById('payment-modal');
+     * wireModalDismiss(overlay, () => overlay.remove());
+     */
+    function wireModalDismiss(overlay, closeFn) {
+      if (!overlay || overlay.dataset.dismissWired) return;
+      overlay.dataset.dismissWired = '1';
+      function isVisible() {
+        return overlay.isConnected && getComputedStyle(overlay).display !== 'none';
+      }
+      function onKeydown(e) {
+        if (e.key === 'Escape' && isVisible()) closeFn();
+      }
+      overlay.addEventListener('mousedown', (e) => {
+        if (e.target === overlay) closeFn();
+      });
+      document.addEventListener('keydown', onKeydown);
+    }
+
     function getCookie(name) {
       let v = null;
       if (document.cookie) {

@@ -942,6 +942,7 @@
 <script>
 let allBooks             = [];
 let allCustomers         = [];
+let lastCustomerFetch    = 0;
 let cart                 = [];
 let currentCustomerDue   = 0;
 let lowStockFilterActive = false;
@@ -1051,6 +1052,7 @@ async function initPOS() {
 
     const cRes = await api('/sales/customers/?page_size=1000');
     allCustomers = cRes.results;
+    lastCustomerFetch = Date.now();
 
     loadCartDraft();
     renderCart();
@@ -1230,7 +1232,7 @@ function renderPOS(container) {
           </div>
           <div class="bf-field">
             <label>ফোন নম্বর</label>
-            <input id="cus-phone" placeholder="01XXXXXXXXX" oninput="onPhoneInput()">
+            <input id="cus-phone" placeholder="01XXXXXXXXX" oninput="onPhoneInput()" onfocus="refreshCustomersIfStale()">
             <small class="phone-check-indicator" id="phone-check-indicator"></small>
           </div>
         </div>
@@ -1686,6 +1688,17 @@ function onPhoneInput() {
   const indicator = document.getElementById('phone-check-indicator');
   if (indicator) indicator.textContent = '';
   phoneCheckTimer = setTimeout(fetchDue, 450);
+}
+
+async function refreshCustomersIfStale() {
+  // অন্য কোনো স্টাফ শিফট চলাকালীন নতুন গ্রাহক যোগ করলে যেন সেটা মিস না হয়,
+  // তাই ফোকাসে গেলে (কিন্তু বারবার না) ব্যাকগ্রাউন্ডে তালিকা রিফ্রেশ করা হচ্ছে।
+  if (Date.now() - lastCustomerFetch < 2 * 60 * 1000) return;
+  try {
+    const cRes = await api('/sales/customers/?page_size=1000');
+    allCustomers = cRes.results;
+    lastCustomerFetch = Date.now();
+  } catch (e) { /* background refresh; keep using the existing list on failure */ }
 }
 
 async function fetchDue() {

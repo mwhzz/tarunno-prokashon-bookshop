@@ -160,7 +160,7 @@
           <div class="pe-field">
             <label>ভেন্ডর <span style="color:var(--danger)">*</span></label>
             <input class="pe-input" id="v-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন বা নতুন নাম লিখুন" autocomplete="off"
-                   oninput="onVendorInput()" onfocus="onVendorInput()">
+                   oninput="onVendorInput()" onfocus="refreshVendorsIfStale(); onVendorInput()">
             <div class="pe-suggest" id="v-suggest"></div>
           </div>
           <div class="pe-field">
@@ -293,6 +293,7 @@
 <script>
 let cart = [];
 let allVendors = [];
+let lastVendorFetch = 0;
 let selectedVendor = null;   // {id, name} or null (new vendor by typed name)
 let selectedBook = null;     // {id, title, ...} or null (new book by typed title)
 let bookSearchTimer = null;
@@ -302,9 +303,21 @@ async function init() {
   try {
     const res = await api('/purchase/vendors/?page_size=1000');
     allVendors = res.results || [];
+    lastVendorFetch = Date.now();
   } catch (e) { /* vendor list preload failed silently, search-as-you-type still works via typed name */ }
   renderCart();
   calcTotals();
+}
+
+async function refreshVendorsIfStale() {
+  // এই পেজ খোলা রেখে দীর্ঘক্ষণ কাজ করলে অন্য কেউ যোগ করা নতুন ভেন্ডর মিস হতে পারতো,
+  // তাই ফোকাসে গেলে (কিন্তু বারবার না) তালিকা ব্যাকগ্রাউন্ডে রিফ্রেশ হয়।
+  if (Date.now() - lastVendorFetch < 2 * 60 * 1000) return;
+  try {
+    const res = await api('/purchase/vendors/?page_size=1000');
+    allVendors = res.results || [];
+    lastVendorFetch = Date.now();
+  } catch (e) { /* background refresh; keep using the existing list on failure */ }
 }
 
 /* ══════════════════════════

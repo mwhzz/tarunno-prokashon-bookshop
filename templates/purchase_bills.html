@@ -288,6 +288,8 @@ async function collectVendorPayment(billId) {
     </div>
   `;
   document.body.insertAdjacentHTML('beforeend', html);
+  const modalEl = document.getElementById('payment-modal');
+  wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
     const amount = document.getElementById('pay-amount').value;
@@ -301,7 +303,7 @@ async function collectVendorPayment(billId) {
     try {
       await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
       toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
-      document.getElementById('payment-modal').remove();
+      modalEl.remove();
       loadBills();
     } catch (e) {
       const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);

@@ -160,6 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMethodSummary();
 });
 document.addEventListener('DOMContentLoaded', fetchHistory);
+document.addEventListener('DOMContentLoaded', () => {
+    wireModalDismiss(document.getElementById('detail-modal'), closeModal);
+    wireModalDismiss(document.getElementById('edit-modal'), closeEditModal);
+});
 
 function resetHistoryFilter() {
     document.getElementById('hist-from').value = '';

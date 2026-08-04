@@ -117,6 +117,7 @@ class VendorPayment(models.Model):
     ]
     bill = models.ForeignKey(PurchaseBill, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="এই পেমেন্টের সাথে দেওয়া বাড়তি ছাড় (বিল ক্লোজ করার জন্য)")
     method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='cash')
     note = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

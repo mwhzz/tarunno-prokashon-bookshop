@@ -54,7 +54,7 @@ class VendorPaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VendorPayment
-        fields = ['id', 'amount', 'method', 'method_display', 'note', 'created_at']
+        fields = ['id', 'amount', 'discount', 'method', 'method_display', 'note', 'created_at']
 
 
 class PurchaseBillSerializer(serializers.ModelSerializer):

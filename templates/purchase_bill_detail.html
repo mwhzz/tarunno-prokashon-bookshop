@@ -51,6 +51,23 @@
 .pb-mini-total.paid { color:var(--accent); }
 
 @media (max-width:900px) { .pbd-stats { grid-template-columns:1fr 1fr; } }
+
+.pbd-print-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25);
+  color:#fff; border-radius:9px; padding:8px 14px; font-size:12.5px; font-weight:700;
+  cursor:pointer; margin-bottom:12px;
+}
+.pbd-print-btn:hover { background:rgba(255,255,255,.24); }
+
+@media print {
+  #sidebar, #topbar, .pbd-back, .pbd-print-btn, .pbd-actions { display:none !important; }
+  #content { padding:0 !important; overflow:visible !important; }
+  body { height:auto !important; overflow:visible !important; }
+  .pbd-hero { background:#fff !important; color:var(--g900) !important; }
+  .pbd-hero-title, .pbd-hero-meta, .pbd-hero-due-val { color:var(--g900) !important; }
+  .table-wrap { box-shadow:none !important; border:1px solid var(--border) !important; break-inside:avoid; }
+}
 </style>
 {% endblock %}
 
@@ -62,6 +79,7 @@
     <div>
       <div class="pbd-hero-title" id="b-title">লোড হচ্ছে...</div>
       <div class="pbd-hero-meta" id="b-meta"></div>
+      <button class="pbd-print-btn" onclick="window.print()"><span data-icon="printer" data-icon-size="13"></span> রশিদ প্রিন্ট করুন</button>
     </div>
     <div class="pbd-hero-due">
       <div class="pbd-hero-due-label">বাকি</div>
@@ -196,6 +214,23 @@ async function deleteBill() {
   }
 }
 
+function updatePayPreview(maxAmount) {
+  const amount = parseFloat(document.getElementById('pay-amount')?.value || 0);
+  const discount = parseFloat(document.getElementById('pay-discount')?.value || 0);
+  const remaining = Math.max(0, maxAmount - amount - discount);
+  const el = document.getElementById('pay-remaining');
+  if (!el) return;
+  el.textContent = `৳${num(remaining)}`;
+  el.style.color = remaining <= 0 ? 'var(--accent)' : 'var(--danger)';
+}
+
+function closeWithDiscount(maxAmount) {
+  const amount = parseFloat(document.getElementById('pay-amount')?.value || 0);
+  const discountEl = document.getElementById('pay-discount');
+  if (discountEl) discountEl.value = Math.max(0, maxAmount - amount);
+  updatePayPreview(maxAmount);
+}
+
 function collectVendorPayment() {
   const bill = billCache;
   if (!bill) return;
@@ -219,7 +254,13 @@ function collectVendorPayment() {
 
         <div class="form-group">
           <label>পরিশোধের পরিমাণ (Amount)</label>
-          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="0" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>ছাড় ৳ (ঐচ্ছিক)</label>
+          <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
         </div>
 
         <div class="form-group" style="margin-top:12px">
@@ -230,6 +271,10 @@ function collectVendorPayment() {
             <option value="nagad">Nagad (নগদ)</option>
             <option value="bank">Bank (ব্যাংক)</option>
           </select>
+        </div>
+
+        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+          পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
@@ -244,17 +289,26 @@ function collectVendorPayment() {
   wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
-    const amount = document.getElementById('pay-amount').value;
+    const amount = parseFloat(document.getElementById('pay-amount').value || 0);
+    const discount = parseFloat(document.getElementById('pay-discount').value || 0);
     const method = document.getElementById('pay-method').value;
 
-    if (!amount || amount <= 0 || amount > maxAmount) {
-      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+    if (amount < 0 || discount < 0) {
+      toast('সঠিক পরিমাণ লিখুন', 'error');
+      return;
+    }
+    if (amount + discount <= 0) {
+      toast('পরিমাণ অথবা ছাড় — কিছু একটা দিন', 'error');
+      return;
+    }
+    if (amount + discount > maxAmount) {
+      toast('পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হওয়া যাবে না', 'error');
       return;
     }
 
     try {
-      await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে');
+      await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, discount, method });
+      toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl.remove();
       loadBill();
     } catch (e) {

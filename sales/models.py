@@ -143,9 +143,21 @@ class Sale(models.Model):
 
 class Payment(models.Model):
     """ইনভয়েসের পেমেন্ট রেকর্ড (নগদ, বিকাশ, ব্যাংক ইত্যাদি)"""
+    METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('bkash', 'bKash'),
+        ('nagad', 'Nagad'),
+        ('bank', 'Bank'),
+        ('mobile', 'Mobile Banking'),
+        ('credit', 'Credit'),
+    ]
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    method = models.CharField(max_length=20, choices=Sale.PAYMENT_CHOICES, default='cash')
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="এই পেমেন্টের সাথে দেওয়া বাড়তি ছাড় (ইনভয়েস ক্লোজ করার জন্য)")
+    # bাকি বিল (due_list.html) থেকে বকেয়া তোলার সময় bKash/Nagad আলাদা অপশন হিসেবে
+    # পাঠানো হয়, তাই এখানে Sale.PAYMENT_CHOICES (যেটা POS-এর মূল বিক্রয়ের পেমেন্ট
+    # মাধ্যমের জন্য — cash/bank/mobile/credit) না ব্যবহার করে দুটোরই সুপারসেট রাখা হয়েছে।
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='cash')
     transaction_id = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

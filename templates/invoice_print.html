@@ -524,6 +524,32 @@
       </table>
     </section>
 
+    {% if sale.payments.all %}
+    <section>
+      <div class="section-title">পেমেন্ট ইতিহাস</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 130px;">তারিখ</th>
+            <th>মাধ্যম</th>
+            <th class="num">পরিমাণ</th>
+            <th class="num">ছাড়</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in sale.payments.all %}
+          <tr>
+            <td>{{ p.created_at|date:"d M, Y" }}</td>
+            <td>{{ p.get_method_display }}</td>
+            <td class="num">৳{{ p.amount }}</td>
+            <td class="num">৳{{ p.discount }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
     <section class="totals">
       <div class="note">
         <strong>নোট:</strong><br>

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 from stock.models import StockSummary, StockEntry
-from .models import Sale, SaleItem, Customer, ExternalTrade
+from .models import Sale, SaleItem, Customer, ExternalTrade, Payment
 from books.models import Book
 
 
@@ -36,8 +36,17 @@ class SaleItemCreateSerializer(serializers.Serializer):
         return data
 
 
+class PaymentSerializer(serializers.ModelSerializer):
+    method_display = serializers.CharField(source='get_method_display', read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = ['id', 'amount', 'discount', 'method', 'method_display', 'transaction_id', 'created_at']
+
+
 class SaleSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     realized_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     total_discount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
@@ -50,7 +59,7 @@ class SaleSerializer(serializers.ModelSerializer):
             'packaging_charge', 'courier_charge', 'transaction_fee',
             'total', 'total_cost', 'paid_amount', 'due_amount',
             'payment_method', 'status', 'note', 'total_profit', 'realized_profit',
-            'items', 'created_at'
+            'items', 'payments', 'created_at'
         ]
 
 

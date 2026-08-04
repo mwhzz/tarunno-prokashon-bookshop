@@ -45,7 +45,7 @@ async function initDue() {
 
       <div class="table-wrap">
         <div class="table-header">
-            <span class="table-title">⚠ বাকি ইনভয়েসের তালিকা</span>
+            <span class="table-title">${icon('alert-triangle', 15)} বাকি ইনভয়েসের তালিকা</span>
         </div>
         <table style="width:100%; border-collapse:collapse;">
           <thead>
@@ -69,10 +69,11 @@ async function initDue() {
               <td style="font-family:monospace;color:var(--danger);font-weight:700">৳${num(s.due_amount)}</td>
               <td>${statusBadge(s.status)}</td>
               <td style="color:var(--muted);font-size:12px">${fmtDate(s.created_at)}</td>
-              <td>
+              <td style="white-space:nowrap">
                 <button class="btn btn-success btn-sm" onclick="collectPayment(${s.id}, ${s.due_amount})">
                   ৳ পেমেন্ট নিন
                 </button>
+                <a class="btn btn-ghost btn-sm" href="/api/sales/${s.id}/print_invoice/" target="_blank" style="text-decoration:none">${icon('printer', 13)} রশিদ</a>
               </td>
             </tr>`).join('') : `<tr><td colspan="8" class="empty">কোনো বাকি ইনভয়েস নেই।</td></tr>`}
           </tbody>
@@ -82,7 +83,7 @@ async function initDue() {
       ${customerDues.length ? `
       <div class="table-wrap" style="margin-top:20px">
         <div class="table-header">
-            <span class="table-title">⚠ অন্যান্য বাকি (ইনভয়েসের বাইরে — যেমন ওপেনিং ব্যালেন্স)</span>
+            <span class="table-title">${icon('alert-triangle', 15)} অন্যান্য বাকি (ইনভয়েসের বাইরে — যেমন ওপেনিং ব্যালেন্স)</span>
         </div>
         <table style="width:100%; border-collapse:collapse;">
           <thead>
@@ -114,16 +115,39 @@ async function initDue() {
   }
 }
 
+function updatePayPreview(maxAmount) {
+  const amount = parseFloat(document.getElementById('pay-amount')?.value || 0);
+  const discount = parseFloat(document.getElementById('pay-discount')?.value || 0);
+  const remaining = Math.max(0, maxAmount - amount - discount);
+  const el = document.getElementById('pay-remaining');
+  if (!el) return;
+  el.textContent = `৳${num(remaining)}`;
+  el.style.color = remaining <= 0 ? 'var(--accent)' : 'var(--danger)';
+}
+
+function closeWithDiscount(maxAmount) {
+  const amount = parseFloat(document.getElementById('pay-amount')?.value || 0);
+  const discountEl = document.getElementById('pay-discount');
+  if (discountEl) discountEl.value = Math.max(0, maxAmount - amount);
+  updatePayPreview(maxAmount);
+}
+
 async function collectPayment(saleId, maxAmount) {
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:400px; padding:24px">
-        <h3 style="margin-bottom:12px">💰 বকেয়া পেমেন্ট নিন</h3>
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} বকেয়া পেমেন্ট নিন</h3>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>জমার পরিমাণ (Amount)</label>
-          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="0" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>ছাড় ৳ (ঐচ্ছিক)</label>
+          <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
         </div>
 
         <div class="form-group" style="margin-top:12px">
@@ -134,6 +158,10 @@ async function collectPayment(saleId, maxAmount) {
             <option value="nagad">Nagad (নগদ)</option>
             <option value="bank">Bank (ব্যাংক)</option>
           </select>
+        </div>
+
+        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+          পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
@@ -148,17 +176,26 @@ async function collectPayment(saleId, maxAmount) {
   wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
-    const amount = document.getElementById('pay-amount').value;
+    const amount = parseFloat(document.getElementById('pay-amount').value || 0);
+    const discount = parseFloat(document.getElementById('pay-discount').value || 0);
     const method = document.getElementById('pay-method').value;
 
-    if (!amount || amount <= 0 || amount > maxAmount) {
-      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+    if (amount < 0 || discount < 0) {
+      toast('সঠিক পরিমাণ লিখুন', 'error');
+      return;
+    }
+    if (amount + discount <= 0) {
+      toast('পরিমাণ অথবা ছাড় — কিছু একটা দিন', 'error');
+      return;
+    }
+    if (amount + discount > maxAmount) {
+      toast('পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হওয়া যাবে না', 'error');
       return;
     }
 
     try {
-      await api(`/sales/${saleId}/add_payment/`, 'POST', { amount, method });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      await api(`/sales/${saleId}/add_payment/`, 'POST', { amount, discount, method });
+      toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl.remove();
       initDue();
     } catch(e) {
@@ -172,12 +209,22 @@ async function collectCustomerDue(customerId, maxAmount) {
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:400px; padding:24px">
-        <h3 style="margin-bottom:12px">💰 বকেয়া পেমেন্ট নিন</h3>
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} বকেয়া পেমেন্ট নিন</h3>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px">এই বাকি কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয়। মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>জমার পরিমাণ (Amount)</label>
-          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="0" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>ছাড় ৳ (ঐচ্ছিক)</label>
+          <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
+          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
+        </div>
+
+        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+          পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
@@ -192,16 +239,25 @@ async function collectCustomerDue(customerId, maxAmount) {
   wireModalDismiss(modalEl2, () => modalEl2.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
-    const amount = document.getElementById('pay-amount').value;
+    const amount = parseFloat(document.getElementById('pay-amount').value || 0);
+    const discount = parseFloat(document.getElementById('pay-discount').value || 0);
 
-    if (!amount || amount <= 0 || amount > maxAmount) {
-      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+    if (amount < 0 || discount < 0) {
+      toast('সঠিক পরিমাণ লিখুন', 'error');
+      return;
+    }
+    if (amount + discount <= 0) {
+      toast('পরিমাণ অথবা ছাড় — কিছু একটা দিন', 'error');
+      return;
+    }
+    if (amount + discount > maxAmount) {
+      toast('পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হওয়া যাবে না', 'error');
       return;
     }
 
     try {
-      await api(`/sales/customers/${customerId}/collect_other_due/`, 'POST', { amount });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      await api(`/sales/customers/${customerId}/collect_other_due/`, 'POST', { amount, discount });
+      toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl2.remove();
       initDue();
     } catch(e) {

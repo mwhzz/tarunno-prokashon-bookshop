@@ -126,7 +126,8 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def add_payment(self, request, pk=None):
-        """ক্রয় বিলের বকেয়ার বিপরীতে ভেন্ডরকে দেওয়া পেমেন্ট জমা করা"""
+        """ক্রয় বিলের বকেয়ার বিপরীতে ভেন্ডরকে দেওয়া পেমেন্ট জমা করা — চাইলে বাড়তি ছাড়
+        (discount) দিয়ে বিলটা কম টাকায়ও পুরোপুরি ক্লোজ করা যাবে।"""
         from decimal import Decimal, InvalidOperation
 
         from accounts.models import CashTransaction, DailyCash
@@ -134,40 +135,47 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
         from .models import VendorPayment
 
         bill = self.get_object()
-        amount_str = request.data.get('amount')
+        amount_str = request.data.get('amount', 0)
+        discount_str = request.data.get('discount', 0)
         method = request.data.get('method', 'cash')
 
-        if not amount_str:
-            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            amount = Decimal(str(amount_str))
+            amount = Decimal(str(amount_str or 0))
+            discount = Decimal(str(discount_str or 0))
         except InvalidOperation:
-            return Response({'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid amount/discount format'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if amount <= 0:
-            return Response({'error': 'Amount must be positive'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount > bill.due_amount:
-            return Response({'error': 'Amount exceeds due balance'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount < 0 or discount < 0:
+            return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount + discount <= 0:
+            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount + discount > bill.due_amount:
+            return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            payment = VendorPayment.objects.create(bill=bill, amount=amount, method=method)
+            payment = VendorPayment.objects.create(bill=bill, amount=amount, discount=discount, method=method)
 
+            bill.discount += discount
+            bill.total = bill.subtotal - bill.discount
             bill.paid_amount += amount
             bill.save()  # save() recomputes due_amount/status
 
             if bill.vendor:
-                bill.vendor.total_due -= amount
+                bill.vendor.total_due -= (amount + discount)
                 bill.vendor.save(update_fields=['total_due'])
 
-            # নগদ ছাড়া অন্য মাধ্যমে (bkash/nagad/bank) দেওয়া পেমেন্ট হাতের ক্যাশ লেজারে দেখানো যাবে না
-            if method == 'cash':
+            # নগদ ছাড়া অন্য মাধ্যমে (bkash/nagad/bank) দেওয়া পেমেন্ট হাতের ক্যাশ লেজারে দেখানো যাবে না;
+            # শুধু ছাড় দিয়ে বিল ক্লোজ করলে (amount=0) কোনো প্রকৃত ক্যাশ লেনদেনই হয়নি, তাই সেটাও বাদ
+            if amount > 0 and method == 'cash':
                 daily_cash = DailyCash.get_for_today()
+                note = f"ক্রয় বিল পেমেন্ট: {bill.vendor_name} — {bill.books_summary()} (Bill #{bill.id})"
+                if discount > 0:
+                    note += f" [ছাড় ৳{discount}]"
                 CashTransaction.objects.create(
                     daily_cash=daily_cash,
                     transaction_type='purchase',
                     amount=amount,
-                    note=f"ক্রয় বিল পেমেন্ট: {bill.vendor_name} — {bill.books_summary()} (Bill #{bill.id})",
+                    note=note,
                     reference_id=f"pbill_payment_{payment.id}",
                 )
                 daily_cash.update_closing_balance()

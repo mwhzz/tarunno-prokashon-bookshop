@@ -17,7 +17,7 @@
   border-radius: 14px; padding: 12px 14px;
   box-shadow: 0 2px 12px rgba(13,51,38,.05);
 }
-.pb-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.pb-label { font-size:12.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
 .pb-val { font-family:'JetBrains Mono', monospace; font-size:20px; font-weight:700; color:var(--g900); margin-top:2px; }
 .pb-val.due { color: var(--danger); }
 .pb-val.paid { color: var(--accent); }
@@ -27,7 +27,7 @@
   padding: 14px 20px; border-bottom: 1px solid var(--border);
 }
 .pb-filters .ff { display:flex; flex-direction:column; gap:4px; }
-.pb-filters label { font-size:11px; font-weight:800; color:var(--text2); }
+.pb-filters label { font-size:12.5px; font-weight:800; color:var(--text2); }
 .pb-filters input {
   height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;
   font-family:'Hind Siliguri',sans-serif; font-size:13px; outline:none;
@@ -132,7 +132,7 @@ async function loadBills() {
     }
 
     const truncatedNote = r.count > bills.length
-      ? `<p style="font-size:12px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${bills.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
+      ? `<p style="font-size:13px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${bills.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
       : '';
 
     w.innerHTML = `
@@ -162,7 +162,7 @@ async function loadBills() {
               <td style="font-family:monospace">৳${num(b.discount)}</td>
               <td style="font-family:monospace;color:var(--accent2)">৳${num(b.paid_amount)}</td>
               <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
-              <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
+              <td style="color:var(--muted); font-size:13px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">
                 ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
@@ -221,13 +221,13 @@ async function collectVendorPayment(billId) {
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:420px; padding:24px">
         <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} ভেন্ডর পেমেন্ট দিন</h3>
-        <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
+        <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:13.5px; line-height:1.7">
           <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
           <div style="color:var(--text2)"><strong>ভেন্ডর:</strong> ${bill.vendor_name}</div>
           <div style="color:var(--text2)"><strong>তারিখ:</strong> ${fmtDate(bill.purchase_date)}</div>
           ${itemsSummary ? `<div style="color:var(--text2); margin-top:4px"><strong>বই:</strong> ${itemsSummary}</div>` : ''}
         </div>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">এই বিলের মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:16px">এই বিলের মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>পরিশোধের পরিমাণ (Amount)</label>
@@ -237,7 +237,7 @@ async function collectVendorPayment(billId) {
         <div class="form-group" style="margin-top:12px">
           <label>ছাড় ৳ (ঐচ্ছিক)</label>
           <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
-          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
+          <p style="font-size:13.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
         </div>
 
         <div class="form-group" style="margin-top:12px">
@@ -250,7 +250,7 @@ async function collectVendorPayment(billId) {
           </select>
         </div>
 
-        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+        <div id="pay-preview" style="font-size:14px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
           পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 

@@ -68,7 +68,7 @@ async function initDue() {
               <td style="font-family:monospace">৳${num(s.total)}</td>
               <td style="font-family:monospace;color:var(--danger);font-weight:700">৳${num(s.due_amount)}</td>
               <td>${statusBadge(s.status)}</td>
-              <td style="color:var(--muted);font-size:12px">${fmtDate(s.created_at)}</td>
+              <td style="color:var(--muted);font-size:13px">${fmtDate(s.created_at)}</td>
               <td style="white-space:nowrap">
                 <button class="btn btn-success btn-sm" onclick="collectPayment(${s.id}, ${s.due_amount})">
                   ৳ পেমেন্ট নিন
@@ -137,7 +137,7 @@ async function collectPayment(saleId, maxAmount) {
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:400px; padding:24px">
         <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} বকেয়া পেমেন্ট নিন</h3>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:16px">মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>জমার পরিমাণ (Amount)</label>
@@ -147,7 +147,7 @@ async function collectPayment(saleId, maxAmount) {
         <div class="form-group" style="margin-top:12px">
           <label>ছাড় ৳ (ঐচ্ছিক)</label>
           <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
-          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
+          <p style="font-size:13.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
         </div>
 
         <div class="form-group" style="margin-top:12px">
@@ -160,7 +160,7 @@ async function collectPayment(saleId, maxAmount) {
           </select>
         </div>
 
-        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+        <div id="pay-preview" style="font-size:14px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
           পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 
@@ -210,7 +210,7 @@ async function collectCustomerDue(customerId, maxAmount) {
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:400px; padding:24px">
         <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} বকেয়া পেমেন্ট নিন</h3>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">এই বাকি কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয়। মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:16px">এই বাকি কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয়। মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
 
         <div class="form-group">
           <label>জমার পরিমাণ (Amount)</label>
@@ -220,10 +220,10 @@ async function collectCustomerDue(customerId, maxAmount) {
         <div class="form-group" style="margin-top:12px">
           <label>ছাড় ৳ (ঐচ্ছিক)</label>
           <input type="number" id="pay-discount" value="0" min="0" max="${maxAmount}" style="width:100%" oninput="updatePayPreview(${maxAmount})">
-          <p style="font-size:11.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
+          <p style="font-size:13.5px; color:var(--accent); margin-top:5px; cursor:pointer; text-decoration:underline; text-decoration-style:dashed; display:inline-block;" onclick="closeWithDiscount(${maxAmount})">অবশিষ্টটা ছাড় হিসেবে দিয়ে সম্পূর্ণ ক্লোজ করুন</p>
         </div>
 
-        <div id="pay-preview" style="font-size:13px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
+        <div id="pay-preview" style="font-size:14px; font-weight:700; margin-top:14px; padding:9px 12px; border-radius:8px; background:var(--surface2);">
           পেমেন্টের পর বাকি থাকবে: <span id="pay-remaining" style="color:var(--danger)">৳${num(maxAmount)}</span>
         </div>
 

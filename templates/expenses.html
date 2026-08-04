@@ -46,7 +46,7 @@
 .es-card.total::before { display:none; }
 .es-card.today::before { background: var(--warning); }
 
-.es-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.es-label { font-size:12.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
 .es-card.total .es-label { color: rgba(255,255,255,.55); }
 
 .es-val {
@@ -58,7 +58,7 @@
 .es-card.total .es-val { color: #fff; font-size: 23px; }
 .es-card.today .es-val { color: var(--warning); }
 
-.es-sub { font-size:12px; color:var(--muted); font-weight:600; }
+.es-sub { font-size:13px; color:var(--muted); font-weight:600; }
 .es-card.total .es-sub { color: rgba(255,255,255,.5); }
 
 /* ─── SHELL ─── */
@@ -83,7 +83,7 @@
 }
 
 .ec-head-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:800; color:#fff; }
-.ec-head-sub   { font-size:11.5px; color:rgba(255,255,255,.55); margin-top:2px; }
+.ec-head-sub   { font-size:12.5px; color:rgba(255,255,255,.55); margin-top:2px; }
 
 .ec-body { padding: 14px 16px; }
 
@@ -99,7 +99,7 @@
   padding: 5px 11px; border-radius: 99px;
   border: 1.5px solid var(--border);
   background: var(--surface2);
-  font-size: 12.5px; font-weight: 700;
+  font-size: 13.5px; font-weight: 700;
   color: var(--text2); cursor: pointer;
   transition: all .15s; white-space: nowrap;
 }
@@ -107,7 +107,7 @@
 .cat-pill:hover   { border-color: var(--danger); color: var(--danger); background: #fef2f2; }
 .cat-pill.active  { border-color: var(--danger); background: #fef2f2; color: var(--danger); }
 
-.cat-pills-empty { font-size:12px; color:var(--muted); padding:8px 0; }
+.cat-pills-empty { font-size:13px; color:var(--muted); padding:8px 0; }
 
 /* amount input */
 .amount-wrap { position: relative; margin-bottom: 9px; }
@@ -139,7 +139,7 @@
 .ec-field { margin-bottom:9px; }
 
 .ec-field label {
-  display:block; font-size:11.5px; font-weight:800;
+  display:block; font-size:12.5px; font-weight:800;
   color:var(--text2); margin-bottom:4px;
 }
 
@@ -207,8 +207,8 @@
 }
 
 .exp-info { flex:1; min-width:0; }
-.exp-info strong { display:block; font-size:12.5px; font-weight:800; color:var(--g900); }
-.exp-info small  { font-size:11px; color:var(--muted); }
+.exp-info strong { display:block; font-size:13.5px; font-weight:800; color:var(--g900); }
+.exp-info small  { font-size:12.5px; color:var(--muted); }
 
 .exp-amount {
   font-family:'JetBrains Mono',monospace;
@@ -278,7 +278,7 @@
             <div class="loading" style="padding:4px"><div class="spinner"></div></div>
           </div>
           <input type="hidden" id="exp-category">
-          <a href="/expenses/categories/" style="font-size:12px; color:var(--accent); font-weight:700; text-decoration:none;">
+          <a href="/expenses/categories/" style="font-size:13px; color:var(--accent); font-weight:700; text-decoration:none;">
             ➕ নতুন খাত তৈরি করুন
           </a>
         </div>
@@ -311,15 +311,15 @@
       </div>
       <div style="display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; padding:0 0 14px;">
         <div>
-          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরু</label>
+          <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরু</label>
           <input type="date" id="exp-f-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
         </div>
         <div>
-          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ</label>
+          <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ</label>
           <input type="date" id="exp-f-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
         </div>
         <div style="flex:1; min-width:160px;">
-          <label style="display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px;">খুঁজুন</label>
+          <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">খুঁজুন</label>
           <input type="text" id="exp-f-search" placeholder="খাত বা নোট দিয়ে খুঁজুন" oninput="debouncedLoadExpenses()"
                  style="width:100%; height:34px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
         </div>

@@ -8,11 +8,11 @@
         <h3 style="font-size:16px; color:var(--accent);">💳 মেথড অনুযায়ী হিসাব (নগদ ছাড়া ব্যাংক/বিকাশ/মোবাইলে যাওয়া টাকা এখানে দেখুন)</h3>
         <div style="display:flex; align-items:flex-end; gap:8px;">
             <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
+                <label style="display:block; font-size:12.5px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
                 <input type="date" id="ms-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
             </div>
             <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
+                <label style="display:block; font-size:12.5px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
                 <input type="date" id="ms-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
             </div>
             <button class="btn btn-primary btn-sm" onclick="loadMethodSummary()">খুঁজুন</button>
@@ -28,11 +28,11 @@
         <h3 style="font-size:16px; color:var(--accent); margin:0;">📅 প্রতিদিনের ক্যাশ রিপোর্ট তালিকা</h3>
         <div style="display:flex; align-items:flex-end; gap:8px;">
             <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
+                <label style="display:block; font-size:12.5px; font-weight:800; color:var(--text2); margin-bottom:4px;">শুরু</label>
                 <input type="date" id="hist-from" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
             </div>
             <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
+                <label style="display:block; font-size:12.5px; font-weight:800; color:var(--text2); margin-bottom:4px;">শেষ</label>
                 <input type="date" id="hist-to" style="height:34px; padding:0 8px; border:1.5px solid var(--border); border-radius:8px;">
             </div>
             <button class="btn btn-primary btn-sm" onclick="fetchHistory()">খুঁজুন</button>
@@ -85,7 +85,7 @@
         <div class="form-group section-gap">
             <label>ওপেনিং ব্যালেন্স (৳) *</label>
             <input type="number" id="edit-opening" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; margin-top:4px;">
-            <p id="edit-closed-warning" style="display:none; font-size:11px; color:var(--danger); margin-top:6px;">⚠️ এই দিনটি ক্লোজড। তবুও পরিবর্তন করা যাবে, কিন্তু ক্লোজিং ব্যালেন্সও রিক্যালকুলেট হয়ে যাবে।</p>
+            <p id="edit-closed-warning" style="display:none; font-size:12.5px; color:var(--danger); margin-top:6px;">⚠️ এই দিনটি ক্লোজড। তবুও পরিবর্তন করা যাবে, কিন্তু ক্লোজিং ব্যালেন্সও রিক্যালকুলেট হয়ে যাবে।</p>
         </div>
 
         <div style="display:flex; gap:8px; margin-top:20px;">
@@ -141,11 +141,11 @@ async function loadMethodSummary() {
         w.innerHTML = `
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                 <div>
-                    <div style="font-weight:800; font-size:12.5px; color:var(--text2); margin-bottom:6px;">🧾 বিক্রয় থেকে আদায় (গ্রাহকের কাছ থেকে)</div>
+                    <div style="font-weight:800; font-size:13.5px; color:var(--text2); margin-bottom:6px;">🧾 বিক্রয় থেকে আদায় (গ্রাহকের কাছ থেকে)</div>
                     ${renderMethodRows(data.collections, 'এই সময়ে কোনো আদায় নেই।')}
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:12.5px; color:var(--text2); margin-bottom:6px;">🏢 ভেন্ডরকে পরিশোধ</div>
+                    <div style="font-weight:800; font-size:13.5px; color:var(--text2); margin-bottom:6px;">🏢 ভেন্ডরকে পরিশোধ</div>
                     ${renderMethodRows(data.vendor_payments, 'এই সময়ে কোনো পেমেন্ট নেই।')}
                 </div>
             </div>`;
@@ -230,11 +230,11 @@ async function viewDetails(id) {
         const methodSection = mb ? `
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
                 <div>
-                    <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">আদায় (মেথড অনুযায়ী)</div>
+                    <div style="font-weight:800; font-size:13px; color:var(--text2); margin-bottom:6px;">আদায় (মেথড অনুযায়ী)</div>
                     ${renderMethodRows(mb.collections, 'এই দিনে কোনো আদায় নেই।')}
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">ভেন্ডর পেমেন্ট (মেথড অনুযায়ী)</div>
+                    <div style="font-weight:800; font-size:13px; color:var(--text2); margin-bottom:6px;">ভেন্ডর পেমেন্ট (মেথড অনুযায়ী)</div>
                     ${renderMethodRows(mb.vendor_payments, 'এই দিনে কোনো পেমেন্ট নেই।')}
                 </div>
             </div>` : '';
@@ -245,7 +245,7 @@ async function viewDetails(id) {
         }
         
         content.innerHTML = methodSection + `
-            <div style="font-weight:800; font-size:12px; color:var(--text2); margin-bottom:6px;">হাতের ক্যাশ লেনদেন</div>
+            <div style="font-weight:800; font-size:13px; color:var(--text2); margin-bottom:6px;">হাতের ক্যাশ লেনদেন</div>
             <table style="width:100%; border-collapse: collapse; font-size:13px;">
                 <thead>
                     <tr style="border-bottom:2px solid var(--border); text-align:left;">

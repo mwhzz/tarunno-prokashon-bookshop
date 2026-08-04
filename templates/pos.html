@@ -1772,7 +1772,7 @@ function calcTotals(manualDisc = false) {
   const manualDiscount = parseFloat(document.getElementById('discount')?.value || 0);
 
   if (manualDisc && sub > 0) {
-    document.getElementById('commission').value = Math.min(100, (manualDiscount/sub)*100).toFixed(1);
+    document.getElementById('commission').value = Math.min(100, (manualDiscount/sub)*100).toFixed(6);
     renderCart();
   }
 

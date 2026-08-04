@@ -186,8 +186,9 @@ function render(b) {
     ? payments.map(p => `
         <div class="pb-mini-row">
           <span class="pb-mini-meta">${fmtDate(p.created_at)}</span>
-          <span class="pb-mini-name">${p.method_display}${p.note ? ' — ' + p.note : ''}</span>
+          <span class="pb-mini-name">${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}${p.note ? ' — ' + p.note : ''}</span>
           <span class="pb-mini-total paid">৳${num(p.amount)}</span>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePayment(${p.id})" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>
         </div>`).join('')
     : `<div class="empty-state" style="padding:30px 20px;"><div class="empty-icon">${icon('wallet', 40)}</div><h3>এখনো কোনো পেমেন্ট হয়নি</h3></div>`;
 }
@@ -199,6 +200,22 @@ async function deleteBill() {
     await api(`/purchase/bills/${billId}/`, 'DELETE');
     toast('বিল মুছে ফেলা হয়েছে।');
     location.href = '/purchase/bills/';
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
+  }
+}
+
+async function deletePayment(paymentId) {
+  const ok = await confirmModal(
+    'ভুলে দুইবার বসে যাওয়া পেমেন্ট মুছে ফেলতে চান?\n\nবিলের পরিশোধিত পরিমাণ, বাকি এবং ভেন্ডরের হিসাব — সব আগের অবস্থায় ফিরে যাবে। এই কাজটি বাতিল করা যাবে না।',
+    { danger: true, requireText: 'DELETE' }
+  );
+  if (!ok) return;
+  try {
+    await api(`/purchase/bills/${billId}/remove_payment/`, 'POST', { payment_id: paymentId });
+    toast('পেমেন্ট মুছে ফেলা হয়েছে, হিসাব সংশোধন হয়েছে।');
+    loadBill();
   } catch (e) {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('মুছে ফেলা যায়নি: ' + msg, 'error');
@@ -280,6 +297,9 @@ function collectVendorPayment() {
   wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
+    const btn = document.getElementById('confirm-pay-btn');
+    if (btn.disabled) return;
+
     const amount = parseFloat(document.getElementById('pay-amount').value || 0);
     const discount = parseFloat(document.getElementById('pay-discount').value || 0);
     const method = document.getElementById('pay-method').value;
@@ -297,6 +317,8 @@ function collectVendorPayment() {
       return;
     }
 
+    btn.disabled = true;
+    btn.textContent = 'জমা হচ্ছে...';
     try {
       await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, discount, method });
       toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
@@ -305,6 +327,8 @@ function collectVendorPayment() {
     } catch (e) {
       const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
       toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
+      btn.disabled = false;
+      btn.textContent = 'পেমেন্ট কনফার্ম';
     }
   };
 }

@@ -176,6 +176,9 @@ async function collectPayment(saleId, maxAmount) {
   wireModalDismiss(modalEl, () => modalEl.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
+    const btn = document.getElementById('confirm-pay-btn');
+    if (btn.disabled) return;
+
     const amount = parseFloat(document.getElementById('pay-amount').value || 0);
     const discount = parseFloat(document.getElementById('pay-discount').value || 0);
     const method = document.getElementById('pay-method').value;
@@ -193,6 +196,8 @@ async function collectPayment(saleId, maxAmount) {
       return;
     }
 
+    btn.disabled = true;
+    btn.textContent = 'জমা হচ্ছে...';
     try {
       await api(`/sales/${saleId}/add_payment/`, 'POST', { amount, discount, method });
       toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
@@ -201,6 +206,8 @@ async function collectPayment(saleId, maxAmount) {
     } catch(e) {
       const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
       toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
+      btn.disabled = false;
+      btn.textContent = 'পেমেন্ট কনফার্ম';
     }
   };
 }
@@ -239,6 +246,9 @@ async function collectCustomerDue(customerId, maxAmount) {
   wireModalDismiss(modalEl2, () => modalEl2.remove());
 
   document.getElementById('confirm-pay-btn').onclick = async () => {
+    const btn = document.getElementById('confirm-pay-btn');
+    if (btn.disabled) return;
+
     const amount = parseFloat(document.getElementById('pay-amount').value || 0);
     const discount = parseFloat(document.getElementById('pay-discount').value || 0);
 
@@ -255,6 +265,8 @@ async function collectCustomerDue(customerId, maxAmount) {
       return;
     }
 
+    btn.disabled = true;
+    btn.textContent = 'জমা হচ্ছে...';
     try {
       await api(`/sales/customers/${customerId}/collect_other_due/`, 'POST', { amount, discount });
       toast(discount > 0 ? `পেমেন্ট জমা হয়েছে (৳${num(discount)} ছাড়সহ)` : 'পেমেন্ট সফলভাবে জমা হয়েছে');
@@ -263,6 +275,8 @@ async function collectCustomerDue(customerId, maxAmount) {
     } catch(e) {
       const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
       toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
+      btn.disabled = false;
+      btn.textContent = 'পেমেন্ট কনফার্ম';
     }
   };
 }

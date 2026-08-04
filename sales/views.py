@@ -150,10 +150,15 @@ class SaleViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
         if amount + discount <= 0:
             return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount + discount > sale.due_amount:
-            return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            # sale-টাকে লক করে আবার পড়া হচ্ছে এবং due_amount আবার চেক করা হচ্ছে — দ্রুত
+            # দুইবার (ডাবল-ক্লিক) সাবমিট হলে দুইটা রিকোয়েস্টই get_object()-এর পুরোনো
+            # due_amount দেখে পাশ করে যেতে পারতো, ফলে বাকির চেয়ে বেশি পেমেন্ট বসে যেত।
+            sale = Sale.objects.select_for_update().get(pk=sale.pk)
+            if amount + discount > sale.due_amount:
+                return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
+
             # ১. পেমেন্ট রেকর্ড তৈরি
             payment = Payment.objects.create(sale=sale, amount=amount, discount=discount, method=method)
 
@@ -184,6 +189,43 @@ class SaleViewSet(viewsets.ModelViewSet):
                     reference_id=f"sale_payment_{payment.id}",
                 )
                 daily_cash.update_closing_balance()
+
+        return Response(SaleSerializer(sale).data)
+
+    @action(detail=True, methods=['post'])
+    def remove_payment(self, request, pk=None):
+        """ভুলবশত (যেমন ডাবল-ক্লিকে) দুইবার পেমেন্ট বসে গেলে একটা মুছে ইনভয়েস/কাস্টমারের
+        হিসাব আগের অবস্থায় ফিরিয়ে আনার জন্য।"""
+        from django.db import transaction
+        from accounts.models import CashTransaction, DailyCash
+        from .models import Payment
+
+        sale = self.get_object()
+        payment_id = request.data.get('payment_id')
+        try:
+            payment = sale.payments.get(id=payment_id)
+        except Payment.DoesNotExist:
+            return Response({'error': 'এই পেমেন্ট পাওয়া যায়নি।'}, status=status.HTTP_404_NOT_FOUND)
+
+        with transaction.atomic():
+            sale.discount -= payment.discount
+            sale.total = sale.subtotal - sale.discount + sale.packaging_charge + sale.courier_charge + sale.transaction_fee
+            sale.paid_amount -= payment.amount
+            sale.save()
+
+            if sale.customer:
+                sale.customer.total_due += (payment.amount + payment.discount)
+                sale.customer.save()
+
+            reference = f"sale_payment_{payment.id}"
+            cash_txns = CashTransaction.objects.filter(reference_id=reference)
+            daily_cash_ids = list(cash_txns.values_list('daily_cash_id', flat=True).distinct())
+            cash_txns.delete()
+
+            payment.delete()
+
+            for dc_id in daily_cash_ids:
+                DailyCash.objects.get(id=dc_id).update_closing_balance()
 
         return Response(SaleSerializer(sale).data)
 

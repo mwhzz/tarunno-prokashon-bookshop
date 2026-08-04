@@ -149,10 +149,15 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
         if amount + discount <= 0:
             return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount + discount > bill.due_amount:
-            return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            # bill-টাকে লক করে আবার পড়া হচ্ছে এবং due_amount আবার চেক করা হচ্ছে — দ্রুত
+            # দুইবার (ডাবল-ক্লিক) সাবমিট হলে দুইটা রিকোয়েস্টই get_object()-এর পুরোনো
+            # due_amount দেখে পাশ করে যেতে পারতো, ফলে বাকির চেয়ে বেশি পেমেন্ট বসে যেত।
+            bill = PurchaseBill.objects.select_for_update().get(pk=bill.pk)
+            if amount + discount > bill.due_amount:
+                return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
+
             payment = VendorPayment.objects.create(bill=bill, amount=amount, discount=discount, method=method)
 
             bill.discount += discount
@@ -179,6 +184,43 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
                     reference_id=f"pbill_payment_{payment.id}",
                 )
                 daily_cash.update_closing_balance()
+
+        return Response(PurchaseBillSerializer(bill).data)
+
+    @action(detail=True, methods=['post'])
+    def remove_payment(self, request, pk=None):
+        """ভুলবশত (যেমন ডাবল-ক্লিকে) দুইবার পেমেন্ট বসে গেলে একটা মুছে বিল/ভেন্ডরের হিসাব
+        আগের অবস্থায় ফিরিয়ে আনার জন্য।"""
+        from accounts.models import CashTransaction, DailyCash
+
+        from .models import VendorPayment
+
+        bill = self.get_object()
+        payment_id = request.data.get('payment_id')
+        try:
+            payment = bill.payments.get(id=payment_id)
+        except VendorPayment.DoesNotExist:
+            return Response({'error': 'এই পেমেন্ট পাওয়া যায়নি।'}, status=status.HTTP_404_NOT_FOUND)
+
+        with transaction.atomic():
+            bill.discount -= payment.discount
+            bill.total = bill.subtotal - bill.discount
+            bill.paid_amount -= payment.amount
+            bill.save()
+
+            if bill.vendor:
+                bill.vendor.total_due += (payment.amount + payment.discount)
+                bill.vendor.save(update_fields=['total_due'])
+
+            reference = f"pbill_payment_{payment.id}"
+            cash_txns = CashTransaction.objects.filter(reference_id=reference)
+            daily_cash_ids = list(cash_txns.values_list('daily_cash_id', flat=True).distinct())
+            cash_txns.delete()
+
+            payment.delete()
+
+            for dc_id in daily_cash_ids:
+                DailyCash.objects.get(id=dc_id).update_closing_balance()
 
         return Response(PurchaseBillSerializer(bill).data)
 

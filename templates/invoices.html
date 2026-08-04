@@ -101,12 +101,15 @@ async function initInvoices() {
               <td>${statusBadge(s.status)}</td>
               <td style="color:var(--muted);font-size:13px">${fmtDate(s.created_at)}</td>
               <td>
-                <div style="display:flex; gap:5px;">
+                <div style="display:flex; gap:5px; flex-wrap:wrap;">
                   <a href="/api/sales/${s.id}/print_invoice/" class="btn btn-ghost btn-sm" target="_blank" style="text-decoration:none; color:var(--accent)">
-                    📄 প্রিন্ট
+                    ${icon('printer', 13)} প্রিন্ট
                   </a>
+                  <button class="btn btn-ghost btn-sm" onclick="showPaymentHistory(${s.id}, '${s.invoice_number}')">
+                    ${icon('wallet', 13)} পেমেন্ট
+                  </button>
                   <button class="btn btn-ghost btn-sm" onclick="showReturnUI(${s.id}, '${s.invoice_number}')">
-                    ↺ ফেরত
+                    ${icon('corner-down-left', 13)} ফেরত
                   </button>
                 </div>
               </td>
@@ -116,6 +119,55 @@ async function initInvoices() {
       </div>`;
   } catch(e) {
       w.innerHTML = '<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>ডাটা লোড করতে সমস্যা হয়েছে।</h3></div>';
+  }
+}
+
+async function showPaymentHistory(saleId, invNum) {
+  try {
+    const s = await api(`/sales/${saleId}/`);
+    const payments = s.payments || [];
+    let html = `
+      <div id="payment-history-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+        <div class="form-card" style="width:460px; padding:20px">
+          <h3 style="margin-bottom:6px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} পেমেন্ট ইতিহাস (#${invNum})</h3>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বিল: <strong>৳${num(s.total)}</strong> • পরিশোধিত: <strong style="color:var(--accent)">৳${num(s.paid_amount)}</strong> • বাকি: <strong style="color:var(--danger)">৳${num(s.due_amount)}</strong></p>
+          <div id="payment-history-list">
+            ${payments.length ? payments.map(p => `
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
+                <span style="color:var(--muted); font-size:12.5px; white-space:nowrap;">${fmtDate(p.created_at)}</span>
+                <span style="flex:1; font-weight:700; color:var(--g900);">${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent);">৳${num(p.amount)}</span>
+                <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteInvoicePayment(${saleId}, ${p.id}, '${invNum}')" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>
+              </div>`).join('')
+            : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('wallet', 34)}</div><h3 style="font-size:14px;">এখনো কোনো পেমেন্ট নেই</h3></div>`}
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:20px">
+            <button class="btn btn-ghost" onclick="document.getElementById('payment-history-modal').remove()">বন্ধ করুন</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const modalEl = document.getElementById('payment-history-modal');
+    wireModalDismiss(modalEl, () => modalEl.remove());
+  } catch (e) { toast('পেমেন্ট ইতিহাস লোড করা যায়নি', 'error'); }
+}
+
+async function deleteInvoicePayment(saleId, paymentId, invNum) {
+  const ok = await confirmModal(
+    'ভুলে দুইবার বসে যাওয়া পেমেন্ট মুছে ফেলতে চান?\n\nইনভয়েসের পরিশোধিত পরিমাণ, বাকি এবং গ্রাহকের হিসাব — সব আগের অবস্থায় ফিরে যাবে। এই কাজটি বাতিল করা যাবে না।',
+    { danger: true, requireText: 'DELETE' }
+  );
+  if (!ok) return;
+  try {
+    await api(`/sales/${saleId}/remove_payment/`, 'POST', { payment_id: paymentId });
+    toast('পেমেন্ট মুছে ফেলা হয়েছে, হিসাব সংশোধন হয়েছে।');
+    document.getElementById('payment-history-modal')?.remove();
+    showPaymentHistory(saleId, invNum);
+    initInvoices();
+  } catch (e) {
+    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
   }
 }
 

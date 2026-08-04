@@ -73,7 +73,7 @@
     </div>
 
     <div class="table-header">
-      <span class="table-title">📜 ক্রয় বিলের তালিকা</span>
+      <span class="table-title"><span data-icon="list" data-icon-size="15"></span> ক্রয় বিলের তালিকা</span>
     </div>
 
     <div id="bills-wrapper">
@@ -126,7 +126,7 @@ async function loadBills() {
     billsCache = bills;
 
     if (!bills.length) {
-      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📜</div><h3>কোনো বিল নেই</h3></div>`;
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">${icon('list', 44)}</div><h3>কোনো বিল নেই</h3></div>`;
       loadSummary();
       return;
     }
@@ -166,7 +166,7 @@ async function loadBills() {
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">
                 ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteBill(${b.id})" style="color:var(--danger)">${icon('trash', 13)} মুছুন</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -174,7 +174,7 @@ async function loadBills() {
 
     loadSummary();
   } catch (e) {
-    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">${icon('alert-triangle', 44)}</div><h3>লোড হয়নি</h3></div>`;
   }
 }
 
@@ -203,7 +203,7 @@ async function collectVendorPayment(billId) {
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:420px; padding:24px">
-        <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} ভেন্ডর পেমেন্ট দিন</h3>
         <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
           <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
           <div style="color:var(--text2)"><strong>ভেন্ডর:</strong> ${bill.vendor_name}</div>
@@ -249,7 +249,7 @@ async function collectVendorPayment(billId) {
 
     try {
       await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl.remove();
       loadBills();
     } catch (e) {

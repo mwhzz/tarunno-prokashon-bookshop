@@ -128,8 +128,8 @@
   width: 30px; height: 30px;
   border-radius: 8px;
   background: var(--g100);
+  color: var(--g700);
   display: grid; place-items: center;
-  font-size: 15px;
   flex-shrink: 0;
 }
 
@@ -850,10 +850,10 @@
 .modal-check {
   width: 72px; height: 72px;
   background: var(--g100);
+  color: var(--accent);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 36px;
   margin: 0 auto 18px;
 }
 
@@ -951,7 +951,7 @@ let phoneCheckTimer      = null;
 
 const CART_STORAGE_KEY = 'pos_cart_draft_v1';
 const PLACEHOLDER_COVER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="158" height="130"><rect width="100%" height="100%" fill="#eafaf2"/><text x="50%" y="58%" font-size="46" text-anchor="middle">📗</text></svg>'
+  '<svg xmlns="http://www.w3.org/2000/svg" width="158" height="130"><rect width="100%" height="100%" fill="#eafaf2"/><g transform="translate(79,65)" fill="none" stroke="#1a6347" stroke-width="3"><rect x="-26" y="-20" width="52" height="40" rx="3"/><line x1="0" y1="-20" x2="0" y2="20"/></g></svg>'
 );
 
 /* warn before an accidental refresh/close wipes an in-progress sale */
@@ -1060,7 +1060,7 @@ async function initPOS() {
   } catch (e) {
     root.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">⚠️</div>
+        <div class="empty-icon">${icon('alert-triangle', 44)}</div>
         <h3>বই লোড হয়নি</h3>
         <p>সার্ভার চালু আছে কিনা দেখুন।</p>
       </div>`;
@@ -1083,21 +1083,21 @@ function renderPOS(container) {
 
       <div class="pos-stats-bar">
         <div class="psb-item clickable" id="psb-total" onclick="resetFilters()" title="ফিল্টার মুছে সব বই দেখুন">
-          <div class="psb-icon">📗</div>
+          <div class="psb-icon">${icon('book', 16)}</div>
           <div class="psb-info">
             <strong>${active.length}</strong>
             <span>মোট বই</span>
           </div>
         </div>
         <div class="psb-item">
-          <div class="psb-icon">📦</div>
+          <div class="psb-icon">${icon('box', 16)}</div>
           <div class="psb-info">
             <strong>${stock}</strong>
             <span>দোকানে স্টক</span>
           </div>
         </div>
         <div class="psb-item clickable" id="psb-lowstock" onclick="toggleLowStockFilter()" title="শুধু কম স্টকের বই দেখুন">
-          <div class="psb-icon" style="background:#fee2e2">⚠️</div>
+          <div class="psb-icon" style="background:var(--danger-soft); color:var(--danger-dark)">${icon('alert-triangle', 16)}</div>
           <div class="psb-info">
             <strong style="color:var(--danger)">${lowStock}</strong>
             <span>কম স্টক</span>
@@ -1106,7 +1106,7 @@ function renderPOS(container) {
       </div>
 
       <div class="pos-search">
-        <span class="pos-search-icon">🔍</span>
+        <span class="pos-search-icon">${icon('search', 18)}</span>
         <input
           type="text"
           id="book-search"
@@ -1151,7 +1151,7 @@ function renderPOS(container) {
           </thead>
           <tbody id="cart-scroll">
             <tr><td colspan="4" class="cart-empty">
-              <div class="cart-empty-icon">📋</div>
+              <div class="cart-empty-icon">${icon('clipboard', 34)}</div>
               বাম পাশ থেকে বই ক্লিক করুন
             </td></tr>
           </tbody>
@@ -1167,7 +1167,7 @@ function renderPOS(container) {
       <div class="receipt-header">
         <div class="rh-top">
           <div>
-            <div class="rh-title">🧾 বিলের হিসাব</div>
+            <div class="rh-title" style="display:flex; align-items:center; gap:7px">${icon('file-text', 17)} বিলের হিসাব</div>
           </div>
           <button class="clear-btn" onclick="clearCart()">সব মুছুন</button>
         </div>
@@ -1198,10 +1198,10 @@ function renderPOS(container) {
           <div class="bf-field">
             <label>পেমেন্ট মাধ্যম</label>
             <select id="pay-method" onchange="onPayMethodChange()">
-              <option value="cash">💵 Cash</option>
-              <option value="mobile">📱 Bkash/Nagad</option>
-              <option value="bank">🏦 Bank</option>
-              <option value="credit">📝 Credit (এখনো টাকা পাননি)</option>
+              <option value="cash">Cash</option>
+              <option value="mobile">Bkash/Nagad</option>
+              <option value="bank">Bank</option>
+              <option value="credit">Credit (এখনো টাকা পাননি)</option>
             </select>
           </div>
         </div>
@@ -1296,31 +1296,31 @@ function renderPOS(container) {
             <span id="t-total">৳০</span>
           </div>
           <div class="total-line" id="prev-due-row" style="display:none; color:var(--warning)">
-            <span>পূর্বের বাকি ⚠️</span>
+            <span style="display:inline-flex; align-items:center; gap:5px">পূর্বের বাকি ${icon('alert-triangle', 13)}</span>
             <span id="t-prev-due">৳০</span>
           </div>
         </div>
 
         <!-- paid input -->
         <div class="paid-wrap">
-          <label>✅ কত টাকা পেলেন? (পরিশোধিত)</label>
+          <label style="display:flex; align-items:center; gap:6px">${icon('check', 14)} কত টাকা পেলেন? (পরিশোধিত)</label>
           <input id="paid" type="number" value="0" min="0" placeholder="0" oninput="onPaidInput()">
           <div class="paid-quick-row" id="paid-quick-row">
-            <button type="button" class="paid-quick-btn full" onclick="setPaidFull()">✅ সম্পূর্ণ বিল</button>
+            <button type="button" class="paid-quick-btn full" onclick="setPaidFull()" style="display:flex; align-items:center; justify-content:center; gap:5px">${icon('check', 13)} সম্পূর্ণ বিল</button>
             <button type="button" class="paid-quick-btn" onclick="setPaidAmount(500)">৳৫০০</button>
             <button type="button" class="paid-quick-btn" onclick="setPaidAmount(1000)">৳১০০০</button>
           </div>
           <div class="paid-warn" id="paid-zero-warn" style="display:none">
-            ⚠️ পরিশোধিত ৳০ আছে — পুরো বিলটা "বাকি" হিসেবে সেভ হবে। টাকা নগদে পেয়ে থাকলে উপরে "সম্পূর্ণ বিল" চাপুন।
+            ${icon('alert-triangle', 13)} পরিশোধিত ৳০ আছে — পুরো বিলটা "বাকি" হিসেবে সেভ হবে। টাকা নগদে পেয়ে থাকলে উপরে "সম্পূর্ণ বিল" চাপুন।
           </div>
           <div class="paid-warn" id="paid-overpay-warn" style="display:none">
-            ⚠️ পরিশোধিত পরিমাণ বিলের তুলনায় অনেক বেশি — টাকার অঙ্কটা আরেকবার দেখে নিন।
+            ${icon('alert-triangle', 13)} পরিশোধিত পরিমাণ বিলের তুলনায় অনেক বেশি — টাকার অঙ্কটা আরেকবার দেখে নিন।
           </div>
         </div>
 
         <div class="totals-box" style="margin-top:0">
           <div class="total-line change-line" id="change-row" style="display:none">
-            <span>ফেরত দিন (Change) 💵</span>
+            <span style="display:inline-flex; align-items:center; gap:5px">ফেরত দিন (Change) ${icon('cash', 14)}</span>
             <span id="t-change">৳০</span>
           </div>
           <div class="total-line due-line">
@@ -1335,7 +1335,7 @@ function renderPOS(container) {
 
         <!-- CTA -->
         <button class="cta-btn" id="complete-btn" onclick="completeSale()">
-          ✅ বিক্রয় সম্পন্ন করুন
+          ${icon('check', 18)} বিক্রয় সম্পন্ন করুন
         </button>
 
       </div><!-- /billing-form -->
@@ -1458,7 +1458,7 @@ function filterBooks() {
   if (!list.length) {
     grid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">🔍</div>
+        <div class="empty-icon">${icon('search', 44)}</div>
         <h3>কোনো বই পাওয়া যায়নি</h3>
         <p>অন্য কিছু লিখে চেষ্টা করুন বা ফিল্টার পরিবর্তন করুন</p>
       </div>`;
@@ -1482,7 +1482,7 @@ function filterBooks() {
            onerror="coverFallback(this)"
            alt="${b.title}">
       <div class="book-row-info">
-        <div class="book-title" title="${b.title}">${b.title}${b.source === 'external' ? '<span class="book-external-badge">🏢 বাইরের</span>' : ''}</div>
+        <div class="book-title" title="${b.title}">${b.title}${b.source === 'external' ? `<span class="book-external-badge">${icon('briefcase', 10)} বাইরের</span>` : ''}</div>
         <div class="book-author">${b.author || '—'}</div>
       </div>
       <div class="book-price-block">
@@ -1491,7 +1491,7 @@ function filterBooks() {
         ${showDiscount ? `<span class="book-disc-badge">-${commissionPct.toFixed(0)}%</span>` : ''}
       </div>
       <span class="book-stock-badge ${outOfStock ? 'zero' : ''}">${b.shop_quantity} কপি</span>
-      <div class="book-row-add">➕</div>
+      <div class="book-row-add">${icon('plus', 15)}</div>
     </div>`;
   }).join('');
 }
@@ -1594,7 +1594,7 @@ function renderCart() {
   if (!cart.length) {
     el.innerHTML = `
       <tr><td colspan="4" class="cart-empty">
-        <div class="cart-empty-icon">📋</div>
+        <div class="cart-empty-icon">${icon('clipboard', 34)}</div>
         বাম পাশ থেকে বই ক্লিক করুন
       </td></tr>`;
     saveCartDraft();
@@ -1632,7 +1632,7 @@ function renderCart() {
         </div>
       </td>
       <td><div class="ci-total">৳${money(itemNet(i))}</div></td>
-      <td><button class="ci-remove" aria-label="মুছে ফেলুন" onclick="removeItem(${i.bid})">✕</button></td>
+      <td><button class="ci-remove" aria-label="মুছে ফেলুন" onclick="removeItem(${i.bid})">${icon('close', 13)}</button></td>
     </tr>`).join('');
 
   saveCartDraft();
@@ -1721,7 +1721,7 @@ async function fetchDue() {
   const val        = document.getElementById('t-prev-due');
   const indicator  = document.getElementById('phone-check-indicator');
   currentCustomerDue = 0;
-  if (indicator) indicator.textContent = '';
+  if (indicator) indicator.innerHTML = '';
 
   if (phone && phone.length >= 11) {
     try {
@@ -1729,7 +1729,7 @@ async function fetchDue() {
       if (res && res.id) {
         document.getElementById('cus-name').value = res.name;
         currentCustomerDue = parseFloat(res.total_due || 0);
-        if (indicator) indicator.textContent = '✓ পরিচিত গ্রাহক';
+        if (indicator) indicator.innerHTML = `${icon('check', 12)} পরিচিত গ্রাহক`;
       }
     } catch (_) {}
   }
@@ -1893,7 +1893,7 @@ async function completeSale() {
 
   const btn = document.getElementById('complete-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ প্রসেস হচ্ছে...';
+  btn.textContent = 'প্রসেস হচ্ছে...';
 
   const payload = {
     customer_name:     document.getElementById('cus-name')?.value || 'Walk-in Customer',
@@ -1935,7 +1935,7 @@ async function completeSale() {
   } catch (e) {
     toast(formatApiError(e), 'error');
     btn.disabled = false;
-    btn.textContent = '✅ বিক্রয় সম্পন্ন করুন';
+    btn.innerHTML = `${icon('check', 18)} বিক্রয় সম্পন্ন করুন`;
   }
 }
 
@@ -1946,7 +1946,7 @@ function showSuccessModal(sale) {
   const html = `
     <div class="sale-modal-bg" id="sale-modal">
       <div class="sale-modal">
-        <div class="modal-check">✅</div>
+        <div class="modal-check">${icon('check', 34)}</div>
         <div class="modal-title">বিক্রয় হয়েছে!</div>
         <div class="modal-sub">
           ইনভয়েস নম্বর:
@@ -1958,14 +1958,14 @@ function showSuccessModal(sale) {
              class="btn btn-primary"
              target="_blank"
              onclick="closeModal()"
-             style="justify-content:center; text-decoration:none; border-radius:12px; min-height:48px; font-size:15px;">
-            🖨️ ইনভয়েস প্রিন্ট করুন
+             style="text-decoration:none; border-radius:12px; min-height:48px; font-size:15px;">
+            ${icon('printer', 16)} ইনভয়েস প্রিন্ট করুন
           </a>
           <button class="btn btn-ghost" onclick="closeModal()" style="border-radius:12px; min-height:44px;">
             নতুন বিক্রয় শুরু করুন →
           </button>
           <button class="btn btn-ghost" onclick="undoLastSale(${sale.id})" style="border-radius:12px; min-height:40px; color:var(--danger); font-size:13px;">
-            ❌ ভুল হয়েছে? এই বিক্রয় বাতিল করুন
+            ${icon('x-circle', 14)} ভুল হয়েছে? এই বিক্রয় বাতিল করুন
           </button>
         </div>
       </div>
@@ -1988,7 +1988,7 @@ async function undoLastSale(saleId) {
     const items = (sale.items || []).map(i => ({ book_id: i.book, quantity: i.quantity }));
     if (!items.length) { toast('ফেরত দেওয়ার মতো কোনো বই পাওয়া যায়নি।', 'error'); return; }
     await api(`/sales/${saleId}/return_items/`, 'POST', { items, reason: 'POS-এ তাৎক্ষণিক ভুল সংশোধন' });
-    toast('বিক্রয়টি বাতিল করা হয়েছে, বই স্টকে ফিরে গেছে ✓');
+    toast('বিক্রয়টি বাতিল করা হয়েছে, বই স্টকে ফিরে গেছে।');
     closeModal();
   } catch (e) {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);

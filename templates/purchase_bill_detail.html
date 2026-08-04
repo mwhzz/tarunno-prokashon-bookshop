@@ -79,7 +79,7 @@
 
   <div class="pbd-section table-wrap">
     <div class="table-header">
-      <span class="table-title">📦 বিলের বইসমূহ</span>
+      <span class="table-title"><span data-icon="box" data-icon-size="15"></span> বিলের বইসমূহ</span>
     </div>
     <div id="items-wrapper">
       <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
@@ -89,7 +89,7 @@
 
   <div class="pbd-section table-wrap">
     <div class="table-header">
-      <span class="table-title">💰 পেমেন্ট ইতিহাস</span>
+      <span class="table-title"><span data-icon="wallet" data-icon-size="15"></span> পেমেন্ট ইতিহাস</span>
     </div>
     <div class="pbd-actions" id="pbd-actions"></div>
     <div id="payments-wrapper">
@@ -111,7 +111,7 @@ async function loadBill() {
     render(b);
   } catch (e) {
     setText('b-title', 'বিল পাওয়া যায়নি');
-    document.getElementById('items-wrapper').innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+    document.getElementById('items-wrapper').innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">${icon('alert-triangle', 44)}</div><h3>লোড হয়নি</h3></div>`;
     document.getElementById('payments-wrapper').innerHTML = '';
   }
 }
@@ -122,7 +122,7 @@ function render(b) {
   document.getElementById('b-meta').innerHTML =
     `ভেন্ডর: <a href="${b.vendor ? '/purchase/vendors/' + b.vendor + '/' : '#'}">${b.vendor_name}</a>` +
     `${b.vendor_code ? ' (' + b.vendor_code + ')' : ''} • তারিখ: ${fmtDate(b.purchase_date)}` +
-    `${b.created_by_name ? ' • এন্ট্রি: ' + b.created_by_name : ''} • স্টক: ${b.location === 'shop' ? '🏪 দোকান' : '🏭 গোডাউন'} • ${statusBadge(b.status)}`;
+    `${b.created_by_name ? ' • এন্ট্রি: ' + b.created_by_name : ''} • স্টক: ${b.location === 'shop' ? 'দোকান' : 'গোডাউন'} • ${statusBadge(b.status)}`;
   setText('b-due', `৳${num(b.due_amount)}`);
 
   setText('s-subtotal', `৳${num(b.subtotal)}`);
@@ -134,7 +134,7 @@ function render(b) {
   const itemsW = document.getElementById('items-wrapper');
   const items = b.items || [];
   if (!items.length) {
-    itemsW.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">📦</div><h3>কোনো বই নেই</h3></div>`;
+    itemsW.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">${icon('box', 44)}</div><h3>কোনো বই নেই</h3></div>`;
   } else {
     itemsW.innerHTML = `
       <table>
@@ -169,7 +169,7 @@ function render(b) {
   const actionsW = document.getElementById('pbd-actions');
   actionsW.innerHTML = `
     ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment()">৳ পেমেন্ট দিন</button>` : ''}
-    <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteBill()">🗑️ বিল মুছুন</button>`;
+    <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteBill()">${icon('trash', 13)} বিল মুছুন</button>`;
 
   const paymentsW = document.getElementById('payments-wrapper');
   const payments = b.payments || [];
@@ -180,7 +180,7 @@ function render(b) {
           <span class="pb-mini-name">${p.method_display}${p.note ? ' — ' + p.note : ''}</span>
           <span class="pb-mini-total paid">৳${num(p.amount)}</span>
         </div>`).join('')
-    : `<div class="empty-state" style="padding:30px 20px;"><div class="empty-icon">💰</div><h3>এখনো কোনো পেমেন্ট হয়নি</h3></div>`;
+    : `<div class="empty-state" style="padding:30px 20px;"><div class="empty-icon">${icon('wallet', 40)}</div><h3>এখনো কোনো পেমেন্ট হয়নি</h3></div>`;
 }
 
 async function deleteBill() {
@@ -208,7 +208,7 @@ function collectVendorPayment() {
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:420px; padding:24px">
-        <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} ভেন্ডর পেমেন্ট দিন</h3>
         <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
           <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
           <div style="color:var(--text2)"><strong>ভেন্ডর:</strong> ${bill.vendor_name}</div>
@@ -254,7 +254,7 @@ function collectVendorPayment() {
 
     try {
       await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl.remove();
       loadBill();
     } catch (e) {

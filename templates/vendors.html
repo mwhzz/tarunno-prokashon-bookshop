@@ -43,7 +43,7 @@
   <div class="vd-shell">
 
     <div class="vd-card">
-      <div class="vd-head"><div class="vd-head-title" id="nv-form-title">🏢 নতুন ভেন্ডর</div></div>
+      <div class="vd-head"><div class="vd-head-title"><span id="nv-form-icon" data-icon="briefcase"></span> <span id="nv-form-title">নতুন ভেন্ডর</span></div></div>
       <div class="vd-body">
         <input type="hidden" id="editing-id" value="">
         <div class="vd-field"><label>নাম <span style="color:var(--danger)">*</span></label><input class="vd-input" id="nv-name" placeholder="ভেন্ডর/প্রকাশনীর নাম"></div>
@@ -54,8 +54,8 @@
           <input class="vd-input" id="nv-opening" type="number" min="0" placeholder="০">
           <p style="font-size:11px; color:var(--muted); margin-top:4px" id="nv-opening-hint"></p>
         </div>
-        <button class="vd-save-btn" id="nv-save-btn" onclick="saveVendor()">💾 ভেন্ডর যোগ করুন</button>
-        <button class="vd-save-btn" id="nv-cancel-btn" onclick="cancelEdit()" style="display:none; margin-top:8px; background:var(--surface2); color:var(--text2)">✕ সম্পাদনা বাতিল করুন</button>
+        <button class="vd-save-btn" id="nv-save-btn" onclick="saveVendor()"><span data-icon="save" data-icon-size="14"></span> ভেন্ডর যোগ করুন</button>
+        <button class="vd-save-btn" id="nv-cancel-btn" onclick="cancelEdit()" style="display:none; margin-top:8px; background:var(--surface2); color:var(--text2)"><span data-icon="close" data-icon-size="12"></span> সম্পাদনা বাতিল করুন</button>
       </div>
     </div>
 
@@ -67,7 +67,7 @@
 
       <div class="table-wrap">
         <div class="table-header">
-          <span class="table-title">📋 সব ভেন্ডর</span>
+          <span class="table-title"><span data-icon="list" data-icon-size="15"></span> সব ভেন্ডর</span>
           <input type="text" id="vd-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন" oninput="debouncedLoad()"
                  style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; font-family:'Hind Siliguri',sans-serif; font-size:13px; outline:none;">
         </div>
@@ -111,7 +111,7 @@ async function loadVendors() {
     }
 
     if (!vendors.length) {
-      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">🏢</div><h3>কোনো ভেন্ডর নেই</h3></div>`;
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">${icon('briefcase', 44)}</div><h3>কোনো ভেন্ডর নেই</h3></div>`;
       return;
     }
 
@@ -136,14 +136,14 @@ async function loadVendors() {
               <td style="font-family:monospace">৳${num(v.opening_due)}</td>
               <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা" aria-label="সম্পাদনা">✏️</button>
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন" aria-label="মুছে ফেলুন">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা" aria-label="সম্পাদনা">${icon('edit', 14)}</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন" aria-label="মুছে ফেলুন">${icon('trash', 14)}</button>
               </td>
             </tr>`).join('')}
         </tbody>
       </table>`;
   } catch (e) {
-    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">${icon('alert-triangle', 44)}</div><h3>লোড হয়নি</h3></div>`;
   }
 }
 
@@ -158,10 +158,11 @@ function editVendor(id) {
   document.getElementById('nv-opening').value = v.total_due;
   editingOriginalDue = parseFloat(v.total_due) || 0;
 
-  document.getElementById('nv-form-title').textContent = `✏️ সম্পাদনা: ${v.name}`;
+  document.getElementById('nv-form-icon').innerHTML = icon('edit', 16);
+  document.getElementById('nv-form-title').textContent = `সম্পাদনা: ${v.name}`;
   document.getElementById('nv-opening-label').textContent = 'বর্তমান মোট বকেয়া';
   document.getElementById('nv-opening-hint').textContent = 'এখানে পরিবর্তন করলে ভেন্ডরের মোট বকেয়া সরাসরি বদলে যাবে — সাবধানে করুন।';
-  document.getElementById('nv-save-btn').textContent = '✓ পরিবর্তন সেভ করুন';
+  document.getElementById('nv-save-btn').innerHTML = `${icon('save', 14)} পরিবর্তন সেভ করুন`;
   document.getElementById('nv-cancel-btn').style.display = 'block';
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -175,10 +176,11 @@ function cancelEdit() {
   document.getElementById('nv-address').value = '';
   document.getElementById('nv-opening').value = '';
 
-  document.getElementById('nv-form-title').textContent = '🏢 নতুন ভেন্ডর';
+  document.getElementById('nv-form-icon').innerHTML = icon('briefcase', 16);
+  document.getElementById('nv-form-title').textContent = 'নতুন ভেন্ডর';
   document.getElementById('nv-opening-label').textContent = 'শুরুর বকেয়া ৳';
   document.getElementById('nv-opening-hint').textContent = '';
-  document.getElementById('nv-save-btn').textContent = '💾 ভেন্ডর যোগ করুন';
+  document.getElementById('nv-save-btn').innerHTML = `${icon('save', 14)} ভেন্ডর যোগ করুন`;
   document.getElementById('nv-cancel-btn').style.display = 'none';
 }
 
@@ -188,7 +190,7 @@ async function deleteVendor(id) {
 
   let warning = `"${v.name}" ভেন্ডরকে মুছে ফেলতে চান?`;
   if (parseFloat(v.total_due) > 0) {
-    warning += `\n\n⚠️ এই ভেন্ডরের এখনো ৳${num(v.total_due)} বকেয়া আছে। মুছে ফেললে এই বকেয়ার হিসাব আর ভেন্ডরের সাথে যুক্ত থাকবে না (তবে পুরনো ক্রয় বিলগুলো থাকবে)।`;
+    warning += `\n\nএই ভেন্ডরের এখনো ৳${num(v.total_due)} বকেয়া আছে। মুছে ফেললে এই বকেয়ার হিসাব আর ভেন্ডরের সাথে যুক্ত থাকবে না (তবে পুরনো ক্রয় বিলগুলো থাকবে)।`;
   }
   const ok = await confirmModal(warning, { danger: true });
   if (!ok) return;
@@ -221,7 +223,7 @@ async function saveVendor() {
   }
 
   const btn = document.getElementById('nv-save-btn');
-  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+  btn.disabled = true; btn.textContent = 'সেভ হচ্ছে...';
   try {
     const phone = document.getElementById('nv-phone').value;
     const address = document.getElementById('nv-address').value;
@@ -230,12 +232,12 @@ async function saveVendor() {
       await api(`/purchase/vendors/${editingId}/`, 'PATCH', {
         name, phone, address, total_due: openingVal,
       });
-      toast('ভেন্ডরের তথ্য আপডেট হয়েছে ✓');
+      toast('ভেন্ডরের তথ্য আপডেট হয়েছে');
     } else {
       await api('/purchase/vendors/', 'POST', {
         name, phone, address, opening_due: openingVal,
       });
-      toast('ভেন্ডর যোগ হয়েছে ✓');
+      toast('ভেন্ডর যোগ হয়েছে');
     }
     cancelEdit();
     loadVendors();

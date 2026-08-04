@@ -77,7 +77,7 @@
 
   <div class="vdt-section table-wrap">
     <div class="table-header">
-      <span class="table-title">📚 কেনা বইসমূহ (সব বিল মিলিয়ে)</span>
+      <span class="table-title"><span data-icon="book" data-icon-size="15"></span> কেনা বইসমূহ (সব বিল মিলিয়ে)</span>
     </div>
     <div id="books-wrapper">
       <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
@@ -86,7 +86,7 @@
 
   <div class="vdt-section table-wrap">
     <div class="table-header">
-      <span class="table-title">📜 সব ক্রয় বিল</span>
+      <span class="table-title"><span data-icon="list" data-icon-size="15"></span> সব ক্রয় বিল</span>
     </div>
     <div id="bills-wrapper">
       <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
@@ -138,7 +138,7 @@ function renderBooksSummary() {
   const rows = Object.values(byBook).sort((a, b) => b.total - a.total);
 
   if (!rows.length) {
-    w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📚</div><h3>এই ভেন্ডরের কাছ থেকে এখনো কোনো বই কেনা হয়নি</h3></div>`;
+    w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">${icon('book', 44)}</div><h3>এই ভেন্ডরের কাছ থেকে এখনো কোনো বই কেনা হয়নি</h3></div>`;
     return;
   }
 
@@ -175,7 +175,7 @@ async function loadBills() {
     renderBooksSummary();
 
     if (!billsCache.length) {
-      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📜</div><h3>এই ভেন্ডরের কোনো ক্রয় বিল নেই</h3></div>`;
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">${icon('list', 44)}</div><h3>এই ভেন্ডরের কোনো ক্রয় বিল নেই</h3></div>`;
       return;
     }
 
@@ -206,7 +206,7 @@ async function loadBills() {
               <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">👁️ বিস্তারিত</button>
+                <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">${icon('eye', 14)} বিস্তারিত</button>
                 ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
               </td>
             </tr>
@@ -214,7 +214,7 @@ async function loadBills() {
               <td colspan="9" style="padding:0">
                 <div class="pb-details">
                   <div class="pb-details-block">
-                    <div class="pb-details-label">📦 বিলের বইসমূহ</div>
+                    <div class="pb-details-label">${icon('box', 12)} বিলের বইসমূহ</div>
                     ${(b.items || []).map(i => `
                       <div class="pb-mini-row">
                         <span class="pb-mini-name">${i.book_title}</span>
@@ -224,7 +224,7 @@ async function loadBills() {
                   </div>
                   ${b.payments && b.payments.length ? `
                     <div class="pb-details-block">
-                      <div class="pb-details-label">💰 পেমেন্ট ইতিহাস</div>
+                      <div class="pb-details-label">${icon('wallet', 12)} পেমেন্ট ইতিহাস</div>
                       ${b.payments.map(p => `
                         <div class="pb-mini-row">
                           <span class="pb-mini-meta">${fmtDate(p.created_at)}</span>
@@ -238,7 +238,7 @@ async function loadBills() {
         </tbody>
       </table>`;
   } catch (e) {
-    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">${icon('alert-triangle', 44)}</div><h3>লোড হয়নি</h3></div>`;
   }
 }
 
@@ -259,7 +259,7 @@ async function collectVendorPayment(billId) {
   let html = `
     <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:420px; padding:24px">
-        <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
+        <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} ভেন্ডর পেমেন্ট দিন</h3>
         <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
           <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
           <div style="color:var(--text2)"><strong>তারিখ:</strong> ${fmtDate(bill.purchase_date)}</div>
@@ -304,7 +304,7 @@ async function collectVendorPayment(billId) {
 
     try {
       await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
-      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে');
       modalEl.remove();
       loadVendorInfo();
       loadSummary();

@@ -151,7 +151,7 @@
     <!-- MAIN: vendor + book entry + cart -->
     <div class="pe-card">
       <div class="pe-head">
-        <div class="pe-head-title">🧾 নতুন ক্রয় (Purchase)</div>
+        <div class="pe-head-title"><span data-icon="file-plus" data-icon-size="17"></span> নতুন ক্রয় (Purchase)</div>
         <div class="pe-head-sub">ভেন্ডরের কাছ থেকে একাধিক বই একসাথে কিনে একটা বিল তৈরি করুন</div>
       </div>
       <div class="pe-body">
@@ -200,7 +200,7 @@
             <input class="pe-input" id="b-selling" type="number" min="0" placeholder="ঐচ্ছিক">
           </div>
           <div class="pe-field" style="display:flex; align-items:flex-end;">
-            <button class="add-list-btn" style="width:100%;" onclick="addToCart()">➕ তালিকায় যোগ করুন</button>
+            <button class="add-list-btn" style="width:100%;" onclick="addToCart()"><span data-icon="plus" data-icon-size="14"></span> তালিকায় যোগ করুন</button>
           </div>
         </div>
 
@@ -229,7 +229,7 @@
     <!-- SUMMARY / PAYMENT -->
     <div class="pe-card pe-summary">
       <div class="pe-head">
-        <div class="pe-head-title">💰 হিসাব</div>
+        <div class="pe-head-title"><span data-icon="wallet" data-icon-size="17"></span> হিসাব</div>
       </div>
 
       <div class="sum-row"><span>মোট আইটেম</span><span class="val" id="s-items">০</span></div>
@@ -268,8 +268,8 @@
         <label>স্টক যাবে <span style="color:var(--danger)">*</span></label>
         <select class="pe-input" id="s-location">
           <option value="" selected disabled>-- বেছে নিন --</option>
-          <option value="godown">🏭 গোডাউন</option>
-          <option value="shop">🏪 দোকান</option>
+          <option value="godown">গোডাউন</option>
+          <option value="shop">দোকান</option>
         </select>
       </div>
 
@@ -283,7 +283,7 @@
         <input class="pe-input" id="s-note" placeholder="ঐচ্ছিক">
       </div>
 
-      <button class="submit-purchase-btn" id="submit-btn" onclick="submitPurchase()">✅ ক্রয় সম্পন্ন করুন</button>
+      <button class="submit-purchase-btn" id="submit-btn" onclick="submitPurchase()"><span data-icon="check" data-icon-size="16"></span> ক্রয় সম্পন্ন করুন</button>
     </div>
 
   </div>
@@ -469,7 +469,7 @@ function renderCart() {
       <td class="num">৳${num(item.unit_price)}</td>
       <td class="num"><input class="qty-inp" type="number" min="1" value="${item.quantity}" onchange="updateCartQty(${idx}, this.value)"></td>
       <td class="num">৳${num(item.unit_price * item.quantity)}</td>
-      <td><button class="cart-remove" onclick="removeFromCart(${idx})">✕</button></td>
+      <td><button class="cart-remove" onclick="removeFromCart(${idx})">${icon('close', 13)}</button></td>
     </tr>`).join('');
 }
 
@@ -540,11 +540,11 @@ async function submitPurchase() {
   };
 
   const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = '⏳ সেভ হচ্ছে...';
+  btn.disabled = true; btn.textContent = 'সেভ হচ্ছে...';
 
   try {
     await api('/purchase/bills/', 'POST', payload);
-    toast('ক্রয় বিল সেভ হয়েছে ✓');
+    toast('ক্রয় বিল সেভ হয়েছে');
     cart = [];
     selectedVendor = null;
     selectedBook = null;
@@ -560,7 +560,7 @@ async function submitPurchase() {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('সেভ করা যায়নি: ' + msg, 'error');
   } finally {
-    btn.disabled = false; btn.innerHTML = '✅ ক্রয় সম্পন্ন করুন';
+    btn.disabled = false; btn.innerHTML = `${icon('check', 16)} ক্রয় সম্পন্ন করুন`;
   }
 }
 

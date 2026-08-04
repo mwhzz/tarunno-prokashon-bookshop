@@ -59,11 +59,11 @@ async function initStock() {
       <!-- স্টক লিস্ট টেবিল -->
       <div class="table-wrap">
         <div class="table-header">
-          <span class="table-title">📦 বর্তমান স্টক বিস্তারিত</span>
+          <span class="table-title">${icon('box', 15)} বর্তমান স্টক বিস্তারিত</span>
           <select id="stock-source-filter" onchange="stockRenderedCount = STOCK_RENDER_STEP; renderStockRows()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
             <option value="">সব বই</option>
-            <option value="own">📗 নিজস্ব বই</option>
-            <option value="external">🏢 বাইরের বই</option>
+            <option value="own">নিজস্ব বই</option>
+            <option value="external">বাইরের বই</option>
           </select>
           <a href="/stock/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ স্টক যোগ করুন</a>
         </div>
@@ -95,7 +95,7 @@ function stockRowHtml(s) {
   return `<tr>
       <td><strong>${s.book_title}</strong></td>
       <td>${s.book_author || '—'}</td>
-      <td>${s.book_source === 'external' ? '<span class="badge badge-yellow">🏢 বাইরের</span>' : '<span class="badge badge-green">📗 নিজস্ব</span>'}</td>
+      <td>${s.book_source === 'external' ? `<span class="badge badge-yellow">${icon('briefcase', 11)} বাইরের</span>` : `<span class="badge badge-green">${icon('book', 11)} নিজস্ব</span>`}</td>
       <td><span class="badge ${s.shop_quantity > 0 ? 'badge-green' : 'badge-red'}">${s.shop_quantity}</span></td>
       <td><span class="badge ${s.godown_quantity > 0 ? 'badge-blue' : 'badge-red'}">${s.godown_quantity}</span></td>
       <td>
@@ -110,7 +110,7 @@ function stockRowHtml(s) {
       <td style="font-family:monospace;color:var(--accent2)">৳${num(s.stock_value)}</td>
       <td>
         <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="recordDamage(${s.book}, 'shop', '${s.book_title}', ${s.shop_quantity})">
-          ⚠ ড্যামেজ
+          ${icon('alert-triangle', 13)} ড্যামেজ
         </button>
       </td>
   </tr>`;
@@ -142,7 +142,7 @@ async function recordDamage(bookId, location, bookTitle, currentQty) {
     <div id="damage-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
       <div class="form-card" style="width:400px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1)">
         <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">
-          <span style="color:var(--danger)">⚠</span> ড্যামেজ রেকর্ড করুন
+          <span style="color:var(--danger)">${icon('alert-triangle', 17)}</span> ড্যামেজ রেকর্ড করুন
         </h3>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px">বই: <strong>${bookTitle}</strong> (${location.toUpperCase()}) — বর্তমান স্টক: <strong>${currentQty}</strong></p>
 
@@ -180,7 +180,7 @@ async function recordDamage(bookId, location, bookTitle, currentQty) {
         source: 'damage',
         note: note || 'নষ্ট হয়ে গেছে'
       });
-      toast('ড্যামেজ রেকর্ড সফল হয়েছে ✓');
+      toast('ড্যামেজ রেকর্ড সফল হয়েছে');
       document.getElementById('damage-modal').remove();
       initStock();
     } catch(e) {

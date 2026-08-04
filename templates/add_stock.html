@@ -656,16 +656,16 @@
   <!-- ─── MODE SELECTOR ─── -->
   <div class="mode-toggle" id="mode-toggle">
     <button class="mode-btn active" id="mode-add" onclick="setMode('add')">
-      <div class="mode-icon">📦</div>
+      <div class="mode-icon" data-icon="box" data-icon-size="26"></div>
       <div class="mode-title">নতুন স্টক যোগ</div>
       <div class="mode-sub">নতুন বই কিনে এনেছেন বা ফেরত পেয়েছেন</div>
-      <div class="mode-tag">সিলেক্টেড ✓</div>
+      <div class="mode-tag">সিলেক্টেড</div>
     </button>
     <button class="mode-btn" id="mode-tr" onclick="setMode('transfer')">
-      <div class="mode-icon">🔄</div>
+      <div class="mode-icon" data-icon="refresh" data-icon-size="26"></div>
       <div class="mode-title">স্টক ট্রান্সফার</div>
       <div class="mode-sub">গোডাউন থেকে দোকানে বই পাঠান</div>
-      <div class="mode-tag">সিলেক্টেড ✓</div>
+      <div class="mode-tag">সিলেক্টেড</div>
     </button>
   </div>
 
@@ -700,12 +700,12 @@
     <!-- STEP A1: বই বেছে নিন -->
     <div class="step-card active" id="as-1">
       <div class="sc-badge">ধাপ ১ / ৪</div>
-      <div class="sc-title">📗 কোন বইয়ের স্টক যোগ করবেন?</div>
+      <div class="sc-title"><span data-icon="book" data-icon-size="19"></span> কোন বইয়ের স্টক যোগ করবেন?</div>
       <div class="sc-desc">তালিকা থেকে বইটি বেছে নিন অথবা নাম লিখে খুঁজুন।</div>
 
       <!-- selected book preview -->
       <div class="selected-book-preview" id="sel-book-preview">
-        <div class="sbp-img" id="sbp-img">📗</div>
+        <div class="sbp-img" id="sbp-img" data-icon="book" data-icon-size="22"></div>
         <div class="sbp-info">
           <strong id="sbp-title">—</strong>
           <small id="sbp-stock">—</small>
@@ -715,7 +715,7 @@
 
       <div id="book-search-area">
         <div class="book-search-wrap">
-          <span class="bs-icon">🔍</span>
+          <span class="bs-icon" data-icon="search" data-icon-size="18"></span>
           <input class="bs-input" id="book-search" placeholder="বইয়ের নাম লিখে খুঁজুন..." oninput="filterBookList()" autocomplete="off">
         </div>
         <div class="book-list" id="book-list">
@@ -732,7 +732,7 @@
     <!-- STEP A2: পরিমাণ ও লোকেশন -->
     <div class="step-card" id="as-2">
       <div class="sc-badge">ধাপ ২ / ৪</div>
-      <div class="sc-title">🔢 কত পিস যোগ করবেন?</div>
+      <div class="sc-title">কত পিস যোগ করবেন?</div>
       <div class="sc-desc">পরিমাণ লিখুন এবং কোথায় রাখবেন তা বেছে নিন।</div>
 
       <div class="wiz-group">
@@ -745,16 +745,16 @@
         <div class="wiz-label">কোথায় রাখবেন? <span class="req">*</span></div>
         <div class="location-grid">
           <div class="loc-card selected" id="loc-godown" onclick="selectLocation('godown')">
-            <div class="loc-icon">🏭</div>
+            <div class="loc-icon" data-icon="box" data-icon-size="30"></div>
             <div class="loc-title">গোডাউন</div>
             <div class="loc-sub">মূল গুদামঘর</div>
-            <div class="loc-check">✓</div>
+            <div class="loc-check" data-icon="check" data-icon-size="11"></div>
           </div>
           <div class="loc-card" id="loc-shop" onclick="selectLocation('shop')">
-            <div class="loc-icon">🏪</div>
+            <div class="loc-icon" data-icon="store" data-icon-size="30"></div>
             <div class="loc-title">দোকান</div>
             <div class="loc-sub">বিক্রয়ের শেলফ</div>
-            <div class="loc-check">✓</div>
+            <div class="loc-check" data-icon="check" data-icon-size="11"></div>
           </div>
         </div>
       </div>
@@ -768,24 +768,24 @@
     <!-- STEP A3: উৎস ও অতিরিক্ত তথ্য -->
     <div class="step-card" id="as-3">
       <div class="sc-badge">ধাপ ৩ / ৪</div>
-      <div class="sc-title">📋 কোথা থেকে এলো?</div>
+      <div class="sc-title"><span data-icon="clipboard" data-icon-size="19"></span> কোথা থেকে এলো?</div>
       <div class="sc-desc">স্টক কোথা থেকে আসছে তা বেছে নিন।</div>
 
       <div class="wiz-group">
         <div class="wiz-label">উৎস (Source)</div>
         <div class="source-grid">
           <div class="src-card selected" id="src-purchase" onclick="selectSource('purchase')">
-            <div class="src-icon">🛍️</div>
+            <div class="src-icon" data-icon="cart" data-icon-size="22"></div>
             <div class="src-title">নতুন কেনা</div>
             <div class="src-sub">Purchase</div>
           </div>
           <div class="src-card" id="src-return" onclick="selectSource('return')">
-            <div class="src-icon">↩️</div>
+            <div class="src-icon" data-icon="corner-down-left" data-icon-size="22"></div>
             <div class="src-title">ফেরত</div>
             <div class="src-sub">Return</div>
           </div>
           <div class="src-card" id="src-adjustment" onclick="selectSource('adjustment')">
-            <div class="src-icon">⚙️</div>
+            <div class="src-icon" data-icon="sliders" data-icon-size="22"></div>
             <div class="src-title">হিসাব মেলানো</div>
             <div class="src-sub">Adjustment</div>
           </div>
@@ -824,14 +824,14 @@
     <!-- STEP A4: রিভিউ ও সেভ -->
     <div class="step-card" id="as-4">
       <div class="sc-badge">ধাপ ৪ / ৪</div>
-      <div class="sc-title">✅ রিভিউ করুন</div>
+      <div class="sc-title"><span data-icon="check" data-icon-size="19"></span> রিভিউ করুন</div>
       <div class="sc-desc">সব তথ্য ঠিক আছে? তাহলে স্টক যোগ করুন।</div>
 
       <div class="review-card" id="add-review"><!-- filled by JS --></div>
 
       <div class="step-nav">
         <button class="btn-back" onclick="goAddStep(3)">← পেছনে, এডিট করুন</button>
-        <button class="btn-save" id="save-btn" onclick="submitStock()">✅ স্টক যোগ করুন</button>
+        <button class="btn-save" id="save-btn" onclick="submitStock()"><span data-icon="check" data-icon-size="16"></span> স্টক যোগ করুন</button>
       </div>
     </div>
 
@@ -844,19 +844,19 @@
   <div class="transfer-panel" id="transfer-panel">
     <div class="step-card active">
       <div class="sc-badge">স্টক ট্রান্সফার</div>
-      <div class="sc-title">🔄 এক জায়গা থেকে অন্য জায়গায় পাঠান</div>
+      <div class="sc-title"><span data-icon="refresh" data-icon-size="19"></span> এক জায়গা থেকে অন্য জায়গায় পাঠান</div>
       <div class="sc-desc">গোডাউন থেকে দোকানে অথবা দোকান থেকে গোডাউনে বই সরান।</div>
 
       <!-- book select -->
       <div class="wiz-group">
         <div class="wiz-label">কোন বই? <span class="req">*</span></div>
         <div class="book-search-wrap">
-          <span class="bs-icon">🔍</span>
+          <span class="bs-icon" data-icon="search" data-icon-size="18"></span>
           <input class="bs-input" id="t-book-search" placeholder="বইয়ের নাম খুঁজুন..." oninput="filterTrBookList()" autocomplete="off">
         </div>
         <div class="book-list" id="t-book-list" style="display:none; max-height:200px;"></div>
         <div class="selected-book-preview" id="t-sel-preview">
-          <div class="sbp-img" id="t-sbp-img">📗</div>
+          <div class="sbp-img" id="t-sbp-img" data-icon="book" data-icon-size="22"></div>
           <div class="sbp-info">
             <strong id="t-sbp-title">—</strong>
             <small id="t-sbp-stock">—</small>
@@ -875,19 +875,19 @@
       <div class="wiz-label">কোথা থেকে → কোথায়?</div>
       <div class="transfer-visual">
         <div class="tv-box" id="tv-godown" onclick="setTrFrom('godown')" style="cursor:pointer;">
-          <div class="tv-icon">🏭</div>
+          <div class="tv-icon" data-icon="box" data-icon-size="30"></div>
           <div class="tv-title">গোডাউন</div>
           <div class="tv-sub" id="tv-godown-role">ক্লিক করুন</div>
         </div>
         <div class="tv-arrow">→</div>
         <div class="tv-box" id="tv-shop" onclick="setTrFrom('shop')" style="cursor:pointer;">
-          <div class="tv-icon">🏪</div>
+          <div class="tv-icon" data-icon="store" data-icon-size="30"></div>
           <div class="tv-title">দোকান</div>
           <div class="tv-sub" id="tv-shop-role">ক্লিক করুন</div>
         </div>
       </div>
       <p style="font-size:12px; color:var(--muted); text-align:center; margin-top:-8px; margin-bottom:14px;">
-        🟡 যেটাতে ক্লিক করবেন সেটা হবে <strong>উৎস (From)</strong>, বাকিটা গন্তব্য (To)
+        যেটাতে ক্লিক করবেন সেটা হবে <strong>উৎস (From)</strong>, বাকিটা গন্তব্য (To)
       </p>
 
       <!-- note -->
@@ -898,22 +898,22 @@
 
       <div class="step-nav">
         <a href="/stock/" class="btn-back" style="text-decoration:none">← বাতিল</a>
-        <button class="btn-transfer" id="tr-btn" onclick="submitTransfer()">🔄 ট্রান্সফার করুন</button>
+        <button class="btn-transfer" id="tr-btn" onclick="submitTransfer()"><span data-icon="refresh" data-icon-size="16"></span> ট্রান্সফার করুন</button>
       </div>
     </div>
   </div>
 
   <!-- ─── SUCCESS SCREEN ─── -->
   <div class="success-screen" id="success-screen">
-    <div class="success-anim" id="success-icon">✅</div>
+    <div class="success-anim" id="success-icon"></div>
     <div class="success-title" id="success-title">স্টক যোগ হয়েছে!</div>
     <div class="success-sub" id="success-msg">সফলভাবে স্টক আপডেট করা হয়েছে।</div>
     <div class="success-actions">
       <a href="/stock/add/" class="btn btn-primary" style="text-decoration:none; border-radius:99px; padding:12px 22px;">
-        ➕ আরো স্টক যোগ করুন
+        <span data-icon="plus" data-icon-size="15"></span> আরো স্টক যোগ করুন
       </a>
       <a href="/stock/" class="btn btn-ghost" style="text-decoration:none; border-radius:99px; padding:12px 22px;">
-        📦 স্টক তালিকা দেখুন
+        <span data-icon="box" data-icon-size="15"></span> স্টক তালিকা দেখুন
       </a>
     </div>
   </div>
@@ -933,6 +933,11 @@ let addLocation  = 'godown';
 let addSource    = 'purchase';
 let trFrom       = null;
 let addStep      = 1;
+
+function bookImgFallback(img) {
+  img.onerror = null;
+  img.parentNode.innerHTML = icon('book', 20);
+}
 
 /* ══════════════════════════════
    INIT
@@ -996,7 +1001,7 @@ function renderBookList(listId, searchId, onSelect, hiddenDefault=false) {
   list.innerHTML = filtered.map(b => `
     <div class="book-row ${selectedBook?.id===b.id || trBook?.id===b.id ? 'selected':''}" onclick='(${onSelect.toString()})( ${JSON.stringify({id:b.id,title:b.title,author:b.author||'',godown_quantity:b.godown_quantity||0,shop_quantity:b.shop_quantity||0,image:b.image||''})})'>
       <div class="br-thumb">
-        ${b.image ? `<img src="${b.image}" onerror="this.parentNode.textContent='📗'">` : '📗'}
+        ${b.image ? `<img src="${b.image}" onerror="bookImgFallback(this)">` : icon('book', 20)}
       </div>
       <div class="br-info">
         <strong>${b.title}</strong>
@@ -1022,8 +1027,8 @@ function selectBook(book) {
   document.getElementById('sbp-title').textContent = book.title;
   document.getElementById('sbp-stock').textContent = `গোডাউন: ${book.godown_quantity} • দোকান: ${book.shop_quantity}`;
   const img = document.getElementById('sbp-img');
-  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentNode.textContent='📗'">`;
-  else img.textContent = '📗';
+  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="bookImgFallback(this)">`;
+  else img.innerHTML = icon('book', 22);
 }
 
 function clearBookSelection() {
@@ -1045,8 +1050,8 @@ function selectTrBook(book) {
   document.getElementById('t-sbp-title').textContent = book.title;
   document.getElementById('t-sbp-stock').textContent = `গোডাউন: ${book.godown_quantity} • দোকান: ${book.shop_quantity}`;
   const img = document.getElementById('t-sbp-img');
-  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentNode.textContent='📗'">`;
-  else img.textContent = '📗';
+  if (book.image) img.innerHTML = `<img src="${book.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="bookImgFallback(this)">`;
+  else img.innerHTML = icon('book', 22);
 }
 
 function clearTrBook() {
@@ -1088,8 +1093,8 @@ function setTrFrom(loc) {
   document.getElementById('tv-shop').classList.remove('from-sel','to-sel');
   document.getElementById(`tv-${loc}`).classList.add('from-sel');
   document.getElementById(`tv-${to}`).classList.add('to-sel');
-  document.getElementById('tv-godown-role').textContent = loc==='godown' ? '👈 এখান থেকে' : '👉 এখানে যাবে';
-  document.getElementById('tv-shop-role').textContent   = loc==='shop'   ? '👈 এখান থেকে' : '👉 এখানে যাবে';
+  document.getElementById('tv-godown-role').textContent = loc==='godown' ? '← এখান থেকে' : '→ এখানে যাবে';
+  document.getElementById('tv-shop-role').textContent   = loc==='shop'   ? '← এখান থেকে' : '→ এখানে যাবে';
 }
 
 /* ══════════════════════════════
@@ -1138,7 +1143,7 @@ function buildAddReview() {
   const source    = addSource === 'purchase' ? 'নতুন কেনা (Purchase)'
                   : addSource === 'return'   ? 'কাস্টমার ফেরত (Return)'
                   : 'হিসাব মেলানো (Adjustment)';
-  const locLabel  = addLocation === 'godown' ? '🏭 গোডাউন' : '🏪 দোকান';
+  const locLabel  = addLocation === 'godown' ? 'গোডাউন' : 'দোকান';
   const supplier  = document.getElementById('s-supplier')?.value || '—';
   const pPrice    = document.getElementById('s-purchase-price')?.value;
   const note      = document.getElementById('s-note')?.value || '—';
@@ -1146,7 +1151,7 @@ function buildAddReview() {
   document.getElementById('add-review').innerHTML = `
     <div class="rv-book">
       <div class="rv-book-img">
-        ${selectedBook?.image ? `<img src="${selectedBook.image}" onerror="this.parentNode.textContent='📗'">` : '📗'}
+        ${selectedBook?.image ? `<img src="${selectedBook.image}" onerror="bookImgFallback(this)">` : icon('book', 20)}
       </div>
       <div class="rv-book-info">
         <strong>${selectedBook?.title || '—'}</strong>
@@ -1186,7 +1191,7 @@ function validateQty() {
 async function submitStock() {
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ যোগ হচ্ছে...';
+  btn.textContent = 'যোগ হচ্ছে...';
 
   const payload = {
     book:     selectedBook.id,
@@ -1206,14 +1211,14 @@ async function submitStock() {
   try {
     await api('/stock/entries/', 'POST', payload);
     showSuccess(
-      '✅',
+      'check',
       'স্টক যোগ হয়েছে!',
       `"${selectedBook.title}" — ${payload.quantity}টি কপি ${addLocation === 'godown' ? 'গোডাউনে' : 'দোকানে'} যোগ হয়েছে।`
     );
   } catch(e) {
     toast((e?.detail || JSON.stringify(e)), 'error');
     btn.disabled = false;
-    btn.textContent = '✅ স্টক যোগ করুন';
+    btn.innerHTML = `${icon('check', 16)} স্টক যোগ করুন`;
   }
 }
 
@@ -1234,7 +1239,7 @@ async function submitTransfer() {
   const to  = trFrom === 'godown' ? 'shop' : 'godown';
   const btn = document.getElementById('tr-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ ট্রান্সফার হচ্ছে...';
+  btn.textContent = 'ট্রান্সফার হচ্ছে...';
 
   try {
     await api('/stock/transfers/', 'POST', {
@@ -1247,7 +1252,7 @@ async function submitTransfer() {
     const fromLbl = trFrom === 'godown' ? 'গোডাউন' : 'দোকান';
     const toLbl   = to     === 'shop'   ? 'দোকান'  : 'গোডাউন';
     showSuccess(
-      '🔄',
+      'refresh',
       'ট্রান্সফার সম্পন্ন!',
       `"${trBook.title}" — ${qty}টি কপি ${fromLbl} থেকে ${toLbl}-এ পাঠানো হয়েছে।`
     );
@@ -1255,18 +1260,18 @@ async function submitTransfer() {
     const msg = e && typeof e==='object' ? (e.detail || e[Object.keys(e)[0]] || JSON.stringify(e)) : String(e);
     toast('ট্রান্সফার ব্যর্থ: ' + msg, 'error');
     btn.disabled = false;
-    btn.textContent = '🔄 ট্রান্সফার করুন';
+    btn.innerHTML = `${icon('refresh', 16)} ট্রান্সফার করুন`;
   }
 }
 
 /* ══════════════════════════════
    SUCCESS SCREEN
 ══════════════════════════════ */
-function showSuccess(icon, title, msg) {
+function showSuccess(iconName, title, msg) {
   document.getElementById('mode-toggle').style.display  = 'none';
   document.getElementById('add-panel').style.display    = 'none';
   document.getElementById('transfer-panel').classList.remove('active');
-  document.getElementById('success-icon').textContent  = icon;
+  document.getElementById('success-icon').innerHTML    = icon(iconName, 40);
   document.getElementById('success-title').textContent = title;
   document.getElementById('success-msg').textContent   = msg;
   document.getElementById('success-screen').classList.add('show');

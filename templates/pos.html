@@ -1253,7 +1253,7 @@ function renderPOS(container) {
             <input id="discount" type="number" value="0" min="0" placeholder="0" oninput="calcTotals(true)">
           </div>
         </div>
-        <div class="bf-hint">টিপ: কমিশন % বা ডিসকাউন্ট ৳ — যেকোনো একটি বদলালে অন্যটি নিজে থেকেই আপডেট হয়। শুধু একটা নির্দিষ্ট বইয়ে বাড়তি ছাড় দিতে কার্টে সেই বইয়ের নিচে থাকা Extra % ব্যবহার করুন।</div>
+        <div class="bf-hint">টিপ: কমিশন % বা ডিসকাউন্ট ৳ — যেকোনো একটি বদলালে অন্যটি নিজে থেকেই আপডেট হয়। খুচরা বিক্রয়ে এটা বইয়ের নিজস্ব ডিফল্ট ছাড়ের উপর বাড়তি হিসেবে যোগ হয় (প্রতিস্থাপন করে না); পাইকারি বিক্রয়ে এটা বইয়ের ডিফল্ট ছাড় পুরোপুরি প্রতিস্থাপন করে চুক্তির হার হিসেবে কাজ করে। শুধু একটা নির্দিষ্ট বইয়ে বাড়তি ছাড় দিতে কার্টে সেই বইয়ের নিচে থাকা Extra % ব্যবহার করুন।</div>
 
         <div class="charges-box">
           <div class="bf-row" style="grid-template-columns:1fr 1fr 1fr; gap:7px;">
@@ -1591,7 +1591,11 @@ function renderCart() {
     return;
   }
 
+  const saleType    = document.getElementById('sale-type')?.value || 'retail';
   const globalActive = defaultCommissionPct() > 0;
+  const baseLabel = saleType === 'wholesale'
+    ? (globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট')
+    : (globalActive ? 'বইয়ের ডিফল্ট + গ্লোবাল' : 'বইয়ের ডিফল্ট');
 
   el.innerHTML = cart.map(i => `
     <tr>
@@ -1601,7 +1605,7 @@ function renderCart() {
           <small>৳${money(i.price)} × ${i.qty}</small>
           <small class="ci-breakdown">
             ছাড় <b>${itemCommissionPct(i).toFixed(1)}%</b>
-            (${globalActive ? 'গ্লোবাল' : 'বইয়ের ডিফল্ট'}${i.extraCommission > 0 ? ' + অতিরিক্ত' : ''})
+            (${baseLabel}${i.extraCommission > 0 ? ' + অতিরিক্ত' : ''})
             — ৳${money(itemDiscount(i))} বাদ
           </small>
           <div class="ci-adjust">
@@ -1742,7 +1746,19 @@ function itemGross(item) {
 
 function itemBaseCommission(item) {
   const globalPct = defaultCommissionPct();
-  return globalPct > 0 ? globalPct : Math.min(100, Math.max(0, parseFloat(item.defaultCommission || 0)));
+  const ownPct    = Math.min(100, Math.max(0, parseFloat(item.defaultCommission || 0)));
+  const saleType  = document.getElementById('sale-type')?.value || 'retail';
+
+  if (saleType === 'wholesale') {
+    // পাইকারি গ্রাহকের জন্য কমিশন% একটা নির্দিষ্ট চুক্তির হার — বইয়ের নিজস্ব
+    // ডিফল্ট কমিশন উপেক্ষা করে পুরোপুরি রিপ্লেস হয়।
+    return globalPct > 0 ? globalPct : ownPct;
+  }
+
+  // খুচরা বিক্রয়ে বইয়ের নিজস্ব ডিফল্ট কমিশন (MRP থেকে দোকানের স্বাভাবিক ছাড়) সবসময় বহাল থাকে;
+  // "ডিসকাউন্ট ৳ / কমিশন %" বক্সে কিছু লিখলে সেটা তার উপর বাড়তি ছাড় হিসেবে যোগ হয়,
+  // প্রতিস্থাপন করে না — নাহলে ছোট একটা বাড়তি ছাড় দিতে গিয়ে দাম উল্টো বেড়ে যেত।
+  return Math.min(100, ownPct + globalPct);
 }
 
 function itemCommissionPct(item) {

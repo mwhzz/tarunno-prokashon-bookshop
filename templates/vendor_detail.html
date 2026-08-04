@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block page_title %}ভেন্ডর বিস্তারিত{% endblock %}
+
+{% block extra_css %}
+<style>
+.vdt-page { animation: fadeUp .3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.vdt-back {
+  display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700;
+  color:var(--text2); text-decoration:none; margin-bottom:12px;
+}
+.vdt-back:hover { color:var(--accent); }
+
+.vdt-hero {
+  background:linear-gradient(135deg, var(--g800), var(--g900));
+  border-radius:18px; padding:20px 24px; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+.vdt-hero-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:800; color:#fff; }
+.vdt-hero-meta { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+.vdt-hero-due { text-align:right; }
+.vdt-hero-due-label { font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:rgba(255,255,255,.6); }
+.vdt-hero-due-val { font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:800; color:#fff; }
+
+.vdt-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.vdt-stat {
+  background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px 14px;
+  box-shadow:0 2px 12px rgba(13,51,38,.05);
+}
+.vdt-stat-label { font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.vdt-stat-val { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--g900); margin-top:2px; }
+.vdt-stat-val.due { color:var(--danger); }
+.vdt-stat-val.paid { color:var(--accent); }
+
+.vdt-section { margin-bottom:16px; }
+
+.pb-details { padding:14px 20px 18px 52px; background:var(--surface2); border-bottom:1px solid var(--border); }
+.pb-details-block { margin-bottom:12px; }
+.pb-details-block:last-child { margin-bottom:0; }
+.pb-details-label { font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.pb-mini-row {
+  display:flex; align-items:center; gap:10px; padding:7px 12px; background:#fff;
+  border:1px solid var(--border); border-radius:9px; font-size:13px; margin-bottom:5px;
+}
+.pb-mini-row:last-child { margin-bottom:0; }
+.pb-mini-name { flex:1; font-weight:700; color:var(--g900); }
+.pb-mini-meta { color:var(--muted); font-size:12px; white-space:nowrap; }
+.pb-mini-total { font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--g900); white-space:nowrap; }
+.pb-mini-total.paid { color:var(--accent); }
+
+@media (max-width:900px) { .vdt-stats { grid-template-columns:1fr 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vdt-page">
+  <a href="/purchase/vendors/" class="vdt-back">← ভেন্ডর তালিকায় ফিরুন</a>
+
+  <div class="vdt-hero">
+    <div>
+      <div class="vdt-hero-title" id="v-name">লোড হচ্ছে...</div>
+      <div class="vdt-hero-meta" id="v-meta"></div>
+    </div>
+    <div class="vdt-hero-due">
+      <div class="vdt-hero-due-label">বর্তমান বকেয়া</div>
+      <div class="vdt-hero-due-val" id="v-due">৳০</div>
+    </div>
+  </div>
+
+  <div class="vdt-stats">
+    <div class="vdt-stat"><div class="vdt-stat-label">মোট বিল</div><div class="vdt-stat-val" id="s-count">০</div></div>
+    <div class="vdt-stat"><div class="vdt-stat-label">মোট ক্রয় মূল্য</div><div class="vdt-stat-val" id="s-total">৳০</div></div>
+    <div class="vdt-stat"><div class="vdt-stat-label">পরিশোধিত</div><div class="vdt-stat-val paid" id="s-paid">৳০</div></div>
+    <div class="vdt-stat"><div class="vdt-stat-label">বাকি</div><div class="vdt-stat-val due" id="s-due">৳০</div></div>
+  </div>
+
+  <div class="vdt-section table-wrap">
+    <div class="table-header">
+      <span class="table-title">📚 কেনা বইসমূহ (সব বিল মিলিয়ে)</span>
+    </div>
+    <div id="books-wrapper">
+      <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+    </div>
+  </div>
+
+  <div class="vdt-section table-wrap">
+    <div class="table-header">
+      <span class="table-title">📜 সব ক্রয় বিল</span>
+    </div>
+    <div id="bills-wrapper">
+      <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const vendorId = "{{ vendor_id }}";
+let billsCache = [];
+
+async function loadVendorInfo() {
+  try {
+    const v = await api(`/purchase/vendors/${vendorId}/`);
+    setText('v-name', v.name);
+    setText('v-meta', `কোড: ${v.vendor_code || 'N/A'}${v.phone ? ' • ফোন: ' + v.phone : ''}${v.address ? ' • ' + v.address : ''}`);
+    setText('v-due', `৳${num(v.total_due)}`);
+    document.title = v.name;
+  } catch (e) {
+    setText('v-name', 'ভেন্ডর পাওয়া যায়নি');
+  }
+}
+
+async function loadSummary() {
+  try {
+    const s = await api(`/purchase/bills/summary/?vendor=${vendorId}`);
+    setText('s-count', num(s.count));
+    setText('s-total', `৳${num(s.total_price)}`);
+    setText('s-paid', `৳${num(s.paid)}`);
+    setText('s-due', `৳${num(s.due)}`);
+  } catch (e) { /* nice-to-have */ }
+}
+
+function renderBooksSummary() {
+  const w = document.getElementById('books-wrapper');
+  const byBook = {};
+  billsCache.forEach(b => {
+    (b.items || []).forEach(i => {
+      const key = i.book || i.book_title;
+      if (!byBook[key]) byBook[key] = { title: i.book_title, qty: 0, total: 0, bills: new Set(), lastDate: b.purchase_date };
+      byBook[key].qty += Number(i.quantity);
+      byBook[key].total += Number(i.total);
+      byBook[key].bills.add(b.id);
+      if (b.purchase_date > byBook[key].lastDate) byBook[key].lastDate = b.purchase_date;
+    });
+  });
+  const rows = Object.values(byBook).sort((a, b) => b.total - a.total);
+
+  if (!rows.length) {
+    w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📚</div><h3>এই ভেন্ডরের কাছ থেকে এখনো কোনো বই কেনা হয়নি</h3></div>`;
+    return;
+  }
+
+  w.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="padding:10px 20px">বইয়ের নাম</th>
+          <th>মোট কপি</th>
+          <th>মোট বিলে</th>
+          <th>সর্বমোট মূল্য</th>
+          <th>সর্বশেষ ক্রয়</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td style="padding:10px 20px"><strong>${r.title}</strong></td>
+            <td style="font-family:monospace">${num(r.qty)}</td>
+            <td style="font-family:monospace">${r.bills.size}</td>
+            <td style="font-family:monospace">৳${num(r.total)}</td>
+            <td style="color:var(--muted); font-size:12px">${fmtDate(r.lastDate)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function loadBills() {
+  const w = document.getElementById('bills-wrapper');
+  try {
+    const r = await api(`/purchase/bills/?vendor=${vendorId}&page_size=1000`);
+    billsCache = r.results || [];
+
+    renderBooksSummary();
+
+    if (!billsCache.length) {
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">📜</div><h3>এই ভেন্ডরের কোনো ক্রয় বিল নেই</h3></div>`;
+      return;
+    }
+
+    w.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="padding:10px 20px">বিল</th>
+            <th>মেমো</th>
+            <th>মোট</th>
+            <th>ডিসকাউন্ট</th>
+            <th>পেইড</th>
+            <th>বাকি</th>
+            <th>তারিখ</th>
+            <th>স্ট্যাটাস</th>
+            <th>অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${billsCache.map(b => `
+            <tr>
+              <td style="padding:10px 20px; font-family:monospace"><strong>#${b.id}</strong></td>
+              <td>${b.memo_number || '—'}</td>
+              <td style="font-family:monospace">৳${num(b.total)}</td>
+              <td style="font-family:monospace">৳${num(b.discount)}</td>
+              <td style="font-family:monospace;color:var(--accent2)">৳${num(b.paid_amount)}</td>
+              <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
+              <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
+              <td>${statusBadge(b.status)}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">👁️ বিস্তারিত</button>
+                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
+              </td>
+            </tr>
+            <tr id="details-row-${b.id}" style="display:none">
+              <td colspan="9" style="padding:0">
+                <div class="pb-details">
+                  <div class="pb-details-block">
+                    <div class="pb-details-label">📦 বিলের বইসমূহ</div>
+                    ${(b.items || []).map(i => `
+                      <div class="pb-mini-row">
+                        <span class="pb-mini-name">${i.book_title}</span>
+                        <span class="pb-mini-meta">${i.quantity} কপি × ৳${num(i.unit_price)}</span>
+                        <span class="pb-mini-total">৳${num(i.total)}</span>
+                      </div>`).join('')}
+                  </div>
+                  ${b.payments && b.payments.length ? `
+                    <div class="pb-details-block">
+                      <div class="pb-details-label">💰 পেমেন্ট ইতিহাস</div>
+                      ${b.payments.map(p => `
+                        <div class="pb-mini-row">
+                          <span class="pb-mini-meta">${fmtDate(p.created_at)}</span>
+                          <span class="pb-mini-name" style="flex:1">${p.method_display}</span>
+                          <span class="pb-mini-total paid">৳${num(p.amount)}</span>
+                        </div>`).join('')}
+                    </div>` : ''}
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    w.innerHTML = `<div class="empty-state" style="padding:40px 20px;"><div class="empty-icon">⚠️</div><h3>লোড হয়নি</h3></div>`;
+  }
+}
+
+function toggleBillDetails(billId) {
+  const row = document.getElementById(`details-row-${billId}`);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+async function collectVendorPayment(billId) {
+  const bill = billsCache.find(x => x.id === billId);
+  if (!bill) return;
+  const maxAmount = bill.due_amount;
+
+  const itemsSummary = (bill.items || [])
+    .map(i => `${i.book_title} × ${i.quantity}`)
+    .join(', ');
+
+  let html = `
+    <div id="payment-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+      <div class="form-card" style="width:420px; padding:24px">
+        <h3 style="margin-bottom:12px">💰 ভেন্ডর পেমেন্ট দিন</h3>
+        <div style="background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.6">
+          <div><strong>বিল #${bill.id}</strong>${bill.memo_number ? ' — মেমো: ' + bill.memo_number : ''}</div>
+          <div style="color:var(--text2)"><strong>তারিখ:</strong> ${fmtDate(bill.purchase_date)}</div>
+          ${itemsSummary ? `<div style="color:var(--text2); margin-top:4px"><strong>বই:</strong> ${itemsSummary}</div>` : ''}
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">এই বিলের মোট বাকি: <strong>৳${num(maxAmount)}</strong></p>
+
+        <div class="form-group">
+          <label>পরিশোধের পরিমাণ (Amount)</label>
+          <input type="number" id="pay-amount" value="${maxAmount}" max="${maxAmount}" min="1" style="width:100%">
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>পেমেন্ট মেথড</label>
+          <select id="pay-method" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border)">
+            <option value="cash">Cash (নগদ)</option>
+            <option value="bkash">bKash (বিকাশ)</option>
+            <option value="nagad">Nagad (নগদ)</option>
+            <option value="bank">Bank (ব্যাংক)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px">
+          <button class="btn btn-ghost" onclick="document.getElementById('payment-modal').remove()">বাতিল</button>
+          <button class="btn btn-success" id="confirm-pay-btn">পেমেন্ট কনফার্ম</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const modalEl = document.getElementById('payment-modal');
+  wireModalDismiss(modalEl, () => modalEl.remove());
+
+  document.getElementById('confirm-pay-btn').onclick = async () => {
+    const amount = document.getElementById('pay-amount').value;
+    const method = document.getElementById('pay-method').value;
+
+    if (!amount || amount <= 0 || amount > maxAmount) {
+      toast('সঠিক পরিমাণ লিখুন (বকেয়ার বেশি হওয়া যাবে না)', 'error');
+      return;
+    }
+
+    try {
+      await api(`/purchase/bills/${billId}/add_payment/`, 'POST', { amount, method });
+      toast('পেমেন্ট সফলভাবে জমা হয়েছে ✓');
+      modalEl.remove();
+      loadVendorInfo();
+      loadSummary();
+      loadBills();
+    } catch (e) {
+      const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
+      toast('পেমেন্ট জমা নেওয়া যায়নি: ' + msg, 'error');
+    }
+  };
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadVendorInfo();
+  loadSummary();
+  loadBills();
+});
+</script>
+{% endblock %}

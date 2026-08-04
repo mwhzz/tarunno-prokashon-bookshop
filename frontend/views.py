@@ -54,6 +54,10 @@ def purchase_bills_view(request):
 def vendors_view(request):
     return render(request, 'vendors.html')
 
+@login_required
+def vendor_detail_view(request, id):
+    return render(request, 'vendor_detail.html', {'vendor_id': id})
+
 # Sales/Invoices
 @login_required
 def invoices_list_view(request):

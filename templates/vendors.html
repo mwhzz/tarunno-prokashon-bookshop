@@ -129,15 +129,15 @@ async function loadVendors() {
         </thead>
         <tbody>
           ${vendors.map(v => `
-            <tr>
+            <tr style="cursor:pointer" onclick="location.href='/purchase/vendors/${v.id}/'" title="বিস্তারিত দেখতে ক্লিক করুন">
               <td style="padding:10px 20px"><strong>${v.name}</strong></td>
               <td style="font-family:monospace">${v.vendor_code || 'N/A'}</td>
               <td>${v.phone || '—'}</td>
               <td style="font-family:monospace">৳${num(v.opening_due)}</td>
               <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-ghost btn-sm" onclick="editVendor(${v.id})" title="সম্পাদনা">✏️</button>
-                <button class="btn btn-ghost btn-sm" onclick="deleteVendor(${v.id})" title="মুছে ফেলুন">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন">🗑️</button>
               </td>
             </tr>`).join('')}
         </tbody>

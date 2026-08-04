@@ -1545,8 +1545,17 @@ function setQty(id, value) {
 
 function removeItem(id) {
   cart = cart.filter(i => i.bid !== id);
+  if (!cart.length) resetGlobalDiscount();
   renderCart();
   calcTotals();
+}
+
+function resetGlobalDiscount() {
+  // কার্ট খালি হয়ে গেলে আগের বিক্রয়ের ম্যানুয়াল ছাড়/কমিশন% যেন পরের নতুন
+  // বিক্রয়ে না লেগে যায় — নাহলে আগের বইয়ে দেওয়া বাড়তি ছাড় পরের অন্য বইয়ের
+  // দামেও নীরবে যোগ হয়ে যেত।
+  if (document.getElementById('commission')) document.getElementById('commission').value = 0;
+  if (document.getElementById('discount'))    document.getElementById('discount').value = 0;
 }
 
 function setExtraCommission(id, value) {
@@ -1562,6 +1571,7 @@ async function clearCart() {
   if (!ok) return;
   cart = [];
   clearCartDraft();
+  resetGlobalDiscount();
   renderCart();
   calcTotals();
 }

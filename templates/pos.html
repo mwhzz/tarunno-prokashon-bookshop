@@ -1850,7 +1850,7 @@ function currentBillTotal() {
   const extra = (parseFloat(document.getElementById('pack')?.value||0))
               + (parseFloat(document.getElementById('courier')?.value||0))
               + (parseFloat(document.getElementById('txfee')?.value||0));
-  return Math.max(0, sub - disc + extra);
+  return Math.round(Math.max(0, sub - disc + extra) * 100) / 100;
 }
 
 function setPaidFull() {

@@ -265,8 +265,9 @@
       </div>
 
       <div class="sum-field">
-        <label>স্টক যাবে</label>
+        <label>স্টক যাবে <span style="color:var(--danger)">*</span></label>
         <select class="pe-input" id="s-location">
+          <option value="" selected disabled>-- বেছে নিন --</option>
           <option value="godown">🏭 গোডাউন</option>
           <option value="shop">🏪 দোকান</option>
         </select>
@@ -509,6 +510,13 @@ async function submitPurchase() {
     if (!ok) return;
   }
 
+  const locationVal = document.getElementById('s-location').value;
+  if (!locationVal) {
+    shakeEl('s-location');
+    toast('স্টক গোডাউনে যাবে নাকি দোকানে — বেছে নিন!', 'error');
+    return;
+  }
+
   const payload = {
     vendor: selectedVendor ? selectedVendor.id : null,
     vendor_name: selectedVendor ? selectedVendor.name : vendorInput,
@@ -516,7 +524,7 @@ async function submitPurchase() {
     discount: document.getElementById('s-discount').value || 0,
     paid_amount: document.getElementById('s-paid').value || 0,
     account_name: document.getElementById('s-account').value,
-    location: document.getElementById('s-location').value,
+    location: locationVal,
     purchase_date: document.getElementById('s-date').value,
     note: document.getElementById('s-note').value,
     items: cart.map(i => ({
@@ -545,6 +553,7 @@ async function submitPurchase() {
     document.getElementById('s-discount').value = '0';
     document.getElementById('s-paid').value = '0';
     document.getElementById('s-note').value = '';
+    document.getElementById('s-location').value = '';
     renderCart();
     calcTotals();
   } catch (e) {

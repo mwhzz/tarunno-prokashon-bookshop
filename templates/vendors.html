@@ -136,8 +136,8 @@ async function loadVendors() {
               <td style="font-family:monospace">৳${num(v.opening_due)}</td>
               <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা">✏️</button>
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা" aria-label="সম্পাদনা">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন" aria-label="মুছে ফেলুন">🗑️</button>
               </td>
             </tr>`).join('')}
         </tbody>

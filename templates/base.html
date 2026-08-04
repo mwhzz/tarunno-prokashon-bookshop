@@ -34,9 +34,16 @@
       --accent-dark:  var(--g800);
       --accent-soft:  var(--g100);
 
-      --danger:  #e53e3e;
-      --warning: #d97706;
-      --info:    #2563eb;
+      --danger:      #e53e3e;
+      --danger-soft:  #fee2e2;
+      --danger-dark:  #991b1b;
+      --warning:      #d97706;
+      --warning-soft: #fef3c7;
+      --warning-dark: #92400e;
+      --warning-border: #fde68a;
+      --info:        #2563eb;
+      --info-soft:    #dbeafe;
+      --info-dark:    #1e40af;
 
       --text:    #0f1f18;
       --text2:   #3d5247;
@@ -431,10 +438,10 @@
       padding: 3px 10px; border-radius: 99px;
       font-size: 11px; font-weight: 800; white-space: nowrap;
     }
-    .badge-green  { background: #dcfce7; color: #166534; }
-    .badge-yellow { background: #fef3c7; color: #92400e; }
-    .badge-red    { background: #fee2e2; color: #991b1b; }
-    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-green  { background: var(--g100);         color: var(--g700); }
+    .badge-yellow { background: var(--warning-soft);  color: var(--warning-dark); }
+    .badge-red    { background: var(--danger-soft);   color: var(--danger-dark); }
+    .badge-blue   { background: var(--info-soft);     color: var(--info-dark); }
     .badge-gray   { background: #f1f5f9; color: #475569; }
 
     /* Form fields */
@@ -461,6 +468,13 @@
     }
 
     textarea { min-height: 100px; resize: vertical; }
+
+    /* সব জায়গায় নিজস্ব +/- কন্ট্রোল আছে এমন সংখ্যা ইনপুট (POS কার্ট, ইত্যাদি) তে ব্রাউজারের
+       ডিফল্ট স্পিনার অ্যারো বাকি ডিজাইনের সাথে বেমানান দেখায় — টাইপ করে বা কীবোর্ড অ্যারো
+       দিয়ে সংখ্যা বদলানো তবু কাজ করে, শুধু ভিজ্যুয়াল বাটনটা সরানো হয়েছে। */
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
     .form-row {
       display: grid;
@@ -955,7 +969,10 @@
       return data;
     }
 
-    function num(v)     { return parseFloat(v || 0).toLocaleString('bn-BD'); }
+    // BDT-তে ৩ ঘর দশমিক দেখানো (bn-BD locale-এর default) স্বাভাবিক টাকার হিসাবে অস্বাভাবিক
+    // লাগে (যেমন ৳৮২.১৪৩) — তাই সর্বোচ্চ ২ ঘর দশমিকে বেঁধে রাখা হয়েছে; পূর্ণ সংখ্যা হলে
+    // দশমিক দেখাবেই না (minimumFractionDigits সেট করা হয়নি)।
+    function num(v)     { return parseFloat(v || 0).toLocaleString('bn-BD', { maximumFractionDigits: 2 }); }
     function fmtDate(s) { return new Date(s).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }); }
 
     // এক্সপেন্স ক্যাটাগরির নামের সাথে একটা স্থায়ী ইমোজি মিলিয়ে দেয় (নাম না বদলালে আইকনও বদলাবে না)।

@@ -35,12 +35,12 @@
       background: #f2f7f4;
       color: var(--text);
       font-family: KalpurushLocal, "Noto Sans Bengali", "Hind Siliguri", Arial, sans-serif;
-      font-size: 14px;
-      line-height: 1.45;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
     .toolbar {
-      max-width: 760px;
+      max-width: 148mm;
       margin: 18px auto 0;
       display: flex;
       justify-content: flex-end;
@@ -65,8 +65,8 @@
     }
 
     .page {
-      width: 210mm;
-      max-width: 760px;
+      width: 148mm;
+      max-width: 148mm;
       min-height: auto;
       margin: 16px auto;
       background: #fff;
@@ -80,53 +80,55 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      padding: 14px 20px;
+      gap: 10px;
+      padding: 12px 14px;
       border-bottom: 2px solid var(--g900);
     }
 
-    .brand-left { display: flex; align-items: center; gap: 12px; }
+    .brand-left { display: flex; align-items: center; gap: 10px; }
 
     .logo {
-      width: 46px;
-      height: 46px;
+      width: 40px;
+      height: 40px;
       object-fit: contain;
       border-radius: 8px;
+      flex-shrink: 0;
     }
 
     .shop-name {
       margin: 0;
       color: var(--g900);
-      font-size: 19px;
+      font-size: 18px;
       line-height: 1.2;
       font-weight: 800;
     }
 
     .shop-meta {
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
       margin-top: 2px;
     }
 
     .doc-chip {
       text-align: right;
       color: var(--g900);
+      flex-shrink: 0;
     }
 
-    .doc-chip strong { display: block; font-size: 15px; font-weight: 800; }
-    .doc-chip small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .doc-chip strong { display: block; font-size: 16px; font-weight: 800; }
+    .doc-chip small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 
-    .content { padding: 16px 20px; }
+    .content { padding: 14px; }
 
     .info-row {
       display: flex;
       justify-content: space-between;
-      gap: 14px;
+      gap: 12px;
       padding: 10px 12px;
       background: var(--g100);
       border-radius: 8px;
       margin-bottom: 14px;
-      font-size: 12.5px;
+      font-size: 13.5px;
       flex-wrap: wrap;
     }
     .info-row .label { color: var(--muted); font-weight: 700; }
@@ -137,16 +139,16 @@
     th {
       background: var(--g900);
       color: #fff;
-      padding: 8px 10px;
-      font-size: 12px;
+      padding: 7px 8px;
+      font-size: 12.5px;
       text-align: left;
       font-weight: 700;
     }
 
     td {
       border-bottom: 1px solid #e5f0eb;
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 7px 8px;
+      font-size: 14px;
       vertical-align: top;
     }
 
@@ -156,19 +158,20 @@
     .totals {
       margin-top: 14px;
       margin-left: auto;
-      width: 260px;
+      width: 100%;
+      max-width: 220px;
     }
 
     .totals tr td {
       padding: 6px 10px;
       border: none;
-      font-size: 13px;
+      font-size: 14px;
     }
     .totals tr td:last-child { text-align: right; font-weight: 700; }
     .totals tr.grand td {
       background: var(--g900);
       color: #fff;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
       padding: 9px 10px;
     }
@@ -177,10 +180,10 @@
     .due { color: var(--danger); }
 
     .section-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       color: var(--g900);
-      margin: 18px 0 8px;
+      margin: 16px 0 8px;
     }
 
     .note-box {
@@ -188,15 +191,15 @@
       padding: 10px 12px;
       background: var(--g100);
       border-radius: 8px;
-      font-size: 12.5px;
+      font-size: 13.5px;
       color: var(--text);
     }
 
     .signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 60px;
-      margin-top: 40px;
+      gap: 24px;
+      margin-top: 34px;
       text-align: center;
     }
 
@@ -204,19 +207,19 @@
       border-top: 1px solid #789286;
       padding-top: 6px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 12.5px;
     }
 
     .footer {
-      margin-top: 20px;
+      margin-top: 18px;
       padding-top: 10px;
       border-top: 1px solid var(--border);
       text-align: center;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
     }
 
-    @page { size: A4; margin: 10mm; }
+    @page { size: A5; margin: 8mm; }
 
     @media print {
       body { background: #fff; }

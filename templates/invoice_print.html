@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ইনভয়েস {{ sale.invoice_number }}</title>
+  <title>ইনভয়েস {{ sale.invoice_number }}</title>
   <style>
     @font-face {
       font-family: KalpurushLocal;
@@ -32,17 +32,15 @@
 
     body {
       margin: 0;
-      background:
-        linear-gradient(135deg, rgba(31, 122, 85, .10), rgba(242, 247, 244, 0) 34%),
-        #f2f7f4;
+      background: #f2f7f4;
       color: var(--text);
       font-family: KalpurushLocal, "Noto Sans Bengali", "Hind Siliguri", Arial, sans-serif;
-      font-size: 14px;
-      line-height: 1.45;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
     .toolbar {
-      max-width: 900px;
+      max-width: 148mm;
       margin: 18px auto 0;
       display: flex;
       justify-content: flex-end;
@@ -67,380 +65,166 @@
     }
 
     .page {
-      width: 210mm;
-      min-height: 297mm;
+      width: 148mm;
+      max-width: 148mm;
+      min-height: auto;
       margin: 16px auto;
       background: #fff;
       border: 1px solid rgba(220, 233, 226, .9);
       border-radius: 14px;
       box-shadow: 0 20px 60px rgba(13, 51, 38, .14);
-      padding: 0;
-      position: relative;
       overflow: hidden;
     }
 
     .brand-bar {
-      display: grid;
-      grid-template-columns: 82px 1fr auto;
-      gap: 16px;
+      display: flex;
       align-items: center;
-      background:
-        linear-gradient(135deg, rgba(13, 51, 38, .98), rgba(26, 99, 71, .94)),
-        var(--g900);
-      padding: 15mm 16mm 12mm;
-      color: #fff;
-      position: relative;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--g900);
     }
 
-    .brand-bar:after {
-      content: "";
-      position: absolute;
-      left: 16mm;
-      right: 16mm;
-      bottom: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #52c98a, #c8f5de, #52c98a);
-      border-radius: 99px 99px 0 0;
-    }
+    .brand-left { display: flex; align-items: center; gap: 10px; }
 
     .logo {
-      width: 72px;
-      height: 72px;
+      width: 40px;
+      height: 40px;
       object-fit: contain;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, .35);
-      padding: 6px;
-      background: #fff;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+      border-radius: 8px;
+      flex-shrink: 0;
     }
 
     .shop-name {
-      margin: 0 0 4px;
-      color: #fff;
-      font-size: 32px;
-      line-height: 1.15;
+      margin: 0;
+      color: var(--g900);
+      font-size: 18px;
+      line-height: 1.2;
       font-weight: 800;
     }
 
     .shop-meta {
-      color: rgba(255, 255, 255, .74);
-      font-size: 13px;
-    }
-
-    .invoice-chip {
-      background: rgba(255, 255, 255, .12);
-      border: 1px solid rgba(255, 255, 255, .24);
-      color: #fff;
-      border-radius: 12px;
-      padding: 12px 14px;
-      text-align: right;
-      font-weight: 800;
-      white-space: nowrap;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
-    }
-
-    .invoice-chip small {
-      display: block;
-      color: rgba(255, 255, 255, .68);
-      font-size: 12.5px;
-      font-weight: 700;
-      margin-bottom: 3px;
-    }
-
-    .content {
-      padding: 13mm 16mm 10mm;
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 0 12px;
-      color: var(--g900);
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .section-title:after {
-      content: "";
-      height: 1px;
-      background: var(--border);
-      flex: 1;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .info-box {
-      border: 1px solid rgba(220, 233, 226, .95);
-      border-radius: 12px;
-      padding: 13px 14px;
-      background: linear-gradient(180deg, #ffffff, #fbfdfc);
-      min-height: 112px;
-      box-shadow: 0 6px 18px rgba(13, 51, 38, .045);
-    }
-
-    .label {
       color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 1px;
+      font-size: 12px;
+      margin-top: 2px;
     }
 
-    .value {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 8px;
+    .doc-chip {
+      text-align: right;
+      color: var(--g900);
+      flex-shrink: 0;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      overflow: hidden;
-      page-break-inside: auto;
-    }
+    .doc-chip strong { display: block; font-size: 16px; font-weight: 800; }
+    .doc-chip small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-    tr, th, td { break-inside: avoid; page-break-inside: avoid; }
+    .content { padding: 14px; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--g100);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 13.5px;
+      flex-wrap: wrap;
+    }
+    .info-row .label { color: var(--muted); font-weight: 700; }
+    .info-row .value { color: var(--g900); font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; }
 
     th {
       background: var(--g900);
       color: #fff;
-      border: 1px solid var(--g900);
-      padding: 10px 9px;
-      font-size: 13px;
+      padding: 7px 8px;
+      font-size: 12.5px;
       text-align: left;
+      font-weight: 700;
     }
 
     td {
-      border: 1px solid #e5f0eb;
-      padding: 9px;
+      border-bottom: 1px solid #e5f0eb;
+      padding: 7px 8px;
+      font-size: 14px;
       vertical-align: top;
-    }
-
-    tbody tr:nth-child(even) td {
-      background: #fbfdfc;
     }
 
     .num { text-align: right; white-space: nowrap; }
     .center { text-align: center; }
 
     .totals {
-      display: grid;
-      grid-template-columns: 1fr 300px;
-      gap: 18px;
-      margin-top: 18px;
-      align-items: start;
+      margin-top: 14px;
+      margin-left: auto;
+      width: 100%;
+      max-width: 220px;
     }
 
-    .note {
-      color: var(--muted);
-      border: 1px solid rgba(220, 233, 226, .95);
-      border-radius: 12px;
-      padding: 14px;
-      min-height: 120px;
-      background: linear-gradient(180deg, #fbfdfc, #f7fbf9);
+    .totals tr td {
+      padding: 6px 10px;
+      border: none;
+      font-size: 14px;
     }
-
-    .summary td {
-      padding: 8px 10px;
-      background: #fff;
-    }
-
-    .summary tr:first-child td:first-child {
-      border-top-left-radius: 10px;
-    }
-
-    .summary tr:first-child td:last-child {
-      border-top-right-radius: 10px;
-    }
-
-    .summary tr:last-child td {
-      background: linear-gradient(135deg, var(--g800), var(--g900));
+    .totals tr td:last-child { text-align: right; font-weight: 700; }
+    .totals tr.grand td {
+      background: var(--g900);
       color: #fff;
-      border-color: var(--g900);
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 800;
-      padding: 11px 10px;
+      padding: 9px 10px;
+    }
+    .totals tr.grand td:first-child { border-radius: 8px 0 0 8px; }
+    .totals tr.grand td:last-child { border-radius: 0 8px 8px 0; }
+    .due { color: var(--danger); }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--g900);
+      margin: 16px 0 8px;
     }
 
-    .due { color: var(--danger); font-weight: 800; }
+    .note-box {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--g100);
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--text);
+    }
 
     .signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 60px;
-      margin-top: 48px;
+      gap: 24px;
+      margin-top: 34px;
       text-align: center;
     }
 
     .signature {
       border-top: 1px solid #789286;
-      padding-top: 8px;
+      padding-top: 6px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12.5px;
     }
 
     .footer {
-      margin: 0 16mm 10mm;
-      color: var(--muted);
+      margin-top: 18px;
+      padding-top: 10px;
       border-top: 1px solid var(--border);
-      padding-top: 8px;
       text-align: center;
-      font-size: 13px;
-      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
     }
 
-    @page {
-      size: A4;
-      margin: 8mm;
-    }
+    @page { size: A5; margin: 8mm; }
 
     @media print {
       body { background: #fff; }
       .toolbar { display: none; }
-      .page {
-        width: auto;
-        min-height: auto;
-        margin: 0;
-        border-radius: 0;
-        border: 0;
-        box-shadow: none;
-        overflow: visible;
-      }
-
-      .brand-bar {
-        padding: 9mm 10mm 7mm;
-        grid-template-columns: 62px 1fr auto;
-        gap: 12px;
-      }
-
-      .brand-bar:after {
-        left: 10mm;
-        right: 10mm;
-        height: 3px;
-      }
-
-      .logo {
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-      }
-
-      .shop-name {
-        font-size: 25px;
-        margin-bottom: 2px;
-      }
-
-      .shop-meta,
-      .invoice-chip small {
-        font-size: 11.5px;
-      }
-
-      .invoice-chip {
-        padding: 8px 10px;
-        border-radius: 9px;
-        font-size: 13px;
-      }
-
-      .content {
-        padding: 8mm 10mm 6mm;
-      }
-
-      .section-title {
-        margin-bottom: 8px;
-        font-size: 15px;
-      }
-
-      .info-grid {
-        gap: 9px;
-        margin-bottom: 11px;
-      }
-
-      .info-box {
-        min-height: auto;
-        padding: 8px 10px;
-        border-radius: 9px;
-        box-shadow: none;
-      }
-
-      .label {
-        font-size: 11.5px;
-      }
-
-      .value {
-        font-size: 13.5px;
-        margin-bottom: 4px;
-      }
-
-      th {
-        padding: 6px 7px;
-        font-size: 11.5px;
-      }
-
-      td {
-        padding: 5px 7px;
-        font-size: 12.5px;
-        line-height: 1.3;
-      }
-
-      .totals {
-        grid-template-columns: 1fr 270px;
-        gap: 12px;
-        margin-top: 10px;
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-
-      .note {
-        min-height: 78px;
-        padding: 9px 10px;
-        border-radius: 9px;
-        font-size: 12.5px;
-      }
-
-      .summary td {
-        padding: 5px 8px;
-      }
-
-      .summary tr:last-child td {
-        font-size: 14px;
-        padding: 8px;
-      }
-
-      .signatures {
-        margin-top: 28px;
-        gap: 42px;
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-
-      .signature {
-        font-size: 12.5px;
-        padding-top: 6px;
-      }
-
-      .footer {
-        margin: 0 10mm 0;
-        font-size: 11.5px;
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-
-      section {
-        break-inside: auto;
-      }
-
-      .info-grid,
-      .info-box {
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
+      .page { width: auto; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
     }
   </style>
 </head>
@@ -452,85 +236,79 @@
 
   <main class="page">
     <header class="brand-bar">
-      <img class="logo" src="{% static 'images/logo.jpeg' %}" alt="Logo">
-      <div>
-        <h1 class="shop-name">তারুণ্য প্রকাশন</h1>
-        <div class="shop-meta">
-          ৩৮ বাংলাবাজার (৩য় তলা), ঢাকা-১১০০<br>
-          ফোন: ০১৭৬১-৮০৪৫১১ | ইমেইল: tarunyaprokashon@gmail.com
+      <div class="brand-left">
+        <img class="logo" src="{% static 'images/logo.jpeg' %}" alt="Logo">
+        <div>
+          <h1 class="shop-name">তারুণ্য প্রকাশন</h1>
+          <div class="shop-meta">৩৮ বাংলাবাজার (৩য় তলা), ঢাকা-১১০০ | ০১৭৬১-৮০৪৫১১</div>
         </div>
       </div>
-      <div class="invoice-chip">
-        <small>বিক্রয় রশিদ</small>
-        #{{ sale.invoice_number }}
+      <div class="doc-chip">
+        <strong>#{{ sale.invoice_number }}</strong>
+        <small>{{ sale.created_at|date:"d M, Y, h:i A" }}</small>
       </div>
     </header>
 
     <div class="content">
-    <section>
-      <div class="section-title">ইনভয়েস তথ্য</div>
-      <div class="info-grid">
-        <div class="info-box">
-          <div class="label">গ্রাহকের নাম</div>
+      <div class="info-row">
+        <div>
+          <div class="label">গ্রাহক</div>
           <div class="value">{{ sale.customer_name|default:"Walk-in Customer" }}</div>
-          <div class="label">ফোন</div>
-          <div class="value">{{ sale.customer_phone|default:"-" }}</div>
-          <div class="label">ঠিকানা</div>
-          <div class="value">{{ sale.customer.address|default:"-" }}</div>
         </div>
-        <div class="info-box">
-          <div class="label">ইনভয়েস নম্বর</div>
-          <div class="value">#{{ sale.invoice_number }}</div>
-          <div class="label">তারিখ</div>
-          <div class="value" id="invoice-date" data-iso="{{ sale.created_at|date:'c' }}">{{ sale.created_at|date:"d F, Y, h:i A" }}</div>
-          <div class="label">পেমেন্ট</div>
-          <div class="value">
-            {% if sale.payment_method == 'cash' %}নগদ{% elif sale.payment_method == 'bank' %}ব্যাংক ট্রান্সফার{% elif sale.payment_method == 'mobile' %}মোবাইল ব্যাংকিং{% else %}ক্রেডিট{% endif %}
-            /
-            {% if sale.status == 'paid' %}পরিশোধিত{% elif sale.status == 'partial' %}আংশিক{% else %}বাকি{% endif %}
-          </div>
+        {% if sale.customer_phone %}
+        <div>
+          <div class="label">ফোন</div>
+          <div class="value">{{ sale.customer_phone }}</div>
+        </div>
+        {% endif %}
+        <div>
+          <div class="label">স্ট্যাটাস</div>
+          <div class="value">{% if sale.status == 'paid' %}পরিশোধিত{% elif sale.status == 'partial' %}আংশিক{% else %}বাকি{% endif %}</div>
         </div>
       </div>
-    </section>
 
-    <section>
-      <div class="section-title">বইয়ের তালিকা</div>
       <table>
         <thead>
           <tr>
-            <th class="center" style="width: 42px;">নং</th>
-            <th>বইয়ের নাম</th>
-            <th class="num" style="width: 95px;">মূল্য</th>
-            <th class="center" style="width: 70px;">পরিমাণ</th>
-            <th class="num" style="width: 95px;">ছাড়</th>
-            <th class="num" style="width: 110px;">মোট</th>
+            <th style="width:26px" class="center">নং</th>
+            <th>বইয়ের নাম</th>
+            <th class="center" style="width:42px">পরি.</th>
+            <th class="num" style="width:65px">দাম</th>
+            <th class="num" style="width:60px">ছাড়</th>
+            <th class="num" style="width:75px">মোট</th>
           </tr>
         </thead>
         <tbody>
           {% for item in sale.items.all %}
           <tr>
             <td class="center">{{ forloop.counter }}</td>
-            <td>
-              <strong>{{ item.book.title }}</strong>
-              {% if item.book.author %}<br><span style="color: var(--muted); font-size: 13px;">{{ item.book.author }}</span>{% endif %}
-            </td>
-            <td class="num">৳{{ item.unit_price }}</td>
+            <td>{{ item.book.title }}</td>
             <td class="center">{{ item.quantity }}</td>
+            <td class="num">৳{{ item.unit_price }}</td>
             <td class="num">৳{{ item.discount }}</td>
             <td class="num">৳{{ item.total }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-    </section>
 
-    {% if sale.payments.all %}
-    <section>
+      <table class="totals">
+        <tr><td>সাবটোটাল</td><td>৳{{ sale.subtotal }}</td></tr>
+        {% if sale.total_discount > 0 %}<tr><td>ছাড়</td><td>- ৳{{ sale.total_discount }}</td></tr>{% endif %}
+        {% if sale.packaging_charge > 0 %}<tr><td>প্যাকিং চার্জ</td><td>৳{{ sale.packaging_charge }}</td></tr>{% endif %}
+        {% if sale.courier_charge > 0 %}<tr><td>কুরিয়ার চার্জ</td><td>৳{{ sale.courier_charge }}</td></tr>{% endif %}
+        {% if sale.transaction_fee > 0 %}<tr><td>ট্রানজেকশন ফি</td><td>৳{{ sale.transaction_fee }}</td></tr>{% endif %}
+        <tr><td>পরিশোধিত</td><td>৳{{ sale.paid_amount }}</td></tr>
+        <tr><td>বাকি</td><td class="due">৳{{ sale.due_amount }}</td></tr>
+        <tr class="grand"><td>মোট</td><td>৳{{ sale.total }}</td></tr>
+      </table>
+
+      {% if sale.payments.all %}
       <div class="section-title">পেমেন্ট ইতিহাস</div>
       <table>
         <thead>
           <tr>
-            <th style="width: 130px;">তারিখ</th>
+            <th style="width:120px">তারিখ</th>
             <th>মাধ্যম</th>
             <th class="num">পরিমাণ</th>
             <th class="num">ছাড়</th>
@@ -547,97 +325,33 @@
           {% endfor %}
         </tbody>
       </table>
-    </section>
-    {% endif %}
+      {% endif %}
 
-    <section class="totals">
-      <div class="note">
-        <strong>নোট:</strong><br>
-        {% if sale.note %}{{ sale.note }}{% else %}বিক্রিত বই ফেরত নেওয়ার আগে দোকানের নিয়ম যাচাই করুন। আপনার পাঠাভ্যাস সমৃদ্ধ হোক।{% endif %}
-        {% if sale.previous_due > 0 %}<br><br><strong>পূর্বের বাকি:</strong> ৳{{ sale.previous_due }}{% endif %}
+      {% if sale.note or sale.previous_due > 0 %}
+      <div class="note-box">
+        {% if sale.note %}<strong>নোট:</strong> {{ sale.note }}{% endif %}
+        {% if sale.previous_due > 0 %}{% if sale.note %}<br>{% endif %}<strong>পূর্বের বাকি:</strong> ৳{{ sale.previous_due }}{% endif %}
       </div>
+      {% endif %}
 
-      <table class="summary">
-        <tr>
-          <td>সাবটোটাল</td>
-          <td class="num">৳{{ sale.subtotal }}</td>
-        </tr>
-        <tr>
-          <td>ছাড়</td>
-          <td class="num">- ৳{{ sale.total_discount }}</td>
-        </tr>
-        {% if sale.packaging_charge > 0 %}
-        <tr>
-          <td>প্যাকিং চার্জ</td>
-          <td class="num">৳{{ sale.packaging_charge }}</td>
-        </tr>
-        {% endif %}
-        {% if sale.courier_charge > 0 %}
-        <tr>
-          <td>কুরিয়ার চার্জ</td>
-          <td class="num">৳{{ sale.courier_charge }}</td>
-        </tr>
-        {% endif %}
-        {% if sale.transaction_fee > 0 %}
-        <tr>
-          <td>ট্রানজেকশন ফি</td>
-          <td class="num">৳{{ sale.transaction_fee }}</td>
-        </tr>
-        {% endif %}
-        <tr>
-          <td>পরিশোধিত</td>
-          <td class="num">৳{{ sale.paid_amount }}</td>
-        </tr>
-        <tr>
-          <td>বাকি</td>
-          <td class="num due">৳{{ sale.due_amount }}</td>
-        </tr>
-        <tr>
-          <td>সর্বমোট</td>
-          <td class="num">৳{{ sale.total }}</td>
-        </tr>
-      </table>
-    </section>
-
-    <section class="signatures">
-      <div class="signature">গ্রাহকের স্বাক্ষর</div>
-      <div class="signature">তারুণ্য প্রকাশন-এর পক্ষে</div>
-    </section>
+      <section class="signatures">
+        <div class="signature">গ্রাহকের স্বাক্ষর</div>
+        <div class="signature">তারুণ্য প্রকাশন-এর পক্ষে</div>
+      </section>
     </div>
 
-    <div class="footer">ধন্যবাদ। আবার আসবেন।</div>
+    <div class="footer">তারুণ্য প্রকাশন | tarunyaprokashon@gmail.com</div>
   </main>
 
   <script>
     const bnDigits = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
-    function toBanglaDigits(text) {
-      return text.replace(/\d/g, digit => bnDigits[Number(digit)]);
-    }
+    function toBanglaDigits(text) { return text.replace(/\d/g, d => bnDigits[Number(d)]); }
     function convertTextNodes(node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        node.nodeValue = toBanglaDigits(node.nodeValue);
-        return;
-      }
-      if (node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT", "STYLE"].includes(node.tagName)) return;
+      if (node.nodeType === Node.TEXT_NODE) { node.nodeValue = toBanglaDigits(node.nodeValue); return; }
+      if (node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT","STYLE"].includes(node.tagName)) return;
       node.childNodes.forEach(convertTextNodes);
     }
-    function renderBengaliInvoiceDate() {
-      const el = document.getElementById('invoice-date');
-      if (!el || !el.dataset.iso) return;
-      const d = new Date(el.dataset.iso);
-      if (isNaN(d)) return;
-      const datePart = d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
-      const timePart = d.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit', hour12: true });
-      el.textContent = `${datePart}, ${timePart}`;
-    }
-
-    window.addEventListener("load", () => {
-      convertTextNodes(document.body);
-      renderBengaliInvoiceDate();
-      // এখানে আগে window.print() স্বয়ংক্রিয়ভাবে চালু হতো প্রতিবার পেজ খোলার সাথে সাথে —
-      // পুরনো একটা ইনভয়েস শুধু দেখার জন্য খুললেও প্রতিবার প্রিন্ট ডায়ালগ চালু হয়ে যেত।
-      // উপরের টুলবারে আগে থেকেই "প্রিন্ট করুন" বাটন আছে, তাই এখন সেটাই একমাত্র ট্রিগার।
-    });
+    window.addEventListener("load", () => convertTextNodes(document.body));
   </script>
 </body>
 </html>

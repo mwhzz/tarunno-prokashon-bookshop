@@ -109,6 +109,49 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
     serializer_class = CashTransactionSerializer
     permission_classes = [IsAdmin]
 
+    # sale/expense/purchase এন্ট্রি অন্য মডেল (Sale/Expense/PurchaseBill) থেকে স্বয়ংক্রিয়ভাবে
+    # আসে — এগুলো এখান থেকে সরাসরি এডিট/ডিলিট করলে মূল রেকর্ডের হিসাব (paid_amount, due
+    # ইত্যাদি) আর ক্যাশ লেজারের সাথে মিলবে না। শুধু ম্যানুয়াল এন্ট্রি (cash_in/cash_out/
+    # adjustment_in/adjustment_out) — যেগুলোর কোনো লিংকড উৎস নেই — এখান থেকে বদলানো নিরাপদ।
+    AUTO_LINKED_TYPES = {'sale', 'expense', 'purchase'}
+
+    def _block_if_auto_linked(self, instance):
+        if instance.transaction_type in self.AUTO_LINKED_TYPES:
+            return Response(
+                {'error': 'এই এন্ট্রি স্বয়ংক্রিয়ভাবে বিক্রয়/খরচ/ক্রয় থেকে এসেছে — এখান থেকে সরাসরি এডিট বা ডিলিট করা যাবে না। মূল রেকর্ড থেকে পরিবর্তন করুন।'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        blocked = self._block_if_auto_linked(instance)
+        if blocked:
+            return blocked
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        blocked = self._block_if_auto_linked(instance)
+        if blocked:
+            return blocked
+        response = super().partial_update(request, *args, **kwargs)
+        # CashTransaction.save() নিজে থেকেই ব্যালেন্স রিক্যালকুলেট করে, তবু নিশ্চিত হতে আবার করা হচ্ছে
+        instance.daily_cash.update_closing_balance()
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        blocked = self._block_if_auto_linked(instance)
+        if blocked:
+            return blocked
+        daily_cash = instance.daily_cash
+        response = super().destroy(request, *args, **kwargs)
+        # save()-এর মতো delete()-এ কোনো হুক নেই, তাই ম্যানুয়ালি ব্যালেন্স রিক্যালকুলেট করতে হচ্ছে —
+        # নাহলে এন্ট্রি মুছে গেলেও closing_balance পুরোনো (ভুল) মানই দেখাতে থাকতো
+        daily_cash.update_closing_balance()
+        return response
+
     def create(self, request, *args, **kwargs):
         daily_cash = DailyCash.get_for_today()
         if daily_cash.is_closed:

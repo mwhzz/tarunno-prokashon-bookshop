@@ -228,6 +228,15 @@
 .tx-amount.plus  { color: var(--g600); }
 .tx-amount.minus { color: var(--danger); }
 
+.tx-actions { display: flex; gap: 4px; flex-shrink: 0; min-width: 54px; }
+.tx-action-btn {
+  width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--border);
+  background: #fff; color: var(--text2); cursor: pointer;
+  display: grid; place-items: center; transition: all .14s;
+}
+.tx-action-btn:hover { background: var(--g100); border-color: var(--accent); color: var(--accent); }
+.tx-action-btn.danger:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+
 /* ─── ENTRY FORM ─── */
 .entry-panel {
   background: #fff;
@@ -612,6 +621,8 @@ async function fetchTodayCash() {
 
     const txns = [...data.transactions].reverse();
 
+    const MANUAL_TX_TYPES = ['cash_in', 'cash_out', 'adjustment_in', 'adjustment_out'];
+
     txList.innerHTML = txns.map(t => {
       const isPlus  = ['sale','cash_in','adjustment_in'].includes(t.transaction_type);
       const iconMap = {
@@ -621,13 +632,15 @@ async function fetchTodayCash() {
         cash_out:       { icon:'💸', cls:'out'  },
         expense:        { icon:'🧾', cls:'expense'},
         adjustment_out: { icon:'➖', cls:'out'  },
+        purchase:       { icon:'🏢', cls:'out'  },
       };
-      const { icon, cls } = iconMap[t.transaction_type] || { icon:'💰', cls:'in' };
+      const { icon: txIcon, cls } = iconMap[t.transaction_type] || { icon:'💰', cls:'in' };
       const time = new Date(t.timestamp).toLocaleTimeString('bn-BD', { hour:'2-digit', minute:'2-digit' });
+      const isManual = MANUAL_TX_TYPES.includes(t.transaction_type);
 
       return `
         <div class="tx-row">
-          <div class="tx-icon ${cls}">${icon}</div>
+          <div class="tx-icon ${cls}">${txIcon}</div>
           <div class="tx-info">
             <span class="tx-type">${t.type_display || t.transaction_type}</span>
             <span class="tx-note">${t.note || '—'}</span>
@@ -636,6 +649,11 @@ async function fetchTodayCash() {
           <div class="tx-amount ${isPlus ? 'plus' : 'minus'}">
             ${isPlus ? '+' : '−'} ৳${num(t.amount)}
           </div>
+          ${isManual && !currentDay.is_closed ? `
+          <div class="tx-actions">
+            <button class="tx-action-btn" onclick="editTransaction(${t.id})" title="এডিট করুন">${icon('edit', 13)}</button>
+            <button class="tx-action-btn danger" onclick="deleteTransaction(${t.id})" title="মুছে ফেলুন">${icon('trash', 13)}</button>
+          </div>` : '<div class="tx-actions"></div>'}
         </div>`;
     }).join('');
 
@@ -688,6 +706,83 @@ async function addTransaction() {
   } finally {
     btn.disabled    = false;
     btn.textContent = '✅ ট্রানজেকশন সেভ করুন';
+  }
+}
+
+/* ══════════════════════════
+   EDIT / DELETE TRANSACTION (শুধু ম্যানুয়াল এন্ট্রি — cash_in/cash_out/adjustment)
+══════════════════════════ */
+async function editTransaction(id) {
+  const t = (currentDay?.transactions || []).find(x => x.id === id);
+  if (!t) return;
+
+  let html = `
+    <div id="edit-tx-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
+      <div class="form-card" style="width:380px; padding:22px">
+        <h3 style="margin-bottom:14px">${t.type_display} এডিট করুন</h3>
+        <div class="form-group">
+          <label>পরিমাণ (Amount)</label>
+          <input type="number" id="edit-tx-amount" value="${t.amount}" min="1" style="width:100%">
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label>নোট</label>
+          <input type="text" id="edit-tx-note" value="${(t.note || '').replace(/"/g, '&quot;')}" style="width:100%">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px">
+          <button class="btn btn-ghost" onclick="document.getElementById('edit-tx-modal').remove()">বাতিল</button>
+          <button class="btn btn-primary" id="confirm-edit-tx-btn">সেভ করুন</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const modalEl = document.getElementById('edit-tx-modal');
+  wireModalDismiss(modalEl, () => modalEl.remove());
+
+  document.getElementById('confirm-edit-tx-btn').onclick = async () => {
+    const btn = document.getElementById('confirm-edit-tx-btn');
+    if (btn.disabled) return;
+
+    const amount = document.getElementById('edit-tx-amount').value;
+    const note   = document.getElementById('edit-tx-note').value;
+    if (!amount || Number(amount) <= 0) {
+      toast('সঠিক পরিমাণ লিখুন', 'error');
+      return;
+    }
+
+    const ok = await confirmModal(`এই এন্ট্রির পরিমাণ ৳${num(t.amount)} থেকে ৳${num(amount)}-এ বদলে দিতে চান? আজকের ক্যাশের হিসাবও সেই অনুযায়ী বদলে যাবে।`);
+    if (!ok) return;
+
+    btn.disabled = true;
+    btn.textContent = 'সেভ হচ্ছে...';
+    try {
+      await api(`/accounts/transactions/${id}/`, 'PATCH', { amount, note });
+      toast('এন্ট্রি আপডেট হয়েছে।');
+      modalEl.remove();
+      fetchTodayCash();
+    } catch (e) {
+      toast(e?.error || 'আপডেট করা যায়নি।', 'error');
+      btn.disabled = false;
+      btn.textContent = 'সেভ করুন';
+    }
+  };
+}
+
+async function deleteTransaction(id) {
+  const t = (currentDay?.transactions || []).find(x => x.id === id);
+  if (!t) return;
+
+  const ok = await confirmModal(
+    `"${t.type_display}" — ৳${num(t.amount)} এন্ট্রিটা মুছে ফেলতে চান?\n\nআজকের ক্যাশের হিসাব সেই অনুযায়ী বদলে যাবে। এই কাজটি বাতিল করা যাবে না।`,
+    { danger: true, requireText: 'DELETE' }
+  );
+  if (!ok) return;
+
+  try {
+    await api(`/accounts/transactions/${id}/`, 'DELETE');
+    toast('এন্ট্রি মুছে ফেলা হয়েছে।');
+    fetchTodayCash();
+  } catch (e) {
+    toast(e?.error || 'মুছে ফেলা যায়নি।', 'error');
   }
 }
 

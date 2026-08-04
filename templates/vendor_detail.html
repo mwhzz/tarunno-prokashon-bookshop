@@ -208,6 +208,7 @@ async function loadBills() {
               <td style="white-space:nowrap">
                 <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">${icon('eye', 14)} বিস্তারিত</button>
                 ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
+                <a class="btn btn-ghost btn-sm" href="/api/purchase/bills/${b.id}/print_receipt/" target="_blank" style="text-decoration:none">${icon('printer', 13)}</a>
               </td>
             </tr>
             <tr id="details-row-${b.id}" style="display:none">

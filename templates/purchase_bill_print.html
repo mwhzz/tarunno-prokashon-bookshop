@@ -1,0 +1,346 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ক্রয় বিল #{{ bill.id }}</title>
+  <style>
+    @font-face {
+      font-family: KalpurushLocal;
+      src: url("{% static 'fonts/kalpurush.ttf' %}") format("truetype");
+      font-weight: 400;
+    }
+
+    :root {
+      --g900: #0d3326;
+      --g800: #164d3a;
+      --g700: #1a6347;
+      --g600: #1f7a55;
+      --g100: #eafaf2;
+      --border: #dce9e2;
+      --text: #102119;
+      --muted: #667f73;
+      --danger: #c53030;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body {
+      margin: 0;
+      background: #f2f7f4;
+      color: var(--text);
+      font-family: KalpurushLocal, "Noto Sans Bengali", "Hind Siliguri", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .toolbar {
+      max-width: 760px;
+      margin: 18px auto 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 14px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      background: var(--g600);
+      color: #fff;
+      font: 700 14px KalpurushLocal, sans-serif;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--g700);
+      border: 1px solid var(--border);
+    }
+
+    .page {
+      width: 210mm;
+      max-width: 760px;
+      min-height: auto;
+      margin: 16px auto;
+      background: #fff;
+      border: 1px solid rgba(220, 233, 226, .9);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(13, 51, 38, .14);
+      overflow: hidden;
+    }
+
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 2px solid var(--g900);
+    }
+
+    .brand-left { display: flex; align-items: center; gap: 12px; }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .shop-name {
+      margin: 0;
+      color: var(--g900);
+      font-size: 19px;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .shop-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .doc-chip {
+      text-align: right;
+      color: var(--g900);
+    }
+
+    .doc-chip strong { display: block; font-size: 15px; font-weight: 800; }
+    .doc-chip small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    .content { padding: 16px 20px; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      background: var(--g100);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+      flex-wrap: wrap;
+    }
+    .info-row .label { color: var(--muted); font-weight: 700; }
+    .info-row .value { color: var(--g900); font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      background: var(--g900);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    td {
+      border-bottom: 1px solid #e5f0eb;
+      padding: 8px 10px;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    .num { text-align: right; white-space: nowrap; }
+    .center { text-align: center; }
+
+    .totals {
+      margin-top: 14px;
+      margin-left: auto;
+      width: 260px;
+    }
+
+    .totals tr td {
+      padding: 6px 10px;
+      border: none;
+      font-size: 13px;
+    }
+    .totals tr td:last-child { text-align: right; font-weight: 700; }
+    .totals tr.grand td {
+      background: var(--g900);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 9px 10px;
+    }
+    .totals tr.grand td:first-child { border-radius: 8px 0 0 8px; }
+    .totals tr.grand td:last-child { border-radius: 0 8px 8px 0; }
+    .due { color: var(--danger); }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--g900);
+      margin: 18px 0 8px;
+    }
+
+    .note-box {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--g100);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: var(--text);
+    }
+
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .signature {
+      border-top: 1px solid #789286;
+      padding-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    @page { size: A4; margin: 10mm; }
+
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .page { width: auto; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn secondary" type="button" onclick="window.close()">বন্ধ করুন</button>
+    <button class="btn" type="button" onclick="window.print()">প্রিন্ট করুন</button>
+  </div>
+
+  <main class="page">
+    <header class="brand-bar">
+      <div class="brand-left">
+        <img class="logo" src="{% static 'images/logo.jpeg' %}" alt="Logo">
+        <div>
+          <h1 class="shop-name">তারুণ্য প্রকাশন</h1>
+          <div class="shop-meta">৩৮ বাংলাবাজার (৩য় তলা), ঢাকা-১১০০ | ০১৭৬১-৮০৪৫১১</div>
+        </div>
+      </div>
+      <div class="doc-chip">
+        <strong>ক্রয় বিল #{{ bill.id }}</strong>
+        <small>{{ bill.purchase_date|date:"d M, Y" }}</small>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="info-row">
+        <div>
+          <div class="label">ভেন্ডর</div>
+          <div class="value">{{ bill.vendor_name }}{% if bill.vendor.vendor_code %} ({{ bill.vendor.vendor_code }}){% endif %}</div>
+        </div>
+        {% if bill.memo_number %}
+        <div>
+          <div class="label">মেমো নম্বর</div>
+          <div class="value">{{ bill.memo_number }}</div>
+        </div>
+        {% endif %}
+        <div>
+          <div class="label">স্ট্যাটাস</div>
+          <div class="value">{% if bill.status == 'paid' %}পরিশোধিত{% elif bill.status == 'partial' %}আংশিক{% else %}বাকি{% endif %}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px" class="center">নং</th>
+            <th>বইয়ের নাম</th>
+            <th class="center" style="width:60px">কপি</th>
+            <th class="num" style="width:90px">দর</th>
+            <th class="num" style="width:100px">মোট</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in bill.items.all %}
+          <tr>
+            <td class="center">{{ forloop.counter }}</td>
+            <td>{{ item.book_title }}</td>
+            <td class="center">{{ item.quantity }}</td>
+            <td class="num">৳{{ item.unit_price }}</td>
+            <td class="num">৳{{ item.total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <table class="totals">
+        <tr><td>সাবটোটাল</td><td>৳{{ bill.subtotal }}</td></tr>
+        {% if bill.discount > 0 %}<tr><td>ছাড়</td><td>- ৳{{ bill.discount }}</td></tr>{% endif %}
+        <tr><td>পরিশোধিত</td><td>৳{{ bill.paid_amount }}</td></tr>
+        <tr><td>বাকি</td><td class="due">৳{{ bill.due_amount }}</td></tr>
+        <tr class="grand"><td>মোট</td><td>৳{{ bill.total }}</td></tr>
+      </table>
+
+      {% if bill.payments.all %}
+      <div class="section-title">পেমেন্ট ইতিহাস</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px">তারিখ</th>
+            <th>মাধ্যম</th>
+            <th class="num">পরিমাণ</th>
+            <th class="num">ছাড়</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in bill.payments.all %}
+          <tr>
+            <td>{{ p.created_at|date:"d M, Y" }}</td>
+            <td>{{ p.get_method_display }}</td>
+            <td class="num">৳{{ p.amount }}</td>
+            <td class="num">৳{{ p.discount }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      {% if bill.note %}
+      <div class="note-box"><strong>নোট:</strong> {{ bill.note }}</div>
+      {% endif %}
+
+      <section class="signatures">
+        <div class="signature">ভেন্ডরের স্বাক্ষর</div>
+        <div class="signature">তারুণ্য প্রকাশন-এর পক্ষে</div>
+      </section>
+    </div>
+
+    <div class="footer">তারুণ্য প্রকাশন | tarunyaprokashon@gmail.com</div>
+  </main>
+
+  <script>
+    const bnDigits = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
+    function toBanglaDigits(text) { return text.replace(/\d/g, d => bnDigits[Number(d)]); }
+    function convertTextNodes(node) {
+      if (node.nodeType === Node.TEXT_NODE) { node.nodeValue = toBanglaDigits(node.nodeValue); return; }
+      if (node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT","STYLE"].includes(node.tagName)) return;
+      node.childNodes.forEach(convertTextNodes);
+    }
+    window.addEventListener("load", () => convertTextNodes(document.body));
+  </script>
+</body>
+</html>

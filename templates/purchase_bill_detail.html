@@ -56,18 +56,9 @@
   display:inline-flex; align-items:center; gap:6px;
   background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25);
   color:#fff; border-radius:9px; padding:8px 14px; font-size:13.5px; font-weight:700;
-  cursor:pointer; margin-bottom:12px;
+  cursor:pointer; margin-bottom:12px; text-decoration:none;
 }
 .pbd-print-btn:hover { background:rgba(255,255,255,.24); }
-
-@media print {
-  #sidebar, #topbar, .pbd-back, .pbd-print-btn, .pbd-actions { display:none !important; }
-  #content { padding:0 !important; overflow:visible !important; }
-  body { height:auto !important; overflow:visible !important; }
-  .pbd-hero { background:#fff !important; color:var(--g900) !important; }
-  .pbd-hero-title, .pbd-hero-meta, .pbd-hero-due-val { color:var(--g900) !important; }
-  .table-wrap { box-shadow:none !important; border:1px solid var(--border) !important; break-inside:avoid; }
-}
 </style>
 {% endblock %}
 
@@ -79,7 +70,7 @@
     <div>
       <div class="pbd-hero-title" id="b-title">লোড হচ্ছে...</div>
       <div class="pbd-hero-meta" id="b-meta"></div>
-      <button class="pbd-print-btn" onclick="window.print()"><span data-icon="printer" data-icon-size="13"></span> রশিদ প্রিন্ট করুন</button>
+      <a class="pbd-print-btn" href="/api/purchase/bills/{{ bill_id }}/print_receipt/" target="_blank"><span data-icon="printer" data-icon-size="13"></span> রশিদ প্রিন্ট করুন</a>
     </div>
     <div class="pbd-hero-due">
       <div class="pbd-hero-due-label">বাকি</div>

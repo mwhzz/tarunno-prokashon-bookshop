@@ -166,6 +166,7 @@ async function loadBills() {
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">
                 ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
+                <a class="btn btn-ghost btn-sm" href="/api/purchase/bills/${b.id}/print_receipt/" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none">${icon('printer', 13)}</a>
                 <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteBill(${b.id})" style="color:var(--danger)">${icon('trash', 13)} মুছুন</button>
               </td>
             </tr>`).join('')}

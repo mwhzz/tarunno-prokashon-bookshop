@@ -182,6 +182,17 @@ class PurchaseBillViewSet(viewsets.ModelViewSet):
 
         return Response(PurchaseBillSerializer(bill).data)
 
+    @action(detail=True, methods=['get'])
+    def print_receipt(self, request, pk=None):
+        """ভেন্ডরকে দেওয়ার মতো প্রিন্টযোগ্য ক্রয় বিলের রশিদ (বইয়ের নিজস্ব বিক্রয়মূল্য/কমিশন
+        দেখানো হয় না — সেটা দোকানের অভ্যন্তরীণ মার্জিনের তথ্য, ভেন্ডরের রশিদে না দেখানোই ভালো)।"""
+        from django.template.loader import render_to_string
+        from django.http import HttpResponse
+
+        bill = self.get_object()
+        html = render_to_string('purchase_bill_print.html', {'bill': bill}, request=request)
+        return HttpResponse(html)
+
     @action(detail=False, methods=['get'])
     def summary(self, request):
         qs = self.filter_queryset(self.get_queryset())

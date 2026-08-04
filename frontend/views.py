@@ -51,6 +51,10 @@ def purchase_bills_view(request):
     return render(request, 'purchase_bills.html')
 
 @login_required
+def purchase_bill_detail_view(request, id):
+    return render(request, 'purchase_bill_detail.html', {'bill_id': id})
+
+@login_required
 def vendors_view(request):
     return render(request, 'vendors.html')
 

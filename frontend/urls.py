@@ -9,6 +9,7 @@ urlpatterns = [
     # Purchase
     path('purchase/', views.purchase_entry_view, name='purchase_entry'),
     path('purchase/bills/', views.purchase_bills_view, name='purchase_bills'),
+    path('purchase/bills/<int:id>/', views.purchase_bill_detail_view, name='purchase_bill_detail'),
     path('purchase/vendors/', views.vendors_view, name='vendors'),
     path('purchase/vendors/<int:id>/', views.vendor_detail_view, name='vendor_detail'),
 

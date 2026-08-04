@@ -40,28 +40,6 @@
 .pb-find-btn:hover { background:var(--accent-dark); }
 .pb-search-box { flex:1; min-width:200px; }
 
-.pb-details {
-  padding: 14px 20px 18px 52px;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-}
-.pb-details-block { margin-bottom: 12px; }
-.pb-details-block:last-child { margin-bottom: 0; }
-.pb-details-label {
-  font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 6px;
-}
-.pb-mini-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 12px; background: #fff; border: 1px solid var(--border); border-radius: 9px;
-  font-size: 13px; margin-bottom: 5px;
-}
-.pb-mini-row:last-child { margin-bottom: 0; }
-.pb-mini-name { flex: 1; font-weight: 700; color: var(--g900); }
-.pb-mini-meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
-.pb-mini-total { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--g900); white-space: nowrap; }
-.pb-mini-total.paid { color: var(--accent); }
-
 @media (max-width:900px) { .pb-summary { grid-template-columns: 1fr 1fr; } }
 @media (max-width:520px) { .pb-summary { grid-template-columns: 1fr; } }
 </style>
@@ -176,7 +154,7 @@ async function loadBills() {
         </thead>
         <tbody>
           ${bills.map(b => `
-            <tr>
+            <tr style="cursor:pointer" onclick="location.href='/purchase/bills/${b.id}/'" title="বিস্তারিত দেখতে ক্লিক করুন">
               <td style="padding:10px 20px; font-family:monospace"><strong>#${b.id}</strong></td>
               <td>${b.vendor_name}${b.vendor_code ? '<br><small style="color:var(--muted)">' + b.vendor_code + '</small>' : ''}</td>
               <td>${b.memo_number || '—'}</td>
@@ -187,34 +165,8 @@ async function loadBills() {
               <td style="color:var(--muted); font-size:12px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-ghost btn-sm" onclick="toggleBillDetails(${b.id})">👁️ বিস্তারিত</button>
-                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
-                <button class="btn btn-ghost btn-sm" onclick="deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
-              </td>
-            </tr>
-            <tr id="details-row-${b.id}" style="display:none">
-              <td colspan="10" style="padding:0">
-                <div class="pb-details">
-                  <div class="pb-details-block">
-                    <div class="pb-details-label">📦 বিলের বইসমূহ</div>
-                    ${(b.items || []).map(i => `
-                      <div class="pb-mini-row">
-                        <span class="pb-mini-name">${i.book_title}</span>
-                        <span class="pb-mini-meta">${i.quantity} কপি × ৳${num(i.unit_price)}</span>
-                        <span class="pb-mini-total">৳${num(i.total)}</span>
-                      </div>`).join('')}
-                  </div>
-                  ${b.payments && b.payments.length ? `
-                    <div class="pb-details-block">
-                      <div class="pb-details-label">💰 পেমেন্ট ইতিহাস</div>
-                      ${b.payments.map(p => `
-                        <div class="pb-mini-row">
-                          <span class="pb-mini-meta">${fmtDate(p.created_at)}</span>
-                          <span class="pb-mini-name" style="flex:1">${p.method_display}</span>
-                          <span class="pb-mini-total paid">৳${num(p.amount)}</span>
-                        </div>`).join('')}
-                    </div>` : ''}
-                </div>
+                ${Number(b.due_amount) > 0 ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); collectVendorPayment(${b.id})">৳ পেমেন্ট দিন</button>` : ''}
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteBill(${b.id})" style="color:var(--danger)">🗑️ মুছুন</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -237,11 +189,6 @@ async function deleteBill(id) {
     const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
     toast('মুছে ফেলা যায়নি: ' + msg, 'error');
   }
-}
-
-function toggleBillDetails(billId) {
-  const row = document.getElementById(`details-row-${billId}`);
-  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
 }
 
 async function collectVendorPayment(billId) {

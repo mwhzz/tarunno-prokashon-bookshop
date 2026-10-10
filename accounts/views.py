@@ -117,7 +117,7 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
     AUTO_LINKED_TYPES = {'sale', 'expense', 'purchase'}
 
     def _block_if_auto_linked(self, instance):
-        reconciled = (instance.reference_id or '').startswith('cash_offset_repair_') or CashTransaction.objects.filter(
+        reconciled = (instance.reference_id or '').startswith(('cash_offset_repair_', 'opening_count_repair_')) or CashTransaction.objects.filter(
             reference_id=f'cash_offset_repair_20261010_{instance.pk}',
         ).exists()
         if instance.transaction_type in self.AUTO_LINKED_TYPES or reconciled:

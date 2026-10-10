@@ -140,3 +140,26 @@ class LegacyOffsetReconciliationTests(TestCase):
             self.assertEqual(client.patch(f'/api/accounts/transactions/{pk}/', {'amount': '1'}, format='json').status_code, 400)
             self.assertEqual(client.delete(f'/api/accounts/transactions/{pk}/').status_code, 400)
         self.assertEqual(CashTransaction.objects.count(), 3)
+
+
+class CountedOpeningTests(TestCase):
+    def test_counted_cash_moves_to_opening_without_adding_cash_twice(self):
+        import importlib
+        from django.apps import apps
+        from django.db import connection
+        from types import SimpleNamespace
+        day = DailyCash.objects.create(id=60, date='2026-10-10', opening_balance='1556.33', closing_balance='3523.00')
+        CashTransaction.objects.bulk_create([CashTransaction(
+            id=514, daily_cash=day, transaction_type='adjustment_in', amount='1966.67',
+            note='হাতে গুনে নগদ ৳৩,৫২৩.০০ আছে—মালিকের নিশ্চিত নির্দেশ অনুযায়ী নগদ সমন্বয় (১০ অক্টোবর ২০২৬)।',
+        )])
+        move = importlib.import_module('accounts.migrations.0004_move_counted_cash_to_opening').move_counted_cash_to_opening
+        move(apps, SimpleNamespace(connection=connection))
+        move(apps, SimpleNamespace(connection=connection))
+        day.refresh_from_db()
+        self.assertEqual(day.opening_balance, Decimal('3523.00'))
+        self.assertEqual(day.closing_balance, Decimal('3523.00'))
+        entry = CashTransaction.objects.get(pk=514)
+        self.assertEqual(entry.amount, 0)
+        self.assertIn('১,৯৬৬.৬৭', entry.note)
+        self.assertEqual(CashTransaction.objects.count(), 1)

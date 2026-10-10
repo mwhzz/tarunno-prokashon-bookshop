@@ -149,6 +149,16 @@ class SaleSubmission(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class DuePaymentSubmission(models.Model):
+    """A due collection that can be safely checked after a lost response."""
+    request_id = models.UUIDField(primary_key=True, editable=False)
+    target_kind = models.CharField(max_length=10)
+    target_id = models.PositiveBigIntegerField()
+    payload_hash = models.CharField(max_length=64)
+    result = models.JSONField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class Payment(models.Model):
     """ইনভয়েসের পেমেন্ট রেকর্ড (নগদ, বিকাশ, ব্যাংক ইত্যাদি)"""
     METHOD_CHOICES = [

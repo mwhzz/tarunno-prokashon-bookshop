@@ -154,60 +154,8 @@ class SaleViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def add_payment(self, request, pk=None):
-        """ইনভয়েসের বাকি টাকা জমা নেওয়া — চাইলে বাড়তি ছাড় (discount) দিয়ে ইনভয়েসটা
-        কম টাকায়ও পুরোপুরি ক্লোজ করা যাবে (যেমন বাকি ৳৫৭৭২ থাকলেও ৳৫৭৫০ নিয়ে ২২ টাকা ছাড় দিয়ে বন্ধ করা)।"""
-        from decimal import Decimal, InvalidOperation
-        from django.db import transaction
-        from accounts.models import CashTransaction, DailyCash
-        from .models import Payment
-
-        sale = self.get_object()
-        amount_str = request.data.get('amount', 0)
-        discount_str = request.data.get('discount', 0)
-        method = request.data.get('method', 'cash')
-
-        try:
-            amount = Decimal(str(amount_str or 0))
-            discount = Decimal(str(discount_str or 0))
-        except InvalidOperation:
-            return Response({'error': 'Invalid amount/discount format'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not amount.is_finite() or not discount.is_finite() or amount < 0 or discount < 0:
-            return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount + discount <= 0:
-            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        with transaction.atomic():
-            # sale-টাকে লক করে আবার পড়া হচ্ছে এবং due_amount আবার চেক করা হচ্ছে — দ্রুত
-            # দুইবার (ডাবল-ক্লিক) সাবমিট হলে দুইটা রিকোয়েস্টই get_object()-এর পুরোনো
-            # due_amount দেখে পাশ করে যেতে পারতো, ফলে বাকির চেয়ে বেশি পেমেন্ট বসে যেত।
-            sale = Sale.objects.select_for_update().get(pk=sale.pk)
-            if amount + discount > sale.due_amount:
-                return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # ১. পেমেন্ট রেকর্ড তৈরি
-            payment = Payment.objects.create(sale=sale, amount=amount, discount=discount, method=method)
-
-            # ২. ইনভয়েস আপডেট
-            sale.discount += discount
-            sale.total = sale.subtotal - sale.discount + sale.packaging_charge + sale.courier_charge + sale.transaction_fee
-            sale.paid_amount += amount
-            # Sale.save() অটোমেটিক due_amount এবং status আপডেট করবে
-            sale.save()
-
-            # ৩. কাস্টমার ব্যালেন্স আপডেট
-            if sale.customer:
-                sale.customer.total_due -= (amount + discount)
-                sale.customer.save()
-
-            # Payment's signal is the sole creator of the cash ledger entry.
-            if amount > 0 and method == 'cash':
-                note = f"বাকি আদায়: {sale.customer_name} — ইনভয়েস #{sale.invoice_number}"
-                if discount > 0:
-                    note += f" [ছাড় ৳{discount}]"
-                CashTransaction.objects.filter(reference_id=f"pay_{payment.id}").update(note=note)
-
-        return Response(SaleSerializer(sale).data)
+        from .due_payments import collect_invoice_due
+        return Response(collect_invoice_due(self.get_object().pk, request.data))
 
     @action(detail=True, methods=['post'])
     def remove_payment(self, request, pk=None):
@@ -642,47 +590,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def collect_other_due(self, request, pk=None):
-        """কোনো নির্দিষ্ট ইনভয়েসের সাথে যুক্ত নয় এমন বাকি (যেমন ওপেনিং ব্যালেন্স) থেকে টাকা
-        জমা নেওয়া — চাইলে বাড়তি ছাড় দিয়েও ক্লোজ করা যাবে।"""
-        from decimal import Decimal, InvalidOperation
-        from django.utils import timezone
-        from accounts.models import CashTransaction, DailyCash
-
-        customer = self.get_object()
-        amount_str = request.data.get('amount', 0)
-        discount_str = request.data.get('discount', 0)
-
-        try:
-            amount = Decimal(str(amount_str or 0))
-            discount = Decimal(str(discount_str or 0))
-        except InvalidOperation:
-            return Response({'error': 'Invalid amount/discount format'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if amount < 0 or discount < 0:
-            return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount + discount <= 0:
-            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-        if amount + discount > customer.total_due:
-            return Response({'error': 'পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না'}, status=status.HTTP_400_BAD_REQUEST)
-
-        customer.total_due -= (amount + discount)
-        customer.save()
-
-        if amount > 0:
-            daily_cash = DailyCash.get_for_today()
-            note = f"বাকি আদায় (ওপেনিং ব্যালেন্স): {customer.name}"
-            if discount > 0:
-                note += f" [ছাড় ৳{discount}]"
-            CashTransaction.objects.create(
-                daily_cash=daily_cash,
-                transaction_type='sale',
-                amount=amount,
-                note=note,
-                reference_id=f"customer_due_{customer.id}_{int(timezone.now().timestamp()*1000)}",
-            )
-            daily_cash.update_closing_balance()
-
-        return Response(CustomerSerializer(customer).data)
+        from .due_payments import collect_customer_due
+        return Response(collect_customer_due(self.get_object().pk, request.data))
 
 
 from rest_framework.decorators import api_view

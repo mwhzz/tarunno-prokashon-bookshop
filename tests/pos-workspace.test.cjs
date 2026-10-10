@@ -132,7 +132,7 @@ test('reload can resolve an uncertain sale even if that sale used the last stock
   const frozen=h.run('JSON.stringify(pendingSalePayload)');
   h.context.api=async()=>({results:[],next:null});await h.run('initPOS()');
   assert.equal(h.run('posStep'),'payment');assert.equal(h.run('cart.length'),1);
-  assert.equal(h.node('cart-stage').hidden,true);assert.equal(h.node('complete-btn').disabled,false);
+  assert.equal(h.node('cart-stage').hidden,false);assert.equal(h.node('complete-btn').disabled,false);
   let retried;h.context.sendCheckout=async body=>{retried=JSON.stringify(body);return{id:1,total:'160.00'};};
   h.run('showSuccessModal=()=>{}');await h.run('completeSale()');assert.equal(retried,frozen);
 });
@@ -151,4 +151,17 @@ test('fresh stock errors return to the ledger and block checkout until the row i
   assert.equal(h.run('posStep'),'books');assert.equal(h.run('cart[0].max'),0);
   assert.equal(h.node('checkout-btn').disabled,true);assert.ok(h.node('cart-scroll').innerHTML.includes('stock-error'));
   h.run('setQty(1,1)');assert.equal(h.run('cart[0].qty'),1);
+});
+
+
+test('ledger and payment remain visible together with adjustments and customer fields open',()=>{
+  const h=harness();h.run('renderPOS(document.getElementById("pos-root"));addToCart(1);goToPayment();');
+  const markup=h.node('pos-root').innerHTML;
+  assert.ok(markup.includes('class="sale-options-card"'));
+  assert.ok(!markup.includes('<details class="order-options"'));
+  assert.ok(!markup.includes('<section id="payment-stage" hidden'));
+  assert.equal(h.node('cart-stage').hidden,false);
+  assert.equal(h.node('payment-entry').hidden,false);
+  assert.equal(h.node('customer-area').hidden,false);
+  assert.equal(h.node('received-field').hidden,false);
 });

@@ -130,7 +130,7 @@ async function initPOS() {
 function renderPOS(container) {
   posStep = 'books';
   container.innerHTML = `
-  <div class="counter-steps" aria-label="বিক্রয়ের ধাপ"><span id="cart-step" class="active">১ <b>বই লিখুন</b></span><i>→</i><span id="payment-step">২ <b>টাকা নিন</b></span></div>
+  <div class="counter-steps" aria-label="বিক্রয়ের নিয়ম"><span id="cart-step" class="active">১ <b>বই ও পরিমাণ লিখুন</b></span><i>→</i><span id="payment-step">২ <b>ছাড় ও টাকা মিলিয়ে জমা দিন</b></span></div>
   <div id="checkout-error" role="alert" tabindex="-1" hidden></div>
   <section id="cart-stage" class="ledger-card">
     <header class="ledger-heading"><div><h2>বিক্রির খাতা</h2><p>বই বাছুন। পরিমাণ লিখুন। দাম নিজে বসবে।</p></div><button type="button" class="text-button danger" onclick="clearCart()">খাতা খালি করুন</button></header>
@@ -138,12 +138,12 @@ function renderPOS(container) {
       <div id="book-picker" class="book-picker" role="dialog" aria-label="বই বাছাই করুন" hidden><div class="picker-caption"><span id="result-count" role="status"></span><button type="button" class="text-button" onclick="closeBookPicker()">বন্ধ করুন ×</button></div><details class="picker-options"><summary>বিভাগ বা স্টক দিয়ে খুঁজুন</summary><div class="pos-filter-row"><label>বিভাগ<select id="filter-group" onchange="filterBooks()"><option value="">সব বিভাগ</option></select></label><label>সাজান<select id="filter-sort" onchange="filterBooks()"><option value="name">নাম অনুযায়ী</option><option value="stock-asc">কম স্টক আগে</option><option value="price-asc">কম দাম আগে</option><option value="price-desc">বেশি দাম আগে</option></select></label><label class="filter-check"><input id="filter-instock" type="checkbox" checked onchange="filterBooks()">দোকানে আছে</label><button type="button" class="text-button" onclick="resetFilters()">সব বই</button></div></details><div id="book-grid" onkeydown="handleGridKey(event)"></div></div>
     </div>
     <div class="ledger-table-wrap"><table class="cart-table"><thead><tr><th>বইয়ের নাম</th><th>পরিমাণ</th><th>প্রতি বইয়ের দাম</th><th>মোট টাকা</th><th><span class="sr-only">মুছুন</span></th></tr></thead><tbody id="cart-scroll"></tbody></table></div>
-    <div class="ledger-bottom"><div class="ledger-notes"><span id="cart-count-lbl">কোনো বই লেখা হয়নি</span><p id="draft-status" role="status">এই ব্রাউজারে অসম্পূর্ণ খাতা রাখা হয়।</p><details class="order-options"><summary>বিশেষ ছাড়, পাইকারি বিক্রয় বা বাড়তি খরচ</summary><div class="options-body"><div class="bf-field sale-mode"><label for="sale-type">বিক্রয়ের ধরন</label><select id="sale-type" onchange="toggleSaleType()"><option value="retail">খুচরা বিক্রয়</option><option value="wholesale">পাইকারি বিক্রয়</option></select></div><div id="ws-section" style="display:none"><div class="bf-field"><label for="wholesale-search">আগের পাইকারি ক্রেতা খুঁজুন</label><input id="wholesale-search" placeholder="নাম, কোড বা ফোন" oninput="searchWS()" autocomplete="off"><div id="wholesale-results"></div><input id="selected-ws-id" type="hidden"></div><p class="field-help">পুরোনো ক্রেতা বাছলে তাঁর কমিশন নিজে বসবে। নতুন হলে টাকা নেওয়ার ধাপে নাম ও ফোন লিখুন।</p></div><p id="discount-explanation" class="field-help"></p><div class="bf-row"><div class="bf-field"><label for="commission">ছাড় / কমিশন (%)</label><input id="commission" type="number" value="0" min="0" max="100" step="any" oninput="fromCommission()"></div><div class="bf-field"><label for="discount">সমপরিমাণ ছাড় (৳)</label><input id="discount" type="number" value="0" min="0" step="0.01" oninput="calcTotals(true)"></div></div><div class="bf-row charges"><div class="bf-field"><label for="pack">প্যাকিং (৳)</label><input id="pack" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div><div class="bf-field"><label for="courier">কুরিয়ার (৳)</label><input id="courier" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div><div class="bf-field"><label for="txfee">অন্য ফি (৳)</label><input id="txfee" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div></div><span id="adjustments-indicator" class="field-help"></span></div></details></div>
-      <div class="ledger-payable"><span>ক্রেতার কাছ থেকে নিন</span><strong id="cart-total">৳০</strong><small><b id="t-items">০</b> ধরনের বই · <b id="t-qty">০</b> কপি</small><button type="button" id="checkout-btn" class="pos-button primary wide" onclick="goToPayment()" disabled>টাকা নিন →</button></div>
-    </div>
+    <div class="ledger-bottom"><div><span id="cart-count-lbl">এখনো কোনো বই লেখা হয়নি</span><p id="draft-status" role="status">এই ব্রাউজারে অসম্পূর্ণ খাতা রাখা হয়।</p></div><div class="ledger-payable"><div><span>এই বিলের মোট</span><strong id="cart-total">৳০</strong><small><b id="t-items">০</b> ধরনের বই · <b id="t-qty">০</b> কপি</small></div><button type="button" id="checkout-btn" class="pos-button primary" onclick="goToPayment()" disabled>টাকা জমার অংশে যান ↓</button></div></div>
   </section>
-  <section id="payment-stage" hidden>
-    <button type="button" class="payment-back text-button" onclick="showCartStep()">← বই বা পরিমাণ বদলান</button>
+  <div class="sale-entry-layout"><section class="sale-options-card"><div class="ledger-notes"><section class="order-options"><h2>ছাড় ও বাড়তি খরচ</h2><p class="field-help">স্বাভাবিক দাম নিজে বসবে। বাড়তি ছাড় বা খরচ থাকলে নিচে লিখুন।</p><div class="options-body"><div class="bf-field sale-mode"><label for="sale-type">বিক্রয়ের ধরন</label><select id="sale-type" onchange="toggleSaleType()"><option value="retail">খুচরা বিক্রয়</option><option value="wholesale">পাইকারি বিক্রয়</option></select></div><div id="ws-section" style="display:none"><div class="bf-field"><label for="wholesale-search">আগের পাইকারি ক্রেতা খুঁজুন</label><input id="wholesale-search" placeholder="নাম, কোড বা ফোন" oninput="searchWS()" autocomplete="off"><div id="wholesale-results"></div><input id="selected-ws-id" type="hidden"></div><p class="field-help">পুরোনো ক্রেতা বাছলে তাঁর কমিশন নিজে বসবে। নতুন হলে টাকা নেওয়ার ধাপে নাম ও ফোন লিখুন।</p></div><p id="discount-explanation" class="field-help"></p><div class="bf-row"><div class="bf-field"><label for="commission">ছাড় / কমিশন (%)</label><input id="commission" type="number" value="0" min="0" max="100" step="any" oninput="fromCommission()"></div><div class="bf-field"><label for="discount">সমপরিমাণ ছাড় (৳)</label><input id="discount" type="number" value="0" min="0" step="0.01" oninput="calcTotals(true)"></div></div><div class="bf-row charges"><div class="bf-field"><label for="pack">প্যাকিং (৳)</label><input id="pack" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div><div class="bf-field"><label for="courier">কুরিয়ার (৳)</label><input id="courier" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div><div class="bf-field"><label for="txfee">অন্য ফি (৳)</label><input id="txfee" type="number" value="0" min="0" step="0.01" oninput="calcTotals()"></div></div><span id="adjustments-indicator" class="field-help"></span></div></section></div>
+</section>
+  <section id="payment-stage">
+    <div class="payment-section-heading"><h2>টাকা জমা করুন</h2><span>বই বা পরিমাণ উপরের খাতাতেই বদলাতে পারবেন</span></div>
     <div class="payment-layout"><div class="payment-card">
       <div class="payment-title"><span>ক্রেতার কাছ থেকে নিন</span><strong id="t-total">৳০</strong><p id="checkout-count"></p></div>
       <fieldset class="settlement-choices"><legend>টাকা পেয়েছেন?</legend><div><button type="button" id="mode-full" aria-pressed="false" onclick="chooseSettlement('full')"><span class="choice-mark">✓</span><b>পুরো টাকা পেয়েছি</b></button><button type="button" id="mode-partial" aria-pressed="false" onclick="chooseSettlement('partial')"><span class="choice-mark">◐</span><b>কিছু টাকা পেয়েছি</b></button><button type="button" id="mode-due" aria-pressed="false" onclick="chooseSettlement('due')"><span class="choice-mark">○</span><b>বাকি থাকবে</b></button></div></fieldset>
@@ -154,7 +154,7 @@ function renderPOS(container) {
       <button type="button" id="customer-toggle" class="text-button" onclick="toggleCustomerDetails()">বিলে ক্রেতার নাম / ফোন লিখতে চান?</button>
       </div><footer class="payment-finish"><button type="button" id="complete-btn" class="pos-button primary wide" onclick="completeSale()" disabled>আগে টাকা পেয়েছেন কি না বাছুন</button><p id="finish-help">বিল শেষ করলেই বিক্রয় ও স্টক সেভ হবে।</p></footer>
     </div><aside class="bill-preview"><h2>খাতার হিসাব</h2><div id="review-lines"></div><div class="review-totals"><div><span>ছাড়ের আগে</span><b id="t-sub"></b></div><div><span>মোট ছাড়</span><b id="t-disc"></b></div><div><span>বাড়তি খরচ</span><b id="t-extra"></b></div><div class="review-net"><span>এই বিল</span><strong id="review-total"></strong></div><div><span>বিলে জমা হবে</span><b id="recorded-paid"></b></div><div><span>এই বিলে বাকি</span><b id="t-due"></b></div><div id="grand-due-row" hidden><span>আগেরসহ মোট বাকি</span><b id="t-grand-due"></b></div></div><div class="price-assurance">বইয়ের নির্ধারিত ছাড় নিজে থেকেই হিসাব হয়েছে।</div></aside></div>
-  </section><div id="cart-feedback" class="cart-feedback" role="status" aria-live="polite"></div>`;
+  </section></div><div id="cart-feedback" class="cart-feedback" role="status" aria-live="polite"></div>`;
   updateGroupOptions(); filterBooks(); renderCart(); calcTotals();
 }
 function escapeHTML(value) {return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -169,16 +169,14 @@ function closeBookPicker() {
 }
 function showCartStep() {
   if (saleSubmitting || pendingSalePayload) return;
-  posStep='books';document.getElementById('cart-stage').hidden=false;document.getElementById('payment-stage').hidden=true;
-  document.getElementById('cart-step').classList.add('active');document.getElementById('payment-step').classList.remove('active');
+  posStep='books';
+  document.getElementById('cart-stage').scrollIntoView({behavior:'smooth',block:'start'});
   document.getElementById('book-search').focus();
 }
 function goToPayment() {
   if (!cart.length || saleSubmitting) return;
   if (reviewedTotalCents!==billCents() && !pendingSalePayload) {settlementMode=null;document.getElementById('paid').value='0';}
   reviewedTotalCents=billCents();posStep='payment';closeBookPicker();
-  document.getElementById('cart-stage').hidden=true;document.getElementById('payment-stage').hidden=false;
-  document.getElementById('cart-step').classList.remove('active');document.getElementById('payment-step').classList.add('active');
   calcTotals();document.getElementById('payment-stage').scrollIntoView({behavior:'smooth',block:'start'});
   document.getElementById(settlementMode?'complete-btn':'mode-full').focus();
 }
@@ -378,7 +376,7 @@ function renderCart() {
   const el=document.getElementById('cart-scroll');if(!el)return;
   setText('cart-count-lbl',cart.length ? money(cart.length)+' ধরনের বই খাতায় লেখা হয়েছে' : 'এখনো কোনো বই লেখা হয়নি');
   if(!cart.length)el.innerHTML=`<tr><td colspan="5" class="ledger-empty"><span>${icon('book',36)}</span><h3>বইয়ের নাম দিয়ে শুরু করুন</h3><p>উপরের ঘরে বই খুঁজে বাছুন। এখানে নাম, পরিমাণ ও দাম নিজে বসবে।</p></td></tr>`;
-  else el.innerHTML=cart.map((i,index)=>`<tr class="${i.qty>i.max?'stock-invalid':''}"><td class="ledger-book"><div class="ledger-book-content"><span class="line-number">${money(index+1)}</span><div><strong>${escapeHTML(i.title)}</strong>${i.qty>i.max?'<small class="stock-error">দোকানে '+money(i.max)+' কপি আছে। পরিমাণ ঠিক করুন অথবা বইটি মুছুন।</small>':''}<details class="line-adjust" ${i.extraCommission>0?'open':''}><summary>${i.extraCommission>0?'বিশেষ ছাড় '+money(i.extraCommission)+'%':'এই বইয়ে বিশেষ ছাড়'}</summary><label for="extra-${i.bid}">অতিরিক্ত ছাড় (%)</label><input id="extra-${i.bid}" type="number" min="0" max="100" step="0.01" value="${i.extraCommission||0}" onchange="setExtraCommission(${i.bid},this.value);renderCart()"></details></div></div></td><td data-label="পরিমাণ"><div class="ci-qty"><button type="button" id="minus-${i.bid}" class="qb" aria-label="এক কপি কমান" ${i.qty<=1?'disabled':''} onclick="changeQty(${i.bid},-1)">−</button><input id="qty-${i.bid}" aria-label="${escapeHTML(i.title)} পরিমাণ" class="ci-count-input" type="text" inputmode="numeric" value="${i.qty}" onchange="setQty(${i.bid},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();document.getElementById('book-search').focus()}"><button type="button" id="plus-${i.bid}" class="qb" aria-label="এক কপি বাড়ান" ${i.qty>=i.max?'disabled':''} onclick="changeQty(${i.bid},1)">+</button></div></td><td data-label="প্রতি বইয়ের দাম" class="ledger-unit" id="unit-${i.bid}">${unitPriceHTML(i)}</td><td data-label="মোট টাকা" class="ledger-line-total" id="line-total-${i.bid}">৳${money(itemNet(i))}</td><td class="ledger-remove"><button type="button" aria-label="${escapeHTML(i.title)} মুছুন" onclick="removeItem(${i.bid})">${icon('close',18)}</button></td></tr>`).join('');
+  else el.innerHTML=cart.map((i,index)=>`<tr class="${i.qty>i.max?'stock-invalid':''}"><td class="ledger-book"><div class="ledger-book-content"><span class="line-number">${money(index+1)}</span><div><strong>${escapeHTML(i.title)}</strong>${i.qty>i.max?'<small class="stock-error">দোকানে '+money(i.max)+' কপি আছে। পরিমাণ ঠিক করুন অথবা বইটি মুছুন।</small>':''}<div class="line-adjust"><label for="extra-${i.bid}">বাড়তি ছাড় %</label><input id="extra-${i.bid}" type="number" min="0" max="100" step="0.01" value="${i.extraCommission||0}" onchange="setExtraCommission(${i.bid},this.value);renderCart()"></div></div></div></td><td data-label="পরিমাণ"><div class="ci-qty"><button type="button" id="minus-${i.bid}" class="qb" aria-label="এক কপি কমান" ${i.qty<=1?'disabled':''} onclick="changeQty(${i.bid},-1)">−</button><input id="qty-${i.bid}" aria-label="${escapeHTML(i.title)} পরিমাণ" class="ci-count-input" type="text" inputmode="numeric" value="${i.qty}" onchange="setQty(${i.bid},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();document.getElementById('book-search').focus()}"><button type="button" id="plus-${i.bid}" class="qb" aria-label="এক কপি বাড়ান" ${i.qty>=i.max?'disabled':''} onclick="changeQty(${i.bid},1)">+</button></div></td><td data-label="প্রতি বইয়ের দাম" class="ledger-unit" id="unit-${i.bid}">${unitPriceHTML(i)}</td><td data-label="মোট টাকা" class="ledger-line-total" id="line-total-${i.bid}">৳${money(itemNet(i))}</td><td class="ledger-remove"><button type="button" aria-label="${escapeHTML(i.title)} মুছুন" onclick="removeItem(${i.bid})">${icon('close',18)}</button></td></tr>`).join('');
   filterBooks();saveCartDraft();
 }
 
@@ -591,7 +589,7 @@ function calcTotals(manualDisc=false) {
 }
 function chooseSettlement(mode) {
   if(saleSubmitting||pendingSalePayload)return;
-  settlementMode=mode;document.getElementById('checkout-error').hidden=true;
+  settlementMode=mode;reviewedTotalCents=billCents();posStep='payment';document.getElementById('checkout-error').hidden=true;
   const method=document.getElementById('pay-method');
   if(mode==='due'){method.value='credit';document.getElementById('paid').value='0';}
   else {if(method.value==='credit')method.value='cash';document.getElementById('paid').value=mode==='full'?centsInput(billCents()):'';}
@@ -615,20 +613,21 @@ function renderPaymentState() {
   const method=document.getElementById('pay-method').value;
   ['full','partial','due'].forEach(mode=>document.getElementById('mode-'+mode).setAttribute('aria-pressed',String(settlementMode===mode)));
   ['cash','mobile','bank'].forEach(value=>document.getElementById('method-'+value).setAttribute('aria-pressed',String(method===value)));
-  document.getElementById('payment-entry').hidden=!settlementMode;
-  document.getElementById('payment-methods').hidden=settlementMode==='due';
-  document.getElementById('received-field').hidden=settlementMode==='due';
-  document.getElementById('paid').disabled=settlementMode==='due'||saleSubmitting||!!pendingSalePayload;
+  document.getElementById('payment-entry').hidden=false;
+  document.getElementById('payment-methods').hidden=false;
+  document.getElementById('received-field').hidden=false;
+  document.getElementById('paid').disabled=!settlementMode||settlementMode==='due'||saleSubmitting||!!pendingSalePayload;
+  ['cash','mobile','bank'].forEach(value=>document.getElementById('method-'+value).disabled=settlementMode==='due'||saleSubmitting||!!pendingSalePayload);
   const needsCustomer=settlementMode==='partial'||settlementMode==='due';
   const wholesale=document.getElementById('sale-type').value==='wholesale';
-  document.getElementById('customer-area').hidden=!(needsCustomer||customerDetailsOpen||wholesale);
-  document.getElementById('customer-toggle').hidden=needsCustomer||wholesale||!settlementMode;
+  document.getElementById('customer-area').hidden=false;
+  document.getElementById('customer-toggle').hidden=true;
   setText('customer-toggle',customerDetailsOpen?'ক্রেতার তথ্য লুকান':'বিলে ক্রেতার নাম / ফোন লিখতে চান?');
   setText('customer-heading',needsCustomer?'কার নামে বাকি রাখবেন?':'ক্রেতার তথ্য');
   setText('customer-help',needsCustomer?'নাম ও ফোন দিলে বাকি সঠিক ক্রেতার হিসাবে থাকবে।':'এই তথ্য দেওয়া ঐচ্ছিক।');
   ['cus-name','cus-phone'].forEach(id=>document.getElementById(id).required=needsCustomer);
-  setText('paid-label',settlementMode==='partial'?'কত টাকা পেয়েছেন?':method==='cash'?'ক্রেতা কত নগদ দিয়েছেন?':'কত টাকা এসেছে?');
-  setText('payment-input-hint',settlementMode==='partial'?'যত টাকা পেয়েছেন শুধু সেটুকু লিখুন। বাকি নিজে হিসাব হবে।':method==='cash'?'বেশি নগদ দিলে সেই অঙ্ক লিখুন। কত ফেরত দেবেন নিচে দেখাবে।':'যে টাকা অ্যাকাউন্টে এসেছে শুধু সেই অঙ্ক লিখুন।');
+  setText('paid-label',settlementMode==='due'?'এখন টাকা নেওয়া হয়নি':settlementMode==='partial'?'কত টাকা পেয়েছেন?':method==='cash'?'ক্রেতা কত নগদ দিয়েছেন?':'কত টাকা এসেছে?');
+  setText('payment-input-hint',settlementMode==='due'?'এখন টাকা জমা হবে না। ক্রেতার নাম ও ফোন লিখে বাকি রাখুন।':settlementMode==='partial'?'যত টাকা পেয়েছেন শুধু সেটুকু লিখুন। বাকি নিজে হিসাব হবে।':method==='cash'?'বেশি নগদ দিলে সেই অঙ্ক লিখুন। কত ফেরত দেবেন নিচে দেখাবে।':'যে টাকা অ্যাকাউন্টে এসেছে শুধু সেই অঙ্ক লিখুন।');
   const shortcuts=document.getElementById('cash-shortcuts');
   shortcuts.hidden=method!=='cash'||settlementMode!=='full';
   let notes=[50,100,200,500,1000,2000,5000].filter(n=>n*100>=total).slice(0,3);
@@ -636,7 +635,8 @@ function renderPaymentState() {
   shortcuts.innerHTML=`<button type="button" onclick="setPaidFull()">ঠিক বিলের টাকা</button>`+notes.map(n=>`<button type="button" onclick="setPaidAmount(${n})">৳${money(n)} দিয়েছেন</button>`).join('');
   const outcome=document.getElementById('payment-outcome');outcome.className='payment-outcome';
   let label,amount,help;
-  if(received===null&&settlementMode!=='due') {label='পাওয়া টাকার অঙ্ক লিখুন';amount='—';help='বাংলা বা ইংরেজি সংখ্যা লিখতে পারবেন।';}
+  if(!settlementMode){label='টাকা পেয়েছেন কি না বাছুন';amount='৳'+money(total/100);help='উপরে পুরো টাকা, কিছু টাকা অথবা বাকি—যেটি ঠিক সেটি বাছুন।';}
+  else if(received===null&&settlementMode!=='due') {label='পাওয়া টাকার অঙ্ক লিখুন';amount='—';help='বাংলা বা ইংরেজি সংখ্যা লিখতে পারবেন।';}
   else if(change>0&&method!=='cash'){label='অঙ্কটি আবার দেখুন';amount='৳'+money(change/100)+' বেশি';help='মোবাইল বা ব্যাংকের বাড়তি টাকা এই বিলে জমা হবে না। সঠিক অঙ্ক লিখুন।';outcome.classList.add('invalid');}
   else if(settlementMode==='partial'&&(paid<=0||paid>=total)){label='কিছু টাকা পেয়েছেন?';amount='—';help='বিলের চেয়ে কম, শূন্যের বেশি টাকা লিখুন। পুরো টাকা পেলে উপরে প্রথম বোতামটি চাপুন।';outcome.classList.add('invalid');}
   else if(settlementMode==='full'&&paid<total){label='আরও টাকা নেওয়া বাকি';amount='৳'+money(due/100);help='কিছু টাকা পেয়ে থাকলে “কিছু টাকা পেয়েছি” বাছুন।';outcome.classList.add('invalid');}
@@ -685,7 +685,7 @@ async function completeSale() {
     for(const id of ['commission','discount','pack','courier','txfee']){
       const el=document.getElementById(id);
       if(!Number.isFinite(Number(el.value))||Number(el.value)<0||!el.checkValidity()){
-        showCartStep();document.querySelector('.order-options').open=true;
+        showCartStep();
         checkoutError('বিশেষ ছাড় বা বাড়তি খরচের অঙ্ক ঠিক করুন।',el);return;
       }
     }

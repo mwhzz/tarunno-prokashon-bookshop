@@ -89,7 +89,7 @@ class BookListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = [
-            'id', 'title', 'product_code', 'author', 'mrp', 'selling_price',
+            'id', 'title', 'product_code', 'isbn', 'author', 'mrp', 'selling_price',
             'commission', 'discount', 'discount_type', 'source', 'source_display',
             'current_stock', 'shop_quantity', 'godown_quantity', 'group_name',
             'is_active', 'image',

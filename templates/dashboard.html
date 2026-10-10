@@ -42,10 +42,10 @@
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px; gap: 12px;
 }
-#dash .dv-card-head h3 { font-size: 15px; font-weight: 600; color: var(--dv-text); }
+#dash .dv-card-head h3 { font-size:17px; font-weight: 600; color: var(--dv-text); }
 
 #dash .dv-link {
-  font-size: 13px; font-weight: 600; color: var(--dv-primary);
+  font-size:16px; font-weight: 600; color: var(--dv-primary);
   text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
 }
 #dash .dv-link:hover { color: var(--dv-primary-dark); }
@@ -61,26 +61,26 @@
 }
 #dash .dv-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.07); }
 #dash .dv-stat-top { display: flex; align-items: center; justify-content: space-between; }
-#dash .dv-stat-label { font-size: 13px; font-weight: 500; color: var(--dv-text2); }
+#dash .dv-stat-label { font-size:16px; font-weight: 500; color: var(--dv-text2); }
 #dash .dv-stat-icon {
   width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
 }
 #dash .dv-stat-value {
-  font-family: 'JetBrains Mono', monospace; font-size: 27px; font-weight: 700; color: var(--dv-text);
+  font-family: 'JetBrains Mono', monospace; font-size:27px; font-weight: 700; color: var(--dv-text);
   margin-top: 10px; line-height: 1.1;
 }
-#dash .dv-stat-delta { font-size: 13.5px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+#dash .dv-stat-delta { font-size:16px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
 #dash .dv-stat-delta.up { color: var(--dv-success); }
 #dash .dv-stat-delta.down { color: var(--dv-danger); }
 #dash .dv-stat-delta small { color: var(--dv-text2); font-weight: 500; }
 #dash .dv-stat-delta.neutral small { color: var(--dv-text2); }
 
 /* ── Quick actions ── */
-#dash .dv-section-title { font-size: 13px; font-weight: 700; color: var(--dv-text2); text-transform: uppercase; letter-spacing: .04em; }
+#dash .dv-section-title { font-size:16px; font-weight: 700; color: var(--dv-text2); text-transform: uppercase; letter-spacing: .04em; }
 #dash .dv-qa-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 14px; }
 #dash .dv-qa-btn {
   height: 56px; border-radius: 10px; border: 1px solid var(--dv-border); background: #fff; color: var(--dv-text);
-  display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 600; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 600; font-size:16px;
   text-decoration: none; transition: transform .2s ease, background .2s ease, border-color .2s ease;
 }
 #dash .dv-qa-btn:hover { border-color: var(--dv-primary); background: var(--dv-primary-soft); transform: translateY(-2px); }
@@ -97,7 +97,7 @@
 /* ── Bar chart ── */
 #dash .dv-chart-card { min-height: 340px; display: flex; flex-direction: column; }
 #dash .dv-select {
-  display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--dv-text2);
+  display: flex; align-items: center; gap: 4px; font-size:16px; font-weight: 600; color: var(--dv-text2);
   border: 1px solid var(--dv-border); border-radius: 8px; padding: 6px 10px; cursor: default;
 }
 #dash .dv-bars {
@@ -110,7 +110,7 @@
   transition: height .5s ease; cursor: default;
 }
 #dash .dv-bar-fill:hover { background: var(--dv-primary-dark); }
-#dash .dv-bar-lbl { font-size: 13px; font-weight: 600; color: var(--dv-text2); }
+#dash .dv-bar-lbl { font-size:16px; font-weight: 600; color: var(--dv-text2); }
 
 /* ── Donut ── */
 #dash .dv-donut-card { min-height: 340px; display: flex; flex-direction: column; }
@@ -119,10 +119,10 @@
 #dash .dv-donut-hole {
   width: 96px; aspect-ratio: 1; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center;
 }
-#dash .dv-donut-hole strong { display: block; font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--dv-text); }
-#dash .dv-donut-hole small { font-size: 12.5px; color: var(--dv-text2); font-weight: 600; }
+#dash .dv-donut-hole strong { display: block; font-family: 'JetBrains Mono', monospace; font-size:23px; font-weight: 700; color: var(--dv-text); }
+#dash .dv-donut-hole small { font-size:16px; color: var(--dv-text2); font-weight: 600; }
 #dash .dv-donut-legend { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-#dash .dv-leg { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--dv-text); }
+#dash .dv-leg { display: flex; align-items: center; gap: 8px; font-size:16px; font-weight: 600; color: var(--dv-text); }
 #dash .dv-leg .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 /* ── Recent sales table ── */
@@ -132,30 +132,30 @@
 #dash table.dv-table { width: 100%; border-collapse: collapse; }
 #dash table.dv-table thead th {
   position: sticky; top: 0; background: var(--dv-bg); z-index: 1;
-  font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dv-text2);
+  font-size:16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dv-text2);
   padding: 12px 24px; border-bottom: 1px solid var(--dv-border); text-align: left; white-space: nowrap;
 }
 #dash table.dv-table tbody td {
-  padding: 0 24px; height: 60px; font-size: 13.5px; color: var(--dv-text); border-bottom: 1px solid #F3F4F6; vertical-align: middle;
+  padding: 0 24px; height: 60px; font-size:16px; color: var(--dv-text); border-bottom: 1px solid #F3F4F6; vertical-align: middle;
 }
 #dash table.dv-table tbody tr:hover td { background: var(--dv-primary-soft); }
 #dash table.dv-table tbody tr:last-child td { border-bottom: none; }
 #dash .dv-empty-row { text-align: center; color: var(--dv-text2); height: 100px !important; }
 
 #dash .dv-badge {
-  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 13px; font-weight: 700;
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size:16px; font-weight: 700;
 }
 #dash .dv-badge.green { background: #DCFCE7; color: var(--dv-success); }
 #dash .dv-badge.red   { background: var(--dv-danger-soft); color: var(--dv-danger); }
 
 /* ── Right rail rows ── */
-#dash .dv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size: 13.5px; }
+#dash .dv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size:16px; }
 #dash .dv-row:last-of-type { border-bottom: none; }
 #dash .dv-row span { color: var(--dv-text2); }
 #dash .dv-row strong { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--dv-text); }
 #dash .dv-row strong.ok { color: var(--dv-success); }
 #dash .dv-row strong.bad { color: var(--dv-danger); }
-#dash .dv-row.sub span, #dash .dv-row.sub strong { font-size: 13.5px; }
+#dash .dv-row.sub span, #dash .dv-row.sub strong { font-size:16px; }
 
 #dash .dv-progress { height: 7px; background: #F3F4F6; border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
 #dash .dv-progress-fill { height: 100%; border-radius: 99px; background: var(--dv-success); transition: width .5s ease; }
@@ -171,21 +171,21 @@
   display: grid; place-items: center; flex-shrink: 0;
 }
 #dash .dv-task-icon.warn { background: var(--dv-warning-soft); color: var(--dv-warning); }
-#dash .dv-task strong { display: block; font-size: 13.5px; font-weight: 600; color: var(--dv-text); }
-#dash .dv-task small { font-size: 13px; color: var(--dv-text2); }
+#dash .dv-task strong { display: block; font-size:16px; font-weight: 600; color: var(--dv-text); }
+#dash .dv-task small { font-size:16px; color: var(--dv-text2); }
 
 /* ── Monthly summary ── */
 #dash .dv-month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 #dash .dv-month-card {
   padding: 18px 16px; background: var(--dv-bg); border: 1px solid var(--dv-border); border-radius: 10px; text-align: center;
 }
-#dash .dv-month-card .dv-stat-label { text-transform: uppercase; letter-spacing: .04em; font-size: 12.5px; font-weight: 700; }
-#dash .dv-month-card .dv-stat-value { font-size: 22px; margin-top: 8px; }
+#dash .dv-month-card .dv-stat-label { text-transform: uppercase; letter-spacing: .04em; font-size:16px; font-weight: 700; }
+#dash .dv-month-card .dv-stat-value { font-size:22px; margin-top: 8px; }
 #dash .dv-month-card .dv-stat-delta { justify-content: center; }
 
 /* ── Empty state ── */
 #dash .dv-empty { text-align: center; padding: 50px 20px; color: var(--dv-text2); }
-#dash .dv-empty .dv-empty-icon { font-size: 40px; margin-bottom: 10px; opacity: .5; }
+#dash .dv-empty .dv-empty-icon { font-size:40px; margin-bottom: 10px; opacity: .5; }
 
 /* ── Responsive ── */
 @media (max-width: 1280px) {

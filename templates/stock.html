@@ -2,7 +2,7 @@
 {% load static %}
 {% block page_title %}স্টক তালিকা{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'workspace.css' %}">
+<link rel="stylesheet" href="{% static 'workspace.css' %}?v=unified-1">
 {% endblock %}
 {% block content %}
 <div class="workspace inventory-workspace">
@@ -52,6 +52,7 @@
 <script>
 let allStockRows = [];
 let stockIsLoading = true;
+let stockLoadId = 0;
 function stockEscape(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 }
@@ -61,6 +62,7 @@ async function loadStockCatalog() {
   let next = true;
   while (next) {
     const result = await api(`/stock/summary/catalog/?page_size=250&page=${page}`);
+    if (!result || !Array.isArray(result.results)) throw new Error('Invalid stock response');
     rows.push(...result.results);
     next = result.next;
     page++;
@@ -68,11 +70,23 @@ async function loadStockCatalog() {
   return rows;
 }
 async function initStock() {
+  const loadId = ++stockLoadId;
   stockIsLoading = true;
   document.getElementById('stock-result-count').textContent = 'লোড হচ্ছে…';
+  document.getElementById('stock-footer-count').textContent = 'বইয়ের তথ্য লোড হচ্ছে…';
+  document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="9"><div class="loading"><div class="spinner"></div> স্টক তালিকা লোড হচ্ছে…</div></td></tr>';
   try {
-    const [rows, report] = await Promise.all([loadStockCatalog(), api('/stock/summary/report/')]);
+    // Summary cards must never prevent successfully loaded books from displaying.
+    const rows = await loadStockCatalog();
+    if (loadId !== stockLoadId) return;
     allStockRows = rows;
+    const report = {
+      total_book_types: rows.length,
+      total_shop_quantity: rows.reduce((sum, row) => sum + Number(row.shop_quantity || 0), 0),
+      total_godown_quantity: rows.reduce((sum, row) => sum + Number(row.godown_quantity || 0), 0),
+      out_of_stock_count: rows.filter(row => Number(row.quantity) <= 0).length,
+      total_stock_value: rows.reduce((sum, row) => sum + Number(row.stock_value || 0), 0),
+    };
     for (const [id, value] of Object.entries({
       books: report.total_book_types, shop: report.total_shop_quantity,
       godown: report.total_godown_quantity, empty: report.out_of_stock_count,
@@ -81,6 +95,7 @@ async function initStock() {
     stockIsLoading = false;
     renderStockRows();
   } catch (e) {
+    if (loadId !== stockLoadId) return;
     document.getElementById('stock-result-count').textContent = 'লোড হয়নি';
     document.getElementById('stock-footer-count').textContent = 'আবার চেষ্টা করুন';
     document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="9"><div class="inventory-empty"><h3>স্টক তালিকা লোড হয়নি</h3><p>সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</p><button class="btn btn-ghost" onclick="initStock()">আবার চেষ্টা করুন</button></div></td></tr>';
@@ -121,7 +136,7 @@ function renderStockRows() {
     if (sort === 'quantity-desc') return b.quantity - a.quantity;
     if (sort === 'quantity-asc') return a.quantity - b.quantity;
     if (sort === 'value-desc') return Number(b.stock_value) - Number(a.stock_value);
-    return a.book_title.localeCompare(b.book_title, 'bn');
+    return String(a.book_title || '').localeCompare(String(b.book_title || ''), 'bn');
   });
   document.getElementById('stock-tbody').innerHTML = rows.length ? rows.map(stockRowHtml).join('') : '<tr><td colspan="9"><div class="inventory-empty"><h3>কোনো বই পাওয়া যায়নি</h3><p>নাম বা ফিল্টার পরিবর্তন করে দেখুন।</p><button class="btn btn-ghost" onclick="resetStockFilters()">সব বই দেখুন</button></div></td></tr>';
   document.getElementById('stock-result-count').textContent = num(rows.length) + 'টি';
@@ -147,7 +162,7 @@ async function recordDamage(bookId, location, bookTitle, currentQty) {
         <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">
           <span style="color:var(--danger)">${icon('alert-triangle', 17)}</span> ড্যামেজ রেকর্ড করুন
         </h3>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:16px">বই: <strong>${stockEscape(bookTitle)}</strong> (${location.toUpperCase()}) — বর্তমান স্টক: <strong>${currentQty}</strong></p>
+        <p style="font-size:16px; color:var(--muted); margin-bottom:16px">বই: <strong>${stockEscape(bookTitle)}</strong> (${location.toUpperCase()}) — বর্তমান স্টক: <strong>${currentQty}</strong></p>
 
         <div class="form-group">
           <label>ড্যামেজ হওয়া বইয়ের পরিমাণ (Quantity)</label>

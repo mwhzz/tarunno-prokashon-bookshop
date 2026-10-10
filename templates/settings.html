@@ -5,12 +5,12 @@
 {% block content %}
 <div class="form-card" style="max-width:640px; padding:24px;">
     <h3 style="color:var(--accent); margin-bottom:6px;">💾 ডাটা ব্যাকআপ ও রিসেট</h3>
-    <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">
+    <p style="font-size:16px; color:var(--muted); margin-bottom:20px;">
         পুরো সাইটের সব ডাটা মুছে ফেলতে চাইলে, আগে একটা সাম্প্রতিক ব্যাকআপ ডাউনলোড করতে হবে। ব্যাকআপ ছাড়া রিসেট করা যাবে না।
     </p>
 
     <div style="border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
-        <div style="font-size:13px; margin-bottom:10px;">
+        <div style="font-size:16px; margin-bottom:10px;">
             সর্বশেষ ব্যাকআপ: <strong id="last-backup-text">লোড হচ্ছে...</strong>
         </div>
         <button class="btn btn-primary" id="backup-btn" onclick="downloadBackup()">
@@ -19,14 +19,14 @@
     </div>
 
     <div style="border:1px solid var(--danger); background:#fef2f2; border-radius:8px; padding:16px;">
-        <div style="font-size:13px; color:#991b1b; margin-bottom:10px;">
+        <div style="font-size:16px; color:#991b1b; margin-bottom:10px;">
             ⚠️ এই অ্যাকশন অপরিবর্তনীয়। সব বই, স্টক, বিক্রয়, গ্রাহক, খরচ ও হিসাবের রেকর্ড স্থায়ীভাবে মুছে যাবে।
             ইউজার/লগইন অ্যাকাউন্ট মুছে যাবে না।
         </div>
         <button class="btn btn-danger" id="reset-btn" onclick="resetAllData()" disabled>
             🗑 সব ডাটা মুছে ফেলুন
         </button>
-        <div id="reset-hint" style="font-size:12.5px; color:#991b1b; margin-top:8px;"></div>
+        <div id="reset-hint" style="font-size:16px; color:#991b1b; margin-top:8px;"></div>
     </div>
 </div>
 {% endblock %}

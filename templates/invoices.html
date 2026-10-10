@@ -4,7 +4,7 @@
 {% block page_title %}সব ইনভয়েস{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'workspace.css' %}">
+<link rel="stylesheet" href="{% static 'workspace.css' %}?v=unified-1">
 {% endblock %}
 
 {% block content %}
@@ -31,15 +31,15 @@
 <div class="table-wrap ledger-filters" style="padding:14px 20px; margin-bottom:16px;">
     <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
         <div>
-            <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরুর তারিখ</label>
+            <label style="display:block; font-size:16px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরুর তারিখ</label>
             <input type="date" id="inv-f-from" style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
         </div>
         <div>
-            <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ তারিখ</label>
+            <label style="display:block; font-size:16px; font-weight:800; color:var(--muted); margin-bottom:4px;">শেষ তারিখ</label>
             <input type="date" id="inv-f-to" style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
         </div>
         <div style="flex:1; min-width:220px;">
-            <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">সার্চ (ইনভয়েস নম্বর/গ্রাহক/ফোন)</label>
+            <label style="display:block; font-size:16px; font-weight:800; color:var(--muted); margin-bottom:4px;">সার্চ (ইনভয়েস নম্বর/গ্রাহক/ফোন)</label>
             <input type="text" id="inv-f-search" placeholder="খুঁজুন..." oninput="debouncedInvoiceLoad()"
                    style="width:100%; height:36px; padding:0 12px; border:1.5px solid var(--border); border-radius:8px;">
         </div>
@@ -88,7 +88,7 @@ async function initInvoices() {
     }
 
     const truncatedNote = r.count > r.results.length
-      ? `<p style="font-size:13px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${r.results.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
+      ? `<p style="font-size:16px; color:var(--muted); padding:8px 20px 0;">মোট ${num(r.count)}টির মধ্যে সাম্প্রতিক ${r.results.length}টি দেখানো হচ্ছে — নির্দিষ্ট করে খুঁজতে উপরের তারিখ/সার্চ ব্যবহার করুন।</p>`
       : '';
 
     w.innerHTML = `
@@ -118,7 +118,7 @@ async function initInvoices() {
               <td style="font-family:monospace;color:var(--accent2)">৳${num(s.paid_amount)}</td>
               <td style="font-family:monospace;color:var(--danger)">৳${num(s.due_amount)}</td>
               <td>${statusBadge(s.status)}</td>
-              <td style="color:var(--muted);font-size:13px">${fmtDate(s.created_at)}</td>
+              <td style="color:var(--muted);font-size:16px">${fmtDate(s.created_at)}</td>
               <td>
                 <div style="display:flex; gap:5px; flex-wrap:wrap;">
                   <a href="/api/sales/${s.id}/print_invoice/" class="btn btn-ghost btn-sm" target="_blank" style="text-decoration:none; color:var(--accent)">
@@ -149,16 +149,16 @@ async function showPaymentHistory(saleId, invNum) {
       <div id="payment-history-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
         <div class="form-card" style="width:460px; padding:20px">
           <h3 style="margin-bottom:6px; display:flex; align-items:center; gap:8px">${icon('wallet', 18)} পেমেন্ট ইতিহাস (#${invNum})</h3>
-          <p style="font-size:13px; color:var(--muted); margin-bottom:16px">মোট বিল: <strong>৳${num(s.total)}</strong> • পরিশোধিত: <strong style="color:var(--accent)">৳${num(s.paid_amount)}</strong> • বাকি: <strong style="color:var(--danger)">৳${num(s.due_amount)}</strong></p>
+          <p style="font-size:16px; color:var(--muted); margin-bottom:16px">মোট বিল: <strong>৳${num(s.total)}</strong> • পরিশোধিত: <strong style="color:var(--accent)">৳${num(s.paid_amount)}</strong> • বাকি: <strong style="color:var(--danger)">৳${num(s.due_amount)}</strong></p>
           <div id="payment-history-list">
             ${payments.length ? payments.map(p => `
-              <div style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
-                <span style="color:var(--muted); font-size:12.5px; white-space:nowrap;">${fmtDate(p.created_at)}</span>
+              <div style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:16px;">
+                <span style="color:var(--muted); font-size:16px; white-space:nowrap;">${fmtDate(p.created_at)}</span>
                 <span style="flex:1; font-weight:700; color:var(--g900);">${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}</span>
                 <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent);">৳${num(p.amount)}</span>
                 <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteInvoicePayment(${saleId}, ${p.id}, '${invNum}')" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>
               </div>`).join('')
-            : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('wallet', 34)}</div><h3 style="font-size:14px;">এখনো কোনো পেমেন্ট নেই</h3></div>`}
+            : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('wallet', 34)}</div><h3 style="font-size:16px;">এখনো কোনো পেমেন্ট নেই</h3></div>`}
           </div>
           <div style="display:flex; justify-content:flex-end; margin-top:20px">
             <button class="btn btn-ghost" onclick="document.getElementById('payment-history-modal').remove()">বন্ধ করুন</button>
@@ -197,13 +197,13 @@ async function showReturnUI(saleId, invNum) {
       <div id="return-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
         <div class="form-card" style="width:450px; padding:20px">
           <h3 style="margin-bottom:15px">বই ফেরত নিন (#${invNum})</h3>
-          <p style="font-size:13px; color:var(--muted); margin-bottom:15px">যে বইটি ফেরত আসছে তার পরিমাণ লিখুন:</p>
+          <p style="font-size:16px; color:var(--muted); margin-bottom:15px">যে বইটি ফেরত আসছে তার পরিমাণ লিখুন:</p>
           <div id="return-items-list">
             ${s.items.map(item => `
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border)">
                 <div style="flex:1">
-                  <div style="font-size:14px; font-weight:600">${item.book_title}</div>
-                  <div style="font-size:12.5px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
+                  <div style="font-size:16px; font-weight:600">${item.book_title}</div>
+                  <div style="font-size:16px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
                 </div>
                 <input type="number" class="return-qty" data-id="${item.book}" data-max="${item.quantity}" value="0" min="0" max="${item.quantity}" style="width:60px; padding:4px"
                        oninput="if(Number(this.value)>Number(this.dataset.max))this.value=this.dataset.max; if(Number(this.value)<0)this.value=0;">

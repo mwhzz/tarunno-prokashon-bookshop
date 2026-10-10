@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -19,7 +20,7 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Hind Siliguri', sans-serif;
+  font-family:'App Bangla',sans-serif;
   background:
     radial-gradient(circle at top left, rgba(37, 99, 235, .11), transparent 34%),
     linear-gradient(135deg, #f8fafc 0%, #eef2f6 54%, #e2e8f0 100%);
@@ -43,16 +44,16 @@ body {
 }
 
 .brand { text-align: left; margin-bottom: 26px; }
-.brand h1 { color: var(--text); font-size: 30px; line-height: 1.1; margin: 0; }
-.brand p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+.brand h1 { color: var(--text); font-size:30px; line-height: 1.1; margin: 0; }
+.brand p { color: var(--muted); margin-top: 8px; font-size:16px; }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-group { margin-bottom: 18px; }
-.form-group label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.form-group label { display: block; font-size:16px; font-weight: 700; color: #475569; margin-bottom: 6px; }
 .form-group input {
   width: 100%; min-height: 44px; padding: 12px;
   border: 1px solid var(--border); border-radius: 8px !important;
-  box-sizing: border-box; font-size: 14px; font-family: inherit;
+  box-sizing: border-box; font-size:16px; font-family: inherit;
   transition: border 0.2s;
 }
 .form-group input:focus {
@@ -62,13 +63,13 @@ body {
 
 .role-note {
   background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px;
-  padding: 10px 12px; font-size: 13.5px; color: #0f766e; margin-bottom: 18px;
+  padding: 10px 12px; font-size:16px; color: #0f766e; margin-bottom: 18px;
 }
 
 .btn {
   width: 100%; min-height: 46px; padding: 12px;
   background: var(--accent); color: #fff;
-  border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+  border: none; border-radius: 8px; font-size:16px; font-weight: 600;
   cursor: pointer; box-shadow: 0 12px 24px rgba(15, 118, 110, .22);
   transition: background .2s;
   margin-top: 10px;
@@ -76,18 +77,19 @@ body {
 .btn:hover { background: var(--accent-dark); }
 
 .messages { list-style: none; padding: 0; margin-bottom: 20px; }
-.message { padding: 10px; border-radius: 6px; font-size: 13px; text-align: center; }
+.message { padding: 10px; border-radius: 6px; font-size:16px; text-align: center; }
 .message.error { background: #fee2e2; color: #b91c1c; }
 
-.footer-links { text-align: center; margin-top: 20px; font-size: 14px; color: var(--muted); }
+.footer-links { text-align: center; margin-top: 20px; font-size:16px; color: var(--muted); }
 .footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
 
 @media (max-width: 560px) {
   .form-grid { grid-template-columns: 1fr; gap: 0; }
 }
 </style>
+<link rel="stylesheet" href="{% static 'app-ui.css' %}?v=1">
 </head>
-<body>
+<body class="app-auth">
 
 <div class="register-card">
   <div class="brand">

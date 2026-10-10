@@ -1,0 +1,186 @@
+/* The application-wide type and component system. Loaded after page styles. */
+@font-face { font-family:'App Bangla'; src:url('fonts/kalpurush.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
+:root {
+  --bg:#f5f5ef; --surface:#fff; --surface2:#f8faf5;
+  --border:#dce5db; --border-hard:#c3d2c0;
+  --text:#243c32; --text2:#395447; --muted:#5d7165;
+  --accent:#2b6446; --accent-dark:#1c4832; --accent-soft:#edf4e7;
+  --g900:#173c2a; --g800:#224c34; --g700:#2c6040; --g600:#34734d;
+  --g100:#eff5e9; --g200:#dcebd4;
+  --info:#315f8b; --danger:#b84740;
+  --shadow:0 4px 18px #263c2c08; --shadow-sm:0 2px 10px #263c2c05;
+}
+body { font-family:'App Bangla',sans-serif; font-size:17px; line-height:1.6; }
+button,input,select,textarea { font-family:'App Bangla',sans-serif; }
+#sidebar { background:#193c2c; border-right:1px solid #284e38; }
+.brand { padding:24px 20px; background:#224632; }
+.brand-text h1 { font-family:'App Bangla',sans-serif; font-size:23px; font-weight:600; line-height:1.35; }
+.brand-text p { font-size:15px; color:#bfd0bf; }
+.nav-section-label { font-size:14px; color:#adc3aa; letter-spacing:0; font-weight:400; padding-top:18px; }
+.nav-item { font-size:18px; font-weight:400; padding:10px 13px; color:#d1dfcc; border-radius:7px; }
+.nav-item.active { background:#376744; box-shadow:inset 3px 0 #d3c38e; }
+.nav-item:hover { background:#2a5139; }
+.nav-icon { width:30px; height:30px; background:#ffffff09; }
+.user-name { font-size:17px; }
+.user-role { font-size:15px; color:#bacfb8; }
+#topbar { background:#fffef8; min-height:76px; height:auto; padding:15px 28px; }
+.topbar-title { font-family:'App Bangla',sans-serif; font-size:27px; font-weight:600; line-height:1.4; }
+.status-pill { font-size:15px; font-weight:400; border-radius:6px; padding:5px 12px; }
+#content { background:var(--bg); padding:30px; min-width:0; }
+#content > * { min-width:0; }
+.workspace { --muted:#5c7062; --border:#dce5db; --surface2:#f8faf5; --accent:#2b6446; font-family:'App Bangla',sans-serif; }
+.workspace-heading { padding:24px 28px; border:1px solid #dce3d5; border-left:4px solid #b29b63; border-radius:10px; background:linear-gradient(110deg,#fffdf5,#edf4e7); margin-bottom:26px; flex-wrap:wrap; }
+.workspace-eyebrow { font-family:'App Bangla',sans-serif; font-size:15px; letter-spacing:.03em; color:#57704f; }
+.workspace-heading h1 { font-size:34px; line-height:1.4; font-weight:600; }
+.workspace-heading p { font-size:17px; color:#526a58; }
+.workspace-link { font-size:17px; min-height:46px; border-radius:7px; }
+.table-wrap,.form-card { border-color:#dce5db; border-radius:10px; box-shadow:0 3px 16px #23422c05; }
+.table-header { flex-wrap:wrap; align-items:center; padding:20px 22px; background:#fafcf7; }
+.table-title { font-family:'App Bangla',sans-serif; font-size:21px; font-weight:600; flex:1 1 230px; min-width:200px; line-height:1.5; }
+.table-header > select { width:auto; flex:0 1 210px; min-width:160px; }
+.table-header > input { flex:1 1 240px; min-width:180px; width:auto; }
+thead th { font-family:'App Bangla',sans-serif; color:#4f6656; background:#f0f5eb; font-size:16px; font-weight:600; padding:15px 18px; letter-spacing:0; text-transform:none; }
+tbody td { font-size:17px; color:#354d3e; padding:16px 18px; }
+tbody tr:hover td { background:#f7faf3; }
+.btn { font-family:'App Bangla',sans-serif; border-radius:7px; min-height:44px; font-size:17px; font-weight:400; box-shadow:none; }
+.btn:hover { transform:none; }
+.btn-primary { background:#2b6446; box-shadow:none; }
+.btn-primary:hover { background:#204d35; box-shadow:none; }
+.btn-ghost { border-width:1px; border-color:#c9d8c4; }
+.btn-danger { background:#b74a43; }
+.btn-sm { font-size:16px; padding:7px 12px; min-height:38px; }
+.badge { font-family:'App Bangla',sans-serif; font-size:15px; font-weight:400; border-radius:5px; padding:4px 8px; line-height:1.4; }
+.form-group label,label { color:#405b48; font-size:16px; font-weight:400; }
+input,select { min-height:46px; font-size:17px; border-width:1px; background:#fff; border-radius:7px; }
+input[type=checkbox],input[type=radio] { min-height:0; accent-color:#34734d; }
+textarea { font-size:17px; border-width:1px; background:#fff; }
+input::placeholder,textarea::placeholder { color:#708275; opacity:1; }
+input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0 3px #326b4310; }
+.stat-card { border-radius:10px; box-shadow:none; border:1px solid #dce5db; }
+.stat-label { font-size:17px; color:#506852; font-weight:400; }
+.stat-value { font-size:32px; font-family:'App Bangla',sans-serif; }
+.stat-sub,.stat-hint { font-size:15px; color:#5e745f; }
+.app-table-scroll { width:100%; max-width:100%; overflow-x:auto; scrollbar-width:thin; scrollbar-color:#c4d4be #f6f8f3; }
+.app-wide-table { min-width:1050px; }
+.app-medium-table { min-width:700px; }
+.app-table-scroll:focus-visible { outline:2px solid #7f9d75; outline-offset:-2px; }
+:is(button,a,input,select,textarea):focus-visible { outline:3px solid #8cae7d; outline-offset:3px; }
+.loading,.empty,.empty-state p { font-size:17px; color:#56715c; }
+.empty-state h3 { font-size:23px; }
+/* Inventory has its own fixed column geometry so large type cannot squeeze amounts. */
+.inventory-workspace { max-width:1600px; }
+.inventory-metrics { grid-template-columns:repeat(5,minmax(0,1fr)); border-color:#d5e0d0; }
+.inventory-metric { padding:22px; background:#fff; }
+.inventory-metric > span { color:#4d674f; font-size:17px; margin-bottom:8px; }
+.inventory-metric strong { font-family:'App Bangla',sans-serif; font-size:32px; color:#24583a; overflow-wrap:normal; white-space:nowrap; }
+.inventory-metric small { font-size:15px; color:#627660; line-height:1.55; }
+.inventory-metric:nth-child(4) strong { font-size:27px; }
+.inventory-metric:last-child { background:#fcf8ed; }
+.inventory-metric:last-child strong { color:#906c2f; }
+.inventory-toolbar { background:#fafcf8; display:grid; grid-template-columns:minmax(260px,2fr) repeat(3,minmax(155px,1fr)) auto; gap:16px; align-items:end; }
+.inventory-toolbar label { font-size:16px; color:#4e694f; }
+.inventory-toolbar :is(input,select) { font-size:17px; height:48px; }
+.inventory-toolbar input::placeholder { color:#738470; }
+.inventory-reset { height:48px; }
+.inventory-table-heading { padding:20px 22px; }
+.inventory-table-heading h2 { font-size:23px; }
+.inventory-table-heading h2 span { font-size:16px; color:#3e6440; background:#e8f0e1; }
+.inventory-table-heading > span { font-size:15px; color:#587051; }
+.inventory-table { min-width:1380px; table-layout:fixed; }
+.inventory-table th { font-size:16px; font-weight:600; background:#edf3e7; color:#50684e; padding:15px; }
+.inventory-table td { font-size:18px; padding:18px 15px; color:#35513c; }
+.inventory-table th:nth-child(1) { width:25%; }
+.inventory-table th:nth-child(2) { width:8%; }
+.inventory-table th:nth-child(3),.inventory-table th:nth-child(4),.inventory-table th:nth-child(5) { width:8%; }
+.inventory-table th:nth-child(6) { width:10%; }
+.inventory-table th:nth-child(7) { width:10%; }
+.inventory-table th:nth-child(8) { width:12%; }
+.inventory-table th:nth-child(9) { width:11%; }
+.inventory-book { min-width:0; max-width:none; }
+.inventory-book > a { font-size:21px; font-weight:600; color:#204c30; line-height:1.6; }
+.inventory-book > small { font-size:16px; color:#65785f; }
+.inventory-code { font-size:15px; color:#61715a; letter-spacing:0; }
+.inventory-source { font-size:16px; color:#55704f; }
+.inventory-table .quantity-zero { color:#76856e; }
+.inventory-status { font-size:15px; padding:5px 8px; }
+.inventory-status.available { color:#346540; background:#e9f2e3; }
+.inventory-status.empty { color:#79574e; background:#f6eeea; }
+.inventory-status.inactive { color:#5f6573; }
+.inventory-status.low { color:#805b21; }
+.inventory-add { font-size:16px; padding:7px 9px; color:#305d36; background:#f7fbf3; }
+.inventory-damage { width:34px; height:36px; color:#876d5d; }
+.inventory-damage:disabled { opacity:.45; }
+.inventory-footer { font-size:16px; color:#52694d; }
+.inventory-footer a { font-size:17px; }
+/* Preserve the workflow-specific layouts while aligning their type and controls. */
+.catalog-workspace .sc-title { font-family:'App Bangla',sans-serif; font-size:27px; }
+.catalog-workspace .wiz-label { font-size:17px; color:#37563e; }
+.catalog-workspace .wiz-input { font-size:18px; min-height:48px; }
+.catalog-workspace .wiz-hint,.catalog-workspace .sc-desc { font-size:16px; color:#5e735e; }
+.catalog-workspace .step-name { font-size:16px; }
+.catalog-workspace .step-circle { width:32px; height:32px; font-size:16px; }
+.catalog-workspace .stepper { width:220px; padding:18px 8px; }
+.catalog-workspace .stepper::before { font-size:16px; }
+.catalog-workspace :is(.btn-next,.btn-save,.btn-csv-import) { font-size:18px; min-height:48px; }
+.catalog-workspace > .mode-tabs .mode-tab { font-size:18px; }
+.sales-workspace .pos-search input { font-size:18px; height:50px; }
+.sales-workspace .book-title { font-size:19px; }
+.sales-workspace .book-author { font-size:15px; }
+.sales-workspace .book-price { font-size:18px; }
+.sales-workspace .book-stock-badge { font-size:15px; }
+.sales-workspace .bf-field label { font-size:16px; }
+.sales-workspace .bf-field input,.sales-workspace .bf-field select { font-size:17px; min-height:45px; }
+.sales-workspace .step-label { font-size:17px; }
+.sales-workspace .total-line { font-size:17px; }
+.sales-workspace .total-line.big { font-size:24px; }
+.sales-workspace .cta-btn { font-size:20px; min-height:52px; }
+.sales-workspace .pos-filter-row { flex-wrap:wrap; }
+.sales-workspace .pos-filter-row select,.sales-workspace .filter-check { font-size:16px; }
+.ledger-workspace th { font-size:16px; }
+.ledger-workspace td { font-size:17px; }
+.ledger-workspace .ledger-filters label { font-size:16px !important; color:#496447 !important; }
+.ledger-workspace .ledger-filters input { height:46px !important; }
+.ledger-workspace td .btn { font-size:16px; }
+.ledger-workspace table { min-width:1250px; }
+.form-card { max-width:100%; }
+.app-auth { font-family:'App Bangla',sans-serif; background:linear-gradient(135deg,#f9f5e8,#eef4e7); --navy:#28543b; --navy-dk:#193c29; --gold:#b29a5c; --text:#253f30; --muted:#5c715b; }
+.app-auth .card,.app-auth .register-card { border:1px solid #dce5d5; box-shadow:0 10px 36px #294d3210; border-radius:12px; }
+.app-auth label,.app-auth input,.app-auth button { font-family:'App Bangla',sans-serif; font-size:18px; }
+.app-auth .card-head { background:#28543b; }
+@media (max-width:1250px) {
+  .inventory-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .inventory-toolbar { grid-template-columns:repeat(3,minmax(140px,1fr)); }
+  .inventory-toolbar .inventory-search { grid-column:1 / -1; }
+}
+@media (max-width:900px) {
+  #topbar { min-height:66px; padding:12px 18px; }
+  #content { padding:20px 16px; }
+  .topbar-title { font-size:24px; }
+  .nav-scroll { gap:8px; }
+  .nav-item { font-size:17px; padding:9px 12px; }
+  .nav-label { display:inline; }
+  .brand { padding:16px 20px; }
+  .workspace-heading { padding:22px; }
+  .catalog-workspace .stepper { width:100%; }
+  .catalog-workspace .step-node { flex-shrink:1; }
+  .catalog-workspace .step-name { font-size:15px; }
+  .table-header { gap:12px; }
+}
+@media (max-width:600px) {
+  .workspace-heading { padding:20px 18px; }
+  .workspace-heading h1 { font-size:29px; }
+  .workspace-link { white-space:normal; }
+  .inventory-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .inventory-metric { padding:16px; }
+  .inventory-metric strong { font-size:29px; }
+  .inventory-metric:nth-child(4) strong { font-size:24px; }
+  .inventory-toolbar { padding:18px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .inventory-toolbar .inventory-search { grid-column:1 / -1; }
+  .inventory-table-heading { flex-wrap:wrap; }
+  .inventory-footer { align-items:flex-start; flex-direction:column; }
+  .table-header > input,.table-header > select { flex:1 1 100%; min-width:0; }
+  .status-pill { font-size:14px; padding:4px 8px; }
+  .brand-text p { font-size:15px; }
+  .form-card { padding:20px; }
+}
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }

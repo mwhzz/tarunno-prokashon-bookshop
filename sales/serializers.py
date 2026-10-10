@@ -26,8 +26,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
 class SaleItemCreateSerializer(serializers.Serializer):
     book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.filter(is_active=True))
     quantity = serializers.IntegerField(min_value=1)
-    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
 
     def validate(self, data):
         line_total = data['unit_price'] * data['quantity']
@@ -67,11 +67,11 @@ class SaleCreateSerializer(serializers.Serializer):
     """POS বিক্রয় তৈরির জন্য"""
     customer_name = serializers.CharField(max_length=200, default='Walk-in Customer')
     customer_phone = serializers.CharField(max_length=20, allow_blank=True, default='')
-    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
-    packaging_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
-    courier_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
-    transaction_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
-    paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
+    packaging_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
+    courier_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
+    transaction_fee = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
+    paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
     payment_method = serializers.ChoiceField(choices=Sale.PAYMENT_CHOICES, default='cash')
     note = serializers.CharField(allow_blank=True, default='')
     sale_type = serializers.ChoiceField(choices=Sale.SALE_TYPE_CHOICES, default='retail')
@@ -80,9 +80,22 @@ class SaleCreateSerializer(serializers.Serializer):
     def validate_items(self, items):
         if not items:
             raise serializers.ValidationError("কমপক্ষে একটি বই লাগবে।")
+        ids = [item['book'].pk for item in items]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError('একই বই একাধিক লাইনে দেওয়া যাবে না। পরিমাণ এক লাইনে লিখুন।')
         return items
 
     def validate(self, data):
+        subtotal = sum(item['unit_price'] * item['quantity'] - item['discount'] for item in data['items'])
+        if data['discount'] > subtotal:
+            raise serializers.ValidationError({'discount': 'ছাড় বইয়ের মোট দামের বেশি হতে পারবে না।'})
+        total = subtotal - data['discount'] + data['packaging_charge'] + data['courier_charge'] + data['transaction_fee']
+        if data['paid_amount'] > total:
+            raise serializers.ValidationError({'paid_amount': 'বিলের বেশি টাকা পেমেন্ট হিসেবে জমা করা যাবে না। বাড়তি নগদ ফেরত দিন।'})
+        if data['payment_method'] == 'credit' and data['paid_amount'] != 0:
+            raise serializers.ValidationError({'paid_amount': 'সম্পূর্ণ বাকি বিক্রয়ে পাওয়া টাকা শূন্য হবে।'})
+        if data['paid_amount'] < total and (not data.get('customer_phone') or data.get('customer_name') == 'Walk-in Customer'):
+            raise serializers.ValidationError({'customer_phone': 'বাকি রাখতে ক্রেতার নাম ও ফোন দিন।'})
         # স্টক চেক করুন (শুধুমাত্র দোকানের স্টক চেক হবে)
         for item_data in data['items']:
             book = item_data['book']
@@ -100,6 +113,14 @@ class SaleCreateSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data):
         items_data = validated_data.pop('items')
+        # The conditional write also protects SQLite, where SELECT FOR UPDATE is ignored.
+        from django.db.models import F
+        for item in sorted(items_data, key=lambda item: item['book'].pk):
+            reserved = StockSummary.objects.filter(
+                book=item['book'], shop_quantity__gte=item['quantity'],
+            ).update(shop_quantity=F('shop_quantity') - item['quantity'], last_updated=timezone.now())
+            if reserved != 1:
+                raise serializers.ValidationError({'items': f"'{item['book'].title}' বইয়ের দোকানের স্টক বদলে গেছে। কার্ট যাচাই করুন।"})
         customer_phone = validated_data.get('customer_phone')
         customer_name = validated_data.get('customer_name')
         
@@ -112,6 +133,7 @@ class SaleCreateSerializer(serializers.Serializer):
                 phone=customer_phone,
                 defaults={'name': customer_name}
             )
+            customer = Customer.objects.select_for_update().get(pk=customer.pk)
             previous_due = customer.total_due
 
         # subtotal হিসাব
@@ -171,7 +193,7 @@ class SaleCreateSerializer(serializers.Serializer):
                 reference_id=sale.id,
                 note=f"Sale Invoice #{sale.invoice_number}"
             )
-            StockSummary.update_stock(book, -qty, location='shop')
+            # Stock was reserved atomically before creating any payment.
 
         # Sale এর মোট কেনা দাম (total_cost) আপডেট করুন
         sale.total_cost = total_cost

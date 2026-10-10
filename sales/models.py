@@ -141,6 +141,14 @@ class Sale(models.Model):
         return self.total_profit * ratio
 
 
+class SaleSubmission(models.Model):
+    """One checkout attempt, replayable after a lost network response."""
+    request_id = models.UUIDField(primary_key=True, editable=False)
+    payload_hash = models.CharField(max_length=64)
+    sale = models.OneToOneField(Sale, null=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class Payment(models.Model):
     """ইনভয়েসের পেমেন্ট রেকর্ড (নগদ, বিকাশ, ব্যাংক ইত্যাদি)"""
     METHOD_CHOICES = [

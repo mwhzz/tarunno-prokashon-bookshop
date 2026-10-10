@@ -10,6 +10,11 @@ from .serializers import (
     ExternalTradeSerializer, ExternalTradeCreateSerializer,
 )
 from django.conf import settings
+from django.db import transaction
+from uuid import UUID
+import hashlib
+import json
+from .models import SaleSubmission
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 import os
@@ -43,10 +48,31 @@ class SaleViewSet(viewsets.ModelViewSet):
             return SaleCreateSerializer
         return SaleSerializer
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
+        submission = None
+        request_id = request.data.get('request_id')
+        if request_id:
+            try:
+                request_id = UUID(str(request_id))
+            except (ValueError, TypeError, AttributeError):
+                return Response({'detail': 'Invalid checkout request ID.'}, status=400)
+            payload = {key: value for key, value in request.data.items() if key != 'request_id'}
+            digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
+            submission, _ = SaleSubmission.objects.get_or_create(
+                request_id=request_id, defaults={'payload_hash': digest},
+            )
+            submission = SaleSubmission.objects.select_for_update().get(pk=request_id)
+            if submission.payload_hash != digest:
+                return Response({'detail': 'এই বিলের তথ্য বদলে গেছে। আগের সেভের ফল আগে যাচাই করুন।'}, status=409)
+            if submission.sale_id:
+                return Response(SaleSerializer(submission.sale).data, status=200)
         serializer = SaleCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         sale = serializer.save()
+        if submission:
+            submission.sale = sale
+            submission.save(update_fields=['sale'])
         return Response(
             SaleSerializer(sale).data,
             status=status.HTTP_201_CREATED

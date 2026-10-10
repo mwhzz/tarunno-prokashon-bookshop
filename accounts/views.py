@@ -85,6 +85,7 @@ class DailyCashViewSet(viewsets.ModelViewSet):
     def close_day(self, request, pk=None):
         obj = self.get_object()
         obj.is_closed = True
+        obj.save(update_fields=['is_closed'])
         obj.update_closing_balance()
 
         telegram_report = {'sent': False}
@@ -116,7 +117,10 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
     AUTO_LINKED_TYPES = {'sale', 'expense', 'purchase'}
 
     def _block_if_auto_linked(self, instance):
-        if instance.transaction_type in self.AUTO_LINKED_TYPES:
+        reconciled = (instance.reference_id or '').startswith('cash_offset_repair_') or CashTransaction.objects.filter(
+            reference_id=f'cash_offset_repair_20261010_{instance.pk}',
+        ).exists()
+        if instance.transaction_type in self.AUTO_LINKED_TYPES or reconciled:
             return Response(
                 {'error': 'এই এন্ট্রি স্বয়ংক্রিয়ভাবে বিক্রয়/খরচ/ক্রয় থেকে এসেছে — এখান থেকে সরাসরি এডিট বা ডিলিট করা যাবে না। মূল রেকর্ড থেকে পরিবর্তন করুন।'},
                 status=status.HTTP_400_BAD_REQUEST,

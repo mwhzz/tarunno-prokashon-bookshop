@@ -1,8 +1,15 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from sales.models import Payment
 from expenses.models import Expense
 from .models import DailyCash, CashTransaction
+
+
+@receiver(post_delete, sender=CashTransaction)
+def recalculate_after_cash_deletion(sender, instance, **kwargs):
+    day = DailyCash.objects.filter(pk=instance.daily_cash_id).first()
+    if day:
+        day.update_closing_balance()
 
 @receiver(post_save, sender=Payment)
 def record_payment_cash(sender, instance, created, **kwargs):

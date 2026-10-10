@@ -140,3 +140,10 @@ class DuePaymentRetryTests(TestCase):
         replay = self.post({**self.payload, 'expected_due': '1000.00'})
         self.assertEqual(replay.status_code, 200)
         self.assertEqual(Payment.objects.count(), 1)
+
+    def test_old_forms_without_a_request_id_cannot_bypass_retry_protection(self):
+        result = self.post({'amount': '100.00', 'method': 'cash'})
+        self.assertEqual(result.status_code, 400)
+        self.assertIn('request_id', result.data)
+        self.assertFalse(Payment.objects.exists())
+        self.assertFalse(CashTransaction.objects.exists())

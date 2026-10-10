@@ -14,7 +14,7 @@ from .serializers import CustomerSerializer, SaleSerializer
 
 
 class DuePaymentInput(serializers.Serializer):
-    request_id = serializers.UUIDField(required=False)
+    request_id = serializers.UUIDField(error_messages={'required': 'পেমেন্ট নেওয়ার আগে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।'})
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, default=0)
     discount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, default=0)
     expected_due = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
@@ -35,9 +35,7 @@ def _start(raw, kind, target_id):
     serializer = DuePaymentInput(data=raw)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
-    request_id = data.pop('request_id', None)
-    if request_id is None:
-        return data, None
+    request_id = data.pop('request_id')
     normalized = {'amount': format(data['amount'], '.2f'), 'discount': format(data['discount'], '.2f'), 'method': data['method']}
     if 'expected_due' in data:
         normalized['expected_due'] = format(data['expected_due'], '.2f')
@@ -115,8 +113,7 @@ def collect_customer_due(customer_id, raw):
     if changed != 1:
         raise serializers.ValidationError('ক্রেতার বাকি বদলে গেছে। আবার যাচাই করুন।')
     if amount > 0:
-        from uuid import uuid4
-        reference = attempt.pk if attempt else uuid4()
+        reference = attempt.pk
         note = f'বাকি আদায় (ওপেনিং ব্যালেন্স): {customer.name}'
         if discount > 0:
             note += f' [ছাড় ৳{discount}]'

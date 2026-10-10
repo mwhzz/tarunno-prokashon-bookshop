@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import uuid4
 from io import StringIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -194,7 +195,7 @@ class DuePaymentCashTests(TestCase):
 
     def test_cash_due_collection_creates_one_ledger_entry(self):
         from sales.models import Payment
-        response = self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'discount':20, 'method':'cash'}, format='json')
+        response = self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'request_id':str(uuid4()), 'amount':100, 'discount':20, 'method':'cash'}, format='json')
         self.assertEqual(response.status_code, 200)
         payment = Payment.objects.get(sale=self.sale)
         self.assertEqual(CashTransaction.objects.filter(transaction_type='sale').count(), 1)
@@ -207,7 +208,7 @@ class DuePaymentCashTests(TestCase):
 
     def test_removing_payment_also_removes_signal_cash_entry(self):
         from sales.models import Payment
-        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'method':'cash'}, format='json')
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'request_id':str(uuid4()), 'amount':100, 'method':'cash'}, format='json')
         payment = Payment.objects.get(sale=self.sale)
         result = self.client.post(f'/api/sales/{self.sale.pk}/remove_payment/', {'payment_id':payment.pk}, format='json')
         self.assertEqual(result.status_code, 200)
@@ -217,8 +218,8 @@ class DuePaymentCashTests(TestCase):
         self.assertEqual(self.sale.due_amount, 1000)
 
     def test_non_cash_and_discount_only_do_not_increase_cash(self):
-        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'method':'bank'}, format='json')
-        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':0, 'discount':100, 'method':'cash'}, format='json')
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'request_id':str(uuid4()), 'amount':100, 'method':'bank'}, format='json')
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'request_id':str(uuid4()), 'amount':0, 'discount':100, 'method':'cash'}, format='json')
         self.assertFalse(CashTransaction.objects.exists())
 
     def test_proven_legacy_duplicates_and_carried_balances_are_repaired(self):

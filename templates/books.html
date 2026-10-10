@@ -2,13 +2,13 @@
 {% load static %}
 {% block page_title %}বইয়ের ক্যাটালগ{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'books-catalog.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'books-catalog.css' %}?v=3">
 {% endblock %}
 {% block content %}
 <div class="bc-page">
   <header class="bc-header">
     <div>
-      <div class="bc-eyebrow">LIBRARY MANAGEMENT</div>
+      <div class="bc-eyebrow">তারুণ্য প্রকাশন / বই ব্যবস্থাপনা</div>
       <h1>বইয়ের ক্যাটালগ<span class="bc-heading-mark" aria-hidden="true">.</span></h1>
       <p>আপনার প্রকাশনার সব বই, মূল্য ও স্টক পরিচালনা করুন।</p>
     </div>
@@ -32,7 +32,7 @@
         <button type="button" data-source="own" aria-pressed="false" onclick="setBookSource('own')">নিজস্ব প্রকাশনা <span id="bc-tab-own">—</span></button>
         <button type="button" data-source="external" aria-pressed="false" onclick="setBookSource('external')">বাইরের বই <span id="bc-tab-external">—</span></button>
       </div>
-      <span class="bc-library-caption">আপনার বইয়ের সংগ্রহ</span>
+      <span class="bc-library-caption">তারুণ্য প্রকাশন · বইয়ের সংগ্রহ</span>
     </div>
     <div class="bc-toolbar">
       <div class="bc-search-wrap">
@@ -138,7 +138,7 @@ function bookRowHtml(b) {
   const image = b.image ? safeBookImage(b.image) : '';
   const stockClass = stock <= 0 ? 'none' : stock <= 5 ? 'low' : 'available';
   return `<tr>
-    <td><div class="bc-book-cell"><a class="bc-cover" href="/books/edit/${b.id}/" tabindex="-1" aria-hidden="true">${bookIcon('book')}${image ? `<img src="${bookEscape(image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</a><div class="bc-book-info"><a href="/books/edit/${b.id}/">${bookEscape(b.title)}</a><span>${bookEscape(b.author || 'লেখক দেওয়া হয়নি')}</span></div></div></td>
+    <td><div class="bc-book-cell"><a class="bc-cover bc-cover-${b.id % 4}" href="/books/edit/${b.id}/" tabindex="-1" aria-hidden="true">${bookIcon('book')}${image ? `<img src="${bookEscape(image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</a><div class="bc-book-info"><a href="/books/edit/${b.id}/">${bookEscape(b.title)}</a><span>${bookEscape(b.author || 'লেখক দেওয়া হয়নি')}</span></div></div></td>
     <td><span class="bc-code">${bookEscape(b.product_code || '—')}</span></td>
     <td><span class="bc-publisher"><span class="bc-publisher-dot ${b.source === 'external' ? 'external' : ''}"></span>${b.source === 'external' ? 'বাইরের বই' : 'নিজস্ব প্রকাশনা'}</span></td>
     <td class="bc-number bc-mrp">৳${num(b.mrp)}</td>

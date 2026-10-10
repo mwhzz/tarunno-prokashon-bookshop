@@ -1,174 +1,191 @@
 {% extends 'base.html' %}
-
-{% block page_title %}বইয়ের তালিকা{% endblock %}
-
+{% load static %}
+{% block page_title %}বইয়ের ক্যাটালগ{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'books-catalog.css' %}?v=1">
+{% endblock %}
 {% block content %}
-<!-- 
-=============================================================================
-* বইয়ের তালিকা পেজ (Books List)
-* এখানে দোকানে থাকা সব বই, তাদের দাম এবং স্টকের অবস্থা দেখা যাবে।
-=============================================================================
--->
+<div class="bc-page">
+  <header class="bc-header">
+    <div>
+      <div class="bc-eyebrow">LIBRARY MANAGEMENT</div>
+      <h1>বইয়ের ক্যাটালগ<span class="bc-heading-mark" aria-hidden="true">.</span></h1>
+      <p>আপনার প্রকাশনার সব বই, মূল্য ও স্টক পরিচালনা করুন।</p>
+    </div>
+    <div class="bc-header-actions">
+      <button type="button" class="bc-button bc-button-secondary" onclick="exportBooksCSV()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg>CSV এক্সপোর্ট</button>
+      <a class="bc-button bc-button-primary" href="/books/add/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>নতুন বই যোগ করুন</a>
+    </div>
+  </header>
 
-<div id="books-wrapper">
-    <div class="loading"><div class="spinner"></div> বই লোড হচ্ছে...</div>
+  <div class="bc-overview" aria-label="ক্যাটালগের সারসংক্ষেপ">
+    <div><span>ক্যাটালগে বই</span><strong id="bc-total">—</strong><small>স্বতন্ত্র শিরোনাম</small></div>
+    <div><span>স্টকে আছে</span><strong id="bc-in-stock">—</strong><small>ধরনের বই</small></div>
+    <div><span>মোট কপি</span><strong id="bc-copies">—</strong><small>দোকান ও গোডাউন মিলিয়ে</small></div>
+    <div class="bc-overview-note"><span class="bc-note-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4zm16 0h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h3z"/></svg></span><p>নতুন বই যোগ করেছেন?<small>বিক্রি শুরু করতে বইয়ের স্টক যোগ করুন।</small><a href="/stock/add/">স্টক পরিচালনা করুন ↗</a></p></div>
+  </div>
+
+  <section class="bc-library" aria-label="বইয়ের তালিকা">
+    <div class="bc-library-top">
+      <div class="bc-source-tabs" role="group" aria-label="বইয়ের উৎস">
+        <button type="button" class="is-selected" data-source="" aria-pressed="true" onclick="setBookSource('')">সব বই <span id="bc-tab-all">—</span></button>
+        <button type="button" data-source="own" aria-pressed="false" onclick="setBookSource('own')">নিজস্ব প্রকাশনা <span id="bc-tab-own">—</span></button>
+        <button type="button" data-source="external" aria-pressed="false" onclick="setBookSource('external')">বাইরের বই <span id="bc-tab-external">—</span></button>
+      </div>
+      <span class="bc-library-caption">আপনার বইয়ের সংগ্রহ</span>
+    </div>
+    <div class="bc-toolbar">
+      <div class="bc-search-wrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <label for="book-search-list" class="bc-sr-only">বইয়ের নাম, লেখক বা কোড দিয়ে খুঁজুন</label>
+        <input id="book-search-list" type="search" placeholder="বইয়ের নাম, লেখক বা কোড দিয়ে খুঁজুন…" oninput="filterBookList()">
+      </div>
+      <label class="bc-select-wrap"><span class="bc-sr-only">স্টকের অবস্থা</span><select id="bc-stock-filter" onchange="filterBookList()"><option value="">সব স্টক</option><option value="available">স্টকে আছে</option><option value="empty">স্টক নেই</option><option value="low">কম স্টক (১–৫)</option></select></label>
+      <label class="bc-select-wrap"><span class="bc-sr-only">বই সাজান</span><select id="bc-sort" onchange="filterBookList()"><option value="name">নাম অনুযায়ী</option><option value="price-desc">দাম: বেশি থেকে কম</option><option value="price-asc">দাম: কম থেকে বেশি</option><option value="stock-desc">বেশি স্টক আগে</option></select></label>
+      <button type="button" class="bc-reset" onclick="resetBookFilters()">রিসেট</button>
+    </div>
+    <div class="bc-table-scroll" tabindex="0" role="region" aria-label="বইয়ের তালিকা; ছোট স্ক্রিনে পাশে স্ক্রল করুন">
+      <table id="books-table" class="bc-table">
+        <thead><tr><th scope="col" class="bc-book-column">বইয়ের বিবরণ</th><th scope="col">প্রোডাক্ট কোড</th><th scope="col">প্রকাশনা</th><th scope="col" class="bc-number">MRP</th><th scope="col" class="bc-number">বিক্রয়মূল্য</th><th scope="col">বর্তমান স্টক</th><th scope="col"><span class="bc-sr-only">অ্যাকশন</span></th></tr></thead>
+        <tbody id="bc-tbody"><tr><td colspan="7"><div class="bc-empty"><div class="spinner"></div><p>ক্যাটালগ লোড হচ্ছে…</p></div></td></tr></tbody>
+      </table>
+    </div>
+    <footer class="bc-footer"><span id="bc-result-count" aria-live="polite">বইয়ের তথ্য লোড হচ্ছে…</span><span>বইয়ের নামে ক্লিক করে বিস্তারিত সম্পাদনা করুন</span></footer>
+  </section>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
 let allBooksList = [];
-const BOOKS_RENDER_STEP = 150;
-let booksRenderedCount = BOOKS_RENDER_STEP;
-
-async function initBooks() {
-  const w = document.getElementById('books-wrapper');
+let bookSource = '';
+let booksLoading = true;
+const deletingBooks = new Set();
+function bookEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+}
+function bookIcon(name) {
+  const paths = {edit:'M15 5l4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',book:'M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4zm16 0h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h3z'};
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.book}"/></svg>`;
+}
+function safeBookImage(value) {
   try {
-    const r = await fetchAllBooks();
-    allBooksList = r.results;
-
-    w.innerHTML = `
-      <div class="table-wrap">
-        <div class="table-header">
-          <span class="table-title">📗 বইয়ের তালিকা (${r.count}টি)</span>
-          <select id="book-source-filter" onchange="filterBookList()" style="padding:6px 10px; border:1px solid var(--border); border-radius:4px;">
-            <option value="">সব বই</option>
-            <option value="own">📗 নিজস্ব বই</option>
-            <option value="external">🏢 বাইরের বই</option>
-          </select>
-          <input type="text" placeholder="বই, লেখক বা কোড খুঁজুন..." id="book-search-list" oninput="filterBookList()" style="width:250px; padding:6px 12px; border:1px solid var(--border); border-radius:4px;">
-          <button class="btn btn-ghost btn-sm" onclick="exportBooksCSV()">⬇️ CSV এক্সপোর্ট</button>
-          <a href="/books/add/" class="btn btn-primary btn-sm" style="text-decoration:none;">+ নতুন বই</a>
-        </div>
-
-        <table id="books-table" style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr>
-              <th>ছবি</th>
-              <th>কোড</th>
-              <th>বইয়ের নাম</th>
-              <th>লেখক</th>
-              <th>উৎস</th>
-              <th>MRP</th>
-              <th>বিক্রয়মূল্য</th>
-              <th>স্টক</th>
-              <th>স্ট্যাটাস</th>
-              <th style="text-align:right">অ্যাকশন</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <div id="books-load-more-wrap" style="padding:14px 20px; text-align:center;"></div>
-      </div>`;
-    renderBooksTable(allBooksList);
-  } catch(e) {
-    w.innerHTML = '<div class="empty">সার্ভার থেকে ডাটা পাওয়া যায়নি।</div>';
+    const url = new URL(value, window.location.origin);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
+async function fetchAllBooks() {
+  const results = [];
+  let page = 1;
+  while (true) {
+    const response = await api(`/books/?page=${page}&page_size=500`);
+    results.push(...response.results);
+    if (!response.next) break;
+    page++;
+  }
+  return results;
+}
+async function initBooks() {
+  booksLoading = true;
+  try {
+    allBooksList = await fetchAllBooks();
+    booksLoading = false;
+    updateBookOverview();
+    filterBookList();
+  } catch (e) {
+    document.getElementById('bc-tbody').innerHTML = '<tr><td colspan="7"><div class="bc-empty"><h2>ক্যাটালগ লোড হয়নি</h2><p>সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</p><button type="button" class="bc-button bc-button-secondary" onclick="initBooks()">আবার চেষ্টা করুন</button></div></td></tr>';
+    document.getElementById('bc-result-count').textContent = 'তথ্য লোড করা যায়নি';
   }
 }
-
-function renderBooksTable(list) {
-  const tbody = document.querySelector('#books-table tbody');
-  const moreWrap = document.getElementById('books-load-more-wrap');
-  if (!tbody) return;
-  const visible = list.slice(0, booksRenderedCount);
-  tbody.innerHTML = visible.map(bookRowHtml).join('');
-  if (moreWrap) {
-    const remaining = list.length - visible.length;
-    moreWrap.innerHTML = remaining > 0
-      ? `<button class="btn btn-ghost btn-sm" onclick="loadMoreBooks()">আরও ${num(remaining)}টি দেখুন</button>`
-      : '';
-  }
+function updateBookOverview() {
+  const values = {
+    'bc-total':allBooksList.length,
+    'bc-in-stock':allBooksList.filter(b => Number(b.current_stock) > 0).length,
+    'bc-copies':allBooksList.reduce((total,b) => total + Number(b.current_stock || 0),0),
+    'bc-tab-all':allBooksList.length,
+    'bc-tab-own':allBooksList.filter(b => b.source === 'own').length,
+    'bc-tab-external':allBooksList.filter(b => b.source === 'external').length,
+  };
+  Object.entries(values).forEach(([id,value]) => document.getElementById(id).textContent = num(value));
 }
-
-function loadMoreBooks() {
-  booksRenderedCount += BOOKS_RENDER_STEP;
-  renderBooksTable(getFilteredBookList());
+function setBookSource(source) {
+  bookSource = source;
+  document.querySelectorAll('.bc-source-tabs button').forEach(button => {
+    const selected = button.dataset.source === source;
+    button.classList.toggle('is-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  filterBookList();
 }
-
-// প্রতিটি বইয়ের জন্য টেবিলের একটা সারি (Row) তৈরি করার ফাংশন
+function getFilteredBookList() {
+  const query = document.getElementById('book-search-list').value.trim().toLocaleLowerCase();
+  const stock = document.getElementById('bc-stock-filter').value;
+  const sort = document.getElementById('bc-sort').value;
+  const rows = allBooksList.filter(b => {
+    const quantity = Number(b.current_stock || 0);
+    return (!bookSource || b.source === bookSource)
+      && [b.title,b.author,b.product_code].some(value => String(value || '').toLocaleLowerCase().includes(query))
+      && (!stock || (stock === 'available' && quantity > 0) || (stock === 'empty' && quantity <= 0) || (stock === 'low' && quantity > 0 && quantity <= 5));
+  });
+  return rows.sort((a,b) => {
+    if (sort === 'price-desc') return Number(b.selling_price) - Number(a.selling_price);
+    if (sort === 'price-asc') return Number(a.selling_price) - Number(b.selling_price);
+    if (sort === 'stock-desc') return Number(b.current_stock) - Number(a.current_stock);
+    return a.title.localeCompare(b.title,'bn');
+  });
+}
 function bookRowHtml(b) {
-  // স্টকের পরিমাণ অনুযায়ী ব্যাজ (Badge) ঠিক করা
-  const stockBadge = b.current_stock <= 0
-    ? '<span class="badge badge-red">স্টক নেই</span>'
-    : b.current_stock <= 5
-    ? `<span class="badge badge-yellow">${b.current_stock} pcs</span>`
-    : `<span class="badge badge-green">${b.current_stock} pcs</span>`;
-    
+  const stock = Number(b.current_stock || 0);
+  const image = b.image ? safeBookImage(b.image) : '';
+  const stockClass = stock <= 0 ? 'none' : stock <= 5 ? 'low' : 'available';
   return `<tr>
-    <td style="width: 50px; text-align: center;">
-      <img src="${b.image || '/static/img/no-book.png'}" 
-           style="width:40px; height:60px; object-fit:contain; border-radius:4px; border:1px solid var(--border); background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.1)"
-           onerror="this.src='https://via.placeholder.com/40x60?text=No+Img'">
-    </td>
-    <td style="font-family:monospace">${b.product_code || '—'}</td>
-    <td><strong>${b.title}</strong></td>
-    <td>${b.author || '—'}</td>
-    <td>${b.source === 'external' ? '<span class="badge badge-yellow">🏢 বাইরের</span>' : '<span class="badge badge-green">📗 নিজস্ব</span>'}</td>
-    <td style="font-family:monospace">৳${b.mrp || 0}</td>
-    <td style="font-family:monospace;color:var(--accent)">৳${b.selling_price}</td>
-    <td>${stockBadge}</td>
-    <td>${b.is_active ? '<span class="badge badge-green">সক্রিয়</span>' : '<span class="badge badge-red">বন্ধ</span>'}</td>
-    <td style="text-align:right">
-      <a href="/books/edit/${b.id}/" class="btn btn-ghost btn-sm" style="text-decoration:none">✎ এডিট</a>
-      <button type="button" class="btn btn-danger btn-sm" onclick="deleteBook(${b.id})">🗑️ মুছুন</button>
-    </td>
+    <td><div class="bc-book-cell"><a class="bc-cover" href="/books/edit/${b.id}/" tabindex="-1" aria-hidden="true">${bookIcon('book')}${image ? `<img src="${bookEscape(image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</a><div class="bc-book-info"><a href="/books/edit/${b.id}/">${bookEscape(b.title)}</a><span>${bookEscape(b.author || 'লেখক দেওয়া হয়নি')}</span></div></div></td>
+    <td><span class="bc-code">${bookEscape(b.product_code || '—')}</span></td>
+    <td><span class="bc-publisher"><span class="bc-publisher-dot ${b.source === 'external' ? 'external' : ''}"></span>${b.source === 'external' ? 'বাইরের বই' : 'নিজস্ব প্রকাশনা'}</span></td>
+    <td class="bc-number bc-mrp">৳${num(b.mrp)}</td>
+    <td class="bc-number bc-price">৳${num(b.selling_price)}</td>
+    <td><div class="bc-stock ${stockClass}"><span class="bc-stock-dot"></span>${stock <= 0 ? 'স্টক নেই' : `<strong>${num(stock)}</strong><span>কপি</span>`}</div>${stock > 0 && stock <= 5 ? '<small class="bc-stock-warning">স্টক কমে এসেছে</small>' : ''}</td>
+    <td><div class="bc-row-actions"><a href="/books/edit/${b.id}/" class="bc-edit" aria-label="${bookEscape(b.title)} সম্পাদনা করুন">${bookIcon('edit')}<span>এডিট</span></a><button type="button" class="bc-delete" data-delete-book="${b.id}" aria-label="${bookEscape(b.title)} মুছুন" title="বই মুছুন" ${deletingBooks.has(b.id) ? 'disabled' : ''}>${bookIcon('trash')}</button></div></td>
   </tr>`;
 }
-
+function filterBookList() {
+  if (booksLoading) return;
+  const rows = getFilteredBookList();
+  document.getElementById('bc-tbody').innerHTML = rows.length ? rows.map(bookRowHtml).join('') : '<tr><td colspan="7"><div class="bc-empty">'+bookIcon('book')+'<h2>কোনো বই পাওয়া যায়নি</h2><p>অন্য নাম দিয়ে খুঁজুন অথবা ফিল্টার সরিয়ে দেখুন।</p><button type="button" class="bc-button bc-button-secondary" onclick="resetBookFilters()">সব বই দেখুন</button></div></td></tr>';
+  document.getElementById('bc-result-count').textContent = 'মোট '+num(allBooksList.length)+'টি বইয়ের মধ্যে '+num(rows.length)+'টি দেখানো হচ্ছে';
+}
+function resetBookFilters() {
+  document.getElementById('book-search-list').value = '';
+  document.getElementById('bc-stock-filter').value = '';
+  document.getElementById('bc-sort').value = 'name';
+  setBookSource('');
+}
 async function deleteBook(id) {
+  if (deletingBooks.has(id)) return;
   const book = allBooksList.find(b => b.id === id);
-  const name = book?.title || 'এই বইটি';
-  const ok = await confirmModal(`"${name}" মুছে ফেলতে চান?`, { danger: true });
+  if (!book) return;
+  const ok = await confirmModal(`"${book.title}" মুছে ফেলতে চান?`, {danger:true});
   if (!ok) return;
-
+  deletingBooks.add(id);
+  filterBookList();
   try {
     await api(`/books/${id}/`, 'DELETE');
     allBooksList = allBooksList.filter(b => b.id !== id);
-    const tbody = document.querySelector('#books-table tbody');
-    if (tbody) tbody.innerHTML = allBooksList.map(bookRowHtml).join('');
+    updateBookOverview();
     toast('বই মুছে ফেলা হয়েছে।');
   } catch (e) {
-    const msg = e && typeof e === 'object' ? (e.error || e.detail || JSON.stringify(e)) : String(e);
-    toast('মুছে ফেলা যায়নি: ' + msg, 'error');
+    toast('মুছতে সমস্যা হয়েছে: ' + (e?.detail || e?.error || 'আবার চেষ্টা করুন'), 'error');
+  } finally {
+    deletingBooks.delete(id);
+    filterBookList();
   }
 }
-
-async function fetchAllBooks() {
-  let page = 1;
-  const results = [];
-  let count = 0;
-
-  while (true) {
-    const r = await api(`/books/?page=${page}&page_size=1000`);
-    results.push(...(r.results || []));
-    count = r.count || results.length;
-    if (!r.next) break;
-    page++;
-  }
-
-  return { count, results };
-}
-
-// সার্চ বক্সে কিছু লিখলে লিস্ট ফিল্টার করার ফাংশন
-function getFilteredBookList() {
-  const q = document.getElementById('book-search-list')?.value.toLowerCase() || '';
-  const source = document.getElementById('book-source-filter')?.value || '';
-
-  // নাম, লেখক অথবা প্রোডাক্ট কোডের সাথে মিলিয়ে ফিল্টার
-  return allBooksList.filter(b =>
-    (b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.product_code||'').toLowerCase().includes(q)) &&
-    (!source || b.source === source)
-  );
-}
-
-function filterBookList() {
-  booksRenderedCount = BOOKS_RENDER_STEP;
-  renderBooksTable(getFilteredBookList());
-}
-
+document.getElementById('bc-tbody').addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-book]');
+  if (button && !button.disabled) deleteBook(Number(button.dataset.deleteBook));
+});
 function csvEscape(v) {
   const s = (v === null || v === undefined) ? '' : String(v);
-  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
 function exportBooksCSV() {
@@ -177,7 +194,7 @@ function exportBooksCSV() {
 
   // এই কলামগুলো CSV Import ফিচারের সাথে মিলিয়ে রাখা হয়েছে, যাতে এক্সপোর্ট করে এডিট করে
   // আবার ইমপোর্ট করা যায়।
-  const headers = ['title', 'author', 'publisher', 'isbn', 'edition', 'product_code', 'mrp', 'purchase_price', 'selling_price', 'commission', 'current_stock'];
+  const headers = ['title', 'author', 'product_code', 'source', 'mrp', 'selling_price', 'commission', 'discount', 'discount_type', 'current_stock'];
   const lines = [headers.join(',')];
   rows.forEach(b => {
     lines.push(headers.map(h => csvEscape(b[h])).join(','));
@@ -194,6 +211,7 @@ function exportBooksCSV() {
   URL.revokeObjectURL(url);
   toast(`${rows.length}টি বই CSV হিসেবে ডাউনলোড হয়েছে ✓`);
 }
+
 
 document.addEventListener('DOMContentLoaded', initBooks);
 </script>

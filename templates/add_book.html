@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block page_title %}নতুন বই যুক্ত করুন{% endblock %}
 
 {% block extra_css %}
@@ -881,21 +882,34 @@ select.wiz-input { cursor: pointer; }
 .col-req { color: var(--danger); font-weight: 800; }
 .col-opt { color: var(--muted); }
 </style>
+<link rel="stylesheet" href="{% static 'workspace.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="wizard-page">
+<div class="wizard-page workspace catalog-workspace">
+<header class="workspace-heading">
+  <div>
+    <div class="workspace-eyebrow">CATALOG / NEW BOOK</div>
+    <h1>নতুন বই যোগ করুন</h1>
+    <p>বইয়ের তথ্য, মূল্য ও প্রচ্ছদ — সব এক জায়গায়।</p>
+  </div>
+  <a class="workspace-link" href="/books/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>
+    বইয়ের তালিকা
+  </a>
+</header>
+
 
   <!-- ── MODE TABS ── -->
   <div class="mode-tabs">
     <button class="mode-tab" id="tab-quick" onclick="switchMode('quick')">
-      ⚡ দ্রুত যোগ করুন
+      দ্রুত যোগ করুন
     </button>
     <button class="mode-tab active" id="tab-manual" onclick="switchMode('manual')">
-      📋 পূর্ণ ফর্ম
+      পূর্ণ ফর্ম
     </button>
     <button class="mode-tab" id="tab-csv" onclick="switchMode('csv')">
-      📂 CSV Import
+      CSV Import
     </button>
   </div>
 
@@ -905,7 +919,7 @@ select.wiz-input { cursor: pointer; }
   <div class="csv-panel" id="quick-panel">
     <div class="csv-card">
       <div class="sc-header">
-        <div class="sc-badge">⚡ QUICK ADD</div>
+        <div class="sc-badge">QUICK ADD</div>
         <div class="sc-title">দ্রুত বই যোগ করুন</div>
         <div class="sc-desc">শুধু নাম দিলেই হবে — বাকি সব পরে edit করা যাবে।</div>
       </div>
@@ -914,8 +928,8 @@ select.wiz-input { cursor: pointer; }
       <div class="wiz-group">
         <div class="wiz-label">বইয়ের উৎস</div>
         <div style="display:flex; gap:8px;">
-          <button type="button" class="mode-tab active" id="qa-src-own" onclick="setQASource('own')" style="border-radius:10px;">📗 নিজস্ব বই</button>
-          <button type="button" class="mode-tab" id="qa-src-external" onclick="setQASource('external')" style="border-radius:10px;">🏢 বাইরের বই</button>
+          <button type="button" class="mode-tab active" id="qa-src-own" onclick="setQASource('own')" style="border-radius:10px;">নিজস্ব বই</button>
+          <button type="button" class="mode-tab" id="qa-src-external" onclick="setQASource('external')" style="border-radius:10px;">বাইরের বই</button>
         </div>
       </div>
 
@@ -996,7 +1010,7 @@ select.wiz-input { cursor: pointer; }
       <!-- save button -->
       <div style="margin-top:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
         <button class="btn-save" id="qa-save-btn" onclick="submitQuickAdd()" style="padding:13px 32px;font-size:16px;">
-          ✅ বই সংরক্ষণ করুন
+          বই সংরক্ষণ করুন
         </button>
         <a href="/books/" style="text-decoration:none;" class="btn-back">← বাতিল</a>
       </div>
@@ -1008,10 +1022,10 @@ select.wiz-input { cursor: pointer; }
         <div class="success-sub" id="qa-success-msg"></div>
         <div class="success-actions">
           <button onclick="resetQuickAdd()" class="btn btn-primary" style="border:none;cursor:pointer;border-radius:99px;padding:12px 24px;background:var(--accent);color:#fff;font-family:inherit;font-size:14px;font-weight:700;">
-            ➕ আরেকটি বই যোগ করুন
+            আরেকটি বই যোগ করুন
           </button>
           <a href="/books/" class="btn btn-ghost" style="text-decoration:none;border-radius:99px;padding:12px 24px;">
-            📗 বইয়ের তালিকা
+            বইয়ের তালিকা
           </a>
         </div>
       </div>
@@ -1025,7 +1039,7 @@ select.wiz-input { cursor: pointer; }
     <div class="csv-card">
       <div class="sc-header">
         <div class="sc-badge">BULK IMPORT</div>
-        <div class="sc-title">📂 CSV থেকে বই Import</div>
+        <div class="sc-title">CSV থেকে বই Import</div>
         <div class="sc-desc">একসাথে অনেক বই যোগ করতে CSV ফাইল আপলোড করুন।</div>
       </div>
 
@@ -1035,7 +1049,7 @@ select.wiz-input { cursor: pointer; }
           ⬇️ Example CSV ডাউনলোড করুন
         </a>
         <button class="btn-csv-import" id="csv-import-btn" onclick="startCSVImport()" disabled>
-          ✅ Import করুন
+          Import করুন
         </button>
       </div>
 
@@ -1054,7 +1068,7 @@ select.wiz-input { cursor: pointer; }
 
       <!-- preview table -->
       <div class="csv-preview-wrap" id="csv-preview-wrap">
-        <div class="preview-label">📋 ফাইলের প্রথম ৫টি সারি:</div>
+        <div class="preview-label">ফাইলের প্রথম ৫টি সারি:</div>
         <div class="preview-table-wrap">
           <table class="preview-table" id="preview-table"></table>
         </div>
@@ -1080,7 +1094,7 @@ select.wiz-input { cursor: pointer; }
             </tr>
           </thead>
           <tbody>
-            <tr><td><span class="col-name">title</span></td><td>বইয়ের নাম</td><td><span class="col-req">✅ হ্যাঁ</span></td><td>হাজার বছর ধরে</td></tr>
+            <tr><td><span class="col-name">title</span></td><td>বইয়ের নাম</td><td><span class="col-req">হ্যাঁ</span></td><td>হাজার বছর ধরে</td></tr>
             <tr><td><span class="col-name">author</span></td><td>লেখক</td><td><span class="col-opt">না</span></td><td>জহির রায়হান</td></tr>
             <tr><td><span class="col-name">publisher</span></td><td>প্রকাশনী</td><td><span class="col-opt">না</span></td><td>অনন্যা</td></tr>
             <tr><td><span class="col-name">isbn</span></td><td>ISBN কোড</td><td><span class="col-opt">না</span></td><td>9789840413232</td></tr>
@@ -1107,27 +1121,27 @@ select.wiz-input { cursor: pointer; }
 
   <!-- ── STEPPER ── -->
   <div class="stepper" id="stepper">
-    <div class="step-node active" onclick="goStep(1)" id="sn-1">
+    <div class="step-node active" onclick="goStep(1)" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goStep(1); }" role="button" tabindex="0" id="sn-1">
       <div class="step-circle"><span>১</span></div>
       <div class="step-name">বইয়ের পরিচয়</div>
     </div>
     <div class="step-connector" id="sc-1"></div>
-    <div class="step-node" onclick="goStep(2)" id="sn-2">
+    <div class="step-node" onclick="goStep(2)" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goStep(2); }" role="button" tabindex="0" id="sn-2">
       <div class="step-circle"><span>২</span></div>
       <div class="step-name">দামের হিসাব</div>
     </div>
     <div class="step-connector" id="sc-2"></div>
-    <div class="step-node" onclick="goStep(3)" id="sn-3">
+    <div class="step-node" onclick="goStep(3)" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goStep(3); }" role="button" tabindex="0" id="sn-3">
       <div class="step-circle"><span>৩</span></div>
       <div class="step-name">ছাড় ও কমিশন</div>
     </div>
     <div class="step-connector" id="sc-3"></div>
-    <div class="step-node" onclick="goStep(4)" id="sn-4">
+    <div class="step-node" onclick="goStep(4)" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goStep(4); }" role="button" tabindex="0" id="sn-4">
       <div class="step-circle"><span>৪</span></div>
       <div class="step-name">ছবি ও নোট</div>
     </div>
     <div class="step-connector" id="sc-4"></div>
-    <div class="step-node" onclick="goStep(5)" id="sn-5">
+    <div class="step-node" onclick="goStep(5)" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goStep(5); }" role="button" tabindex="0" id="sn-5">
       <div class="step-circle"><span>৫</span></div>
       <div class="step-name">রিভিউ করুন</div>
     </div>
@@ -1139,7 +1153,7 @@ select.wiz-input { cursor: pointer; }
   <div class="step-card active" id="step-1">
     <div class="sc-header">
       <div class="sc-badge">ধাপ ১ / ৫</div>
-      <div class="sc-title">📗 বইয়ের পরিচয়</div>
+      <div class="sc-title">বইয়ের পরিচয়</div>
       <div class="sc-desc">বইটি সম্পর্কে মূল তথ্য দিন — নাম, লেখক ও প্রকাশক।</div>
     </div>
 
@@ -1189,8 +1203,8 @@ select.wiz-input { cursor: pointer; }
     <div class="wiz-group">
       <div class="wiz-label">বইয়ের উৎস</div>
       <div style="display:flex; gap:8px; max-width:400px;">
-        <button type="button" class="mode-tab active" id="b-src-own" onclick="setBSource('own')" style="border-radius:10px;">📗 নিজস্ব বই (তারুণ্য প্রকাশন)</button>
-        <button type="button" class="mode-tab" id="b-src-external" onclick="setBSource('external')" style="border-radius:10px;">🏢 বাইরের প্রকাশনী/ভেন্ডর</button>
+        <button type="button" class="mode-tab active" id="b-src-own" onclick="setBSource('own')" style="border-radius:10px;">নিজস্ব বই (তারুণ্য প্রকাশন)</button>
+        <button type="button" class="mode-tab" id="b-src-external" onclick="setBSource('external')" style="border-radius:10px;">বাইরের প্রকাশনী/ভেন্ডর</button>
       </div>
       <div class="wiz-hint">নিজেদের প্রকাশিত বই নাকি অন্য প্রকাশনী/ভেন্ডরের কাছ থেকে নেওয়া বই।</div>
     </div>
@@ -1207,7 +1221,7 @@ select.wiz-input { cursor: pointer; }
   <div class="step-card" id="step-2">
     <div class="sc-header">
       <div class="sc-badge">ধাপ ২ / ৫</div>
-      <div class="sc-title">💰 দামের হিসাব</div>
+      <div class="sc-title">দামের হিসাব</div>
       <div class="sc-desc">বইটির গায়ের দাম, কেনার দাম এবং আপনার বিক্রয় মূল্য লিখুন।</div>
     </div>
 
@@ -1296,7 +1310,7 @@ select.wiz-input { cursor: pointer; }
   <div class="step-card" id="step-4">
     <div class="sc-header">
       <div class="sc-badge">ধাপ ৪ / ৫</div>
-      <div class="sc-title">🖼️ ছবি ও অতিরিক্ত নোট</div>
+      <div class="sc-title">ছবি ও অতিরিক্ত নোট</div>
       <div class="sc-desc">বইয়ের কভার ছবি এবং কোনো বিশেষ নোট থাকলে যোগ করুন।</div>
     </div>
 
@@ -1335,7 +1349,7 @@ select.wiz-input { cursor: pointer; }
   <div class="step-card" id="step-5">
     <div class="sc-header">
       <div class="sc-badge">ধাপ ৫ / ৫</div>
-      <div class="sc-title">✅ রিভিউ করুন</div>
+      <div class="sc-title">রিভিউ করুন</div>
       <div class="sc-desc">সব তথ্য ঠিক আছে কিনা দেখুন — তারপর সংরক্ষণ করুন।</div>
     </div>
 
@@ -1351,7 +1365,7 @@ select.wiz-input { cursor: pointer; }
     <div class="step-nav">
       <button class="btn-back" onclick="goStep(4)">← পেছনে, আরো এডিট করুন</button>
       <button class="btn-save" id="save-btn" onclick="submitBook()">
-        ✅ বই সংরক্ষণ করুন
+        বই সংরক্ষণ করুন
       </button>
     </div>
   </div>
@@ -1365,13 +1379,13 @@ select.wiz-input { cursor: pointer; }
     <div class="success-sub" id="success-msg">নতুন বই সফলভাবে যোগ করা হয়েছে।</div>
     <div class="success-actions">
       <a href="/books/add/" class="btn btn-primary" style="text-decoration:none; border-radius:99px; padding:12px 24px;">
-        ➕ আরেকটি বই যোগ করুন
+        আরেকটি বই যোগ করুন
       </a>
       <a href="/books/" class="btn btn-ghost" style="text-decoration:none; border-radius:99px; padding:12px 24px;">
-        📗 বইয়ের তালিকা দেখুন
+        বইয়ের তালিকা দেখুন
       </a>
       <a href="/stock/add/" class="btn btn-success" style="text-decoration:none; border-radius:99px; padding:12px 24px; color:var(--g900);">
-        📦 স্টক যোগ করুন
+        স্টক যোগ করুন
       </a>
     </div>
   </div>
@@ -1513,7 +1527,7 @@ function buildReview() {
     ['ISBN',           document.getElementById('b-isbn').value],
     ['প্রোডাক্ট কোড', document.getElementById('b-code').value],
     ['ধরন',            document.getElementById('b-type').value === 'series' ? 'Series (সিরিজ)' : 'Single (একটি বই)'],
-    ['উৎস',            selectedSource === 'external' ? '🏢 বাইরের প্রকাশনী/ভেন্ডর' : '📗 নিজস্ব বই'],
+    ['উৎস',            selectedSource === 'external' ? 'বাইরের প্রকাশনী/ভেন্ডর' : 'নিজস্ব বই'],
     ['MRP',            document.getElementById('b-mrp').value   ? `৳${document.getElementById('b-mrp').value}`   : null],
     ['ক্রয় মূল্য',    document.getElementById('b-cost').value  ? `৳${document.getElementById('b-cost').value}`  : null],
     ['বিক্রয় মূল্য',  document.getElementById('b-price').value ? `৳${document.getElementById('b-price').value}` : null],
@@ -1557,14 +1571,14 @@ async function submitBook() {
   btn.textContent = '⏳ সংরক্ষণ হচ্ছে...';
 
   const title = document.getElementById('b-title').value.trim();
-  if (!title) { toast('বইয়ের নাম দিতে হবে!','error'); btn.disabled=false; btn.textContent='✅ বই সংরক্ষণ করুন'; return; }
+  if (!title) { toast('বইয়ের নাম দিতে হবে!','error'); btn.disabled=false; btn.textContent='বই সংরক্ষণ করুন'; return; }
 
   try {
     const dup = await api(`/books/?search=${encodeURIComponent(title)}&page_size=5`);
     const exactMatch = (dup.results || []).find(b => b.title.trim().toLowerCase() === title.toLowerCase());
     if (exactMatch) {
       const ok = await confirmModal(`"${title}" নামে একটা বই ইতিমধ্যেই তালিকায় আছে (কোড: ${exactMatch.product_code || 'N/A'})।\n\nআবার নতুন করে যোগ করলে একই বইয়ের দুইটা আলাদা এন্ট্রি তৈরি হবে। তবুও নতুন করে যোগ করতে চান?`, { danger: true, confirmText: 'তবুও নতুন যোগ করুন' });
-      if (!ok) { btn.disabled = false; btn.textContent = '✅ বই সংরক্ষণ করুন'; return; }
+      if (!ok) { btn.disabled = false; btn.textContent = 'বই সংরক্ষণ করুন'; return; }
     }
   } catch (e) { /* duplicate-check failing shouldn't block adding the book */ }
 
@@ -1607,7 +1621,7 @@ async function submitBook() {
   } catch (e) {
     toast('সেভ করতে সমস্যা হয়েছে: ' + (e.detail || JSON.stringify(e)), 'error');
     btn.disabled = false;
-    btn.textContent = '✅ বই সংরক্ষণ করুন';
+    btn.textContent = 'বই সংরক্ষণ করুন';
   }
 }
 
@@ -1765,7 +1779,7 @@ async function submitQuickAdd() {
   } catch (e) {
     toast('সেভ হয়নি: ' + (e.detail || e.title || JSON.stringify(e)), 'error');
     btn.disabled = false;
-    btn.textContent = '✅ বই সংরক্ষণ করুন';
+    btn.textContent = 'বই সংরক্ষণ করুন';
   }
 }
 
@@ -1791,7 +1805,7 @@ function resetQuickAdd() {
   document.getElementById('qa-save-btn').style.display = '';
   document.querySelector('#quick-panel .btn-back').style.display = '';
   document.getElementById('qa-save-btn').disabled = false;
-  document.getElementById('qa-save-btn').textContent = '✅ বই সংরক্ষণ করুন';
+  document.getElementById('qa-save-btn').textContent = 'বই সংরক্ষণ করুন';
 }
 
 /* ══════════════════════════════
@@ -1910,7 +1924,7 @@ async function startCSVImport() {
     toast('Import ব্যর্থ হয়েছে: ' + e, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '✅ Import করুন';
+    btn.textContent = 'Import করুন';
   }
 }
 
@@ -1924,7 +1938,7 @@ function showImportResult(data) {
   const isOk = s.errors === 0;
   headerEl.className = 'result-header ' + (isOk ? 'success' : 'partial');
   headerEl.innerHTML = isOk
-    ? `✅ Import সম্পন্ন — ${s.created}টি বই যোগ হয়েছে!`
+    ? `Import সম্পন্ন — ${s.created}টি বই যোগ হয়েছে!`
     : `⚠️ Import সম্পন্ন — কিছু সমস্যা হয়েছে`;
 
   statsEl.innerHTML = `

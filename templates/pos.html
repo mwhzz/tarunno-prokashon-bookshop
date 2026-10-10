@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block page_title %}বিক্রয় (POS){% endblock %}
 
 {% block extra_css %}
@@ -930,11 +931,26 @@
   .book-cover { display: none; }
 }
 </style>
+<link rel="stylesheet" href="{% static 'workspace.css' %}">
 {% endblock %}
 
 {% block content %}
+<div class="workspace sales-workspace">
+<header class="workspace-heading">
+  <div>
+    <div class="workspace-eyebrow">SALES / POINT OF SALE</div>
+    <h1>নতুন বিক্রয়</h1>
+    <p>বই বাছাই করুন, বিল তৈরি করুন এবং পেমেন্ট গ্রহণ করুন।</p>
+  </div>
+  <a class="workspace-link" href="/sales/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>
+    সব ইনভয়েস
+  </a>
+</header>
+
 <div id="pos-root">
   <div class="loading"><div class="spinner"></div>&nbsp; বই লোড হচ্ছে...</div>
+</div>
 </div>
 {% endblock %}
 

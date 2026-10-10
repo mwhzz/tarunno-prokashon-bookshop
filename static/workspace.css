@@ -1,0 +1,160 @@
+/* Shared visual language for catalog entry and the sales workspace. */
+.workspace {
+  --border: #e2e7e5;
+  --muted: #697b73;
+  --surface2: #f8faf9;
+  --accent: #21664e;
+  --g900: #17382c;
+  --g100: #eff6f2;
+  color: #243b30;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.workspace-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:28px; }
+.workspace-eyebrow { font-family:'Plus Jakarta Sans',sans-serif; color:#7a8b81; font-size:10px; font-weight:700; letter-spacing:.16em; margin-bottom:8px; }
+.workspace-heading h1 { font-size:30px; font-weight:600; line-height:1.3; letter-spacing:-.5px; color:#17382c; }
+.workspace-heading p { font-size:14px; color:var(--muted); margin-top:7px; line-height:1.6; }
+.workspace-link { display:inline-flex; gap:10px; align-items:center; white-space:nowrap; border:1px solid #d5ded8; background:white; border-radius:8px; padding:11px 17px; font-size:14px; font-weight:600; transition:background .15s; }
+.workspace-link:hover { background:#edf4ef; }
+.workspace-link svg { width:17px; height:17px; }
+.workspace .btn { border-radius:7px !important; box-shadow:none; font-weight:600; }
+.workspace :is(button,a,input,select,textarea):focus-visible { outline:3px solid #8ab5a0; outline-offset:3px; }
+.workspace input:not([type=checkbox]):not([type=file]), .workspace select, .workspace textarea { border:1px solid #dbe3de; background:#fff; border-radius:7px; }
+
+/* Catalog: a guided form with a quiet, persistent navigation rail. */
+.catalog-workspace { max-width:1120px; animation:none; }
+.catalog-workspace > .mode-tabs { justify-content:flex-start; background:transparent; border:0; border-bottom:1px solid var(--border); border-radius:0; padding:0; gap:28px; margin-bottom:28px; box-shadow:none; }
+.catalog-workspace > .mode-tabs .mode-tab { flex:none; padding:13px 0; background:transparent; border:0; border-bottom:2px solid transparent; border-radius:0; box-shadow:none; color:var(--muted); font-size:14px; font-weight:500; }
+.catalog-workspace > .mode-tabs .mode-tab.active { border-bottom-color:var(--accent); color:var(--accent); background:transparent; box-shadow:none; }
+.catalog-workspace #manual-panel { position:relative; padding-left:240px; min-height:470px; }
+.catalog-workspace .stepper { position:absolute; left:0; top:0; width:212px; display:flex; flex-direction:column; align-items:stretch; gap:8px; padding:18px 12px; border:1px solid var(--border); border-radius:10px; background:#f8faf9; }
+.catalog-workspace .stepper::before { content:'বই যোগ করার ধাপ'; font-size:12px; color:var(--muted); padding:0 12px 12px; }
+.catalog-workspace .step-node { flex-direction:row; justify-content:flex-start; gap:12px; padding:11px 12px; border-radius:7px; }
+.catalog-workspace .step-node.active { background:#e7efe9; }
+.catalog-workspace .step-circle { width:27px; height:27px; border:1px solid #d4dfd7; font-size:12px; font-weight:600; background:#fff; border-radius:7px; }
+.catalog-workspace .step-node.active .step-circle { transform:none; box-shadow:none; background:var(--accent); border-color:var(--accent); }
+.catalog-workspace .step-name { font-size:13px; font-weight:500; text-align:left; }
+.catalog-workspace .step-connector { display:none; }
+.catalog-workspace :is(.step-card,.csv-card) { border:1px solid var(--border); border-radius:10px; padding:32px; box-shadow:0 2px 4px #17382c03; animation:none; }
+.catalog-workspace .sc-header { padding-bottom:22px; margin-bottom:26px; border-bottom:1px solid #edf0ee; }
+.catalog-workspace .sc-badge { background:transparent; color:var(--muted); padding:0; border-radius:0; font-size:11px; font-weight:600; letter-spacing:.06em; }
+.catalog-workspace .sc-title { font-family:'Hind Siliguri',sans-serif; font-size:23px; font-weight:600; margin-top:4px; }
+.catalog-workspace .sc-desc { color:var(--muted); font-size:13px; line-height:1.7; }
+.catalog-workspace .wiz-label { font-size:13px; font-weight:500; color:#40574b; margin-bottom:7px; }
+.catalog-workspace .wiz-input { min-height:44px; padding:10px 13px; font-size:14px; box-shadow:none; }
+.catalog-workspace .wiz-input.big { font-size:17px; min-height:49px; font-weight:500; }
+.catalog-workspace .wiz-input:focus { border-color:#789b87; box-shadow:0 0 0 3px #21664e0d; }
+.catalog-workspace .wiz-row { gap:20px; }
+.catalog-workspace .wiz-hint { color:#7a8b81; font-size:12px; line-height:1.6; }
+.catalog-workspace .step-nav { border-top:1px solid #edf0ee; padding-top:22px; margin-top:30px; gap:12px; }
+.catalog-workspace :is(.btn-next,.btn-save,.btn-csv-import) { border-radius:7px; box-shadow:none; background:var(--accent); font-size:14px; font-weight:600; min-height:44px; padding:10px 20px; transform:none; }
+.catalog-workspace .btn-back { font-size:13px; font-weight:500; }
+.catalog-workspace :is(.img-upload-area,.qa-img-area,.csv-drop-zone) { background:#fafcfb; border:1px dashed #bdcdc1; border-radius:8px; box-shadow:none; }
+.catalog-workspace .mode-tab { border-radius:7px; box-shadow:none; font-size:13px; font-weight:500; }
+.catalog-workspace :is(.price-helper,.review-grid,.col-ref) { background:#f8faf9; border:1px solid var(--border); border-radius:8px; box-shadow:none; }
+.catalog-workspace .qa-top { gap:28px; }
+
+/* POS: book selection and a receipt form with distinct visual hierarchy. */
+.sales-workspace .workspace-heading { margin-bottom:20px; }
+.sales-workspace .pos-shell { gap:24px; height:calc(100dvh - 220px); min-height:600px; grid-template-columns:minmax(0,1fr) 380px; animation:none; }
+.sales-workspace .books-panel { gap:14px; }
+.sales-workspace .pos-stats-bar { gap:0; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.sales-workspace .psb-item { border:0; border-radius:0; box-shadow:none; background:transparent; padding:16px; border-right:1px solid var(--border); }
+.sales-workspace .psb-item:last-child { border-right:0; }
+.sales-workspace .psb-icon { background:#f0f5f2; color:#507361; border-radius:7px; }
+.sales-workspace .psb-info strong { font-size:21px; font-weight:600; }
+.sales-workspace .psb-info span { font-size:11px; font-weight:500; }
+.sales-workspace .pos-search input { height:49px; font-size:14px; border:1px solid #cedbd2; border-radius:8px; box-shadow:none; }
+.sales-workspace .pos-filter-row { align-items:center; gap:12px; }
+.sales-workspace .pos-filter-row select { min-height:38px; border:1px solid var(--border); border-radius:6px; font-size:12px; }
+.sales-workspace .filter-check { font-size:12px; font-weight:500; }
+.sales-workspace .book-grid { gap:8px; }
+.sales-workspace .book-row { border:1px solid var(--border); border-radius:8px; padding:12px; gap:12px; box-shadow:none; }
+.sales-workspace .book-row:hover { border-color:#8baa96; background:#fafcfb; transform:none; box-shadow:0 2px 6px #17382c08; }
+.sales-workspace .book-cover { width:36px; height:49px; border-radius:3px; }
+.sales-workspace .book-title { font-size:14px; font-weight:600; }
+.sales-workspace .book-author { font-size:11px; margin-top:3px; }
+.sales-workspace .book-price { font-size:14px; font-weight:600; }
+.sales-workspace .book-stock-badge { border-radius:5px; font-size:10px; font-weight:500; }
+.sales-workspace .book-row-add { border-radius:6px; background:#edf4ef; color:var(--accent); }
+.sales-workspace .cart-table-wrap { border-radius:10px; border-color:var(--border); }
+.sales-workspace .cart-table th { background:#f8faf9; font-size:11px; font-weight:500; padding:12px; }
+.sales-workspace .cart-empty { color:#839087; font-size:13px; }
+.sales-workspace .receipt-panel { border-radius:10px; box-shadow:0 3px 12px #17382c05; border-color:#d9e2dc; }
+.sales-workspace .receipt-header { background:#f7faf8; border-bottom:1px solid var(--border); padding:20px; }
+.sales-workspace .rh-title { color:#17382c; font-size:19px; font-weight:600; }
+.sales-workspace .rh-sub { color:#7a8b81; font-size:12px; margin-top:7px; }
+.sales-workspace .clear-btn { color:#7d5656; border:1px solid #e6dcdc; background:#fff; border-radius:6px; font-size:11px; }
+.sales-workspace .billing-form { padding:18px 20px; }
+.sales-workspace .step-label { font-size:12px; color:#40574b; font-weight:600; padding-top:14px; margin-top:14px; }
+.sales-workspace .step-num { background:#edf3ef; color:#557461; border-radius:5px; box-shadow:none; }
+.sales-workspace .bf-field label { font-size:11px; font-weight:500; letter-spacing:0; }
+.sales-workspace .bf-field input,.sales-workspace .bf-field select { min-height:38px; font-size:13px; border:1px solid var(--border); border-radius:6px; background:white; }
+.sales-workspace .bf-row { gap:12px; margin-bottom:12px; }
+.sales-workspace .stat-mini { background:#f8faf9; border:1px solid var(--border); border-radius:6px; }
+.sales-workspace :is(.charges-box,.totals-box) { border:1px solid var(--border); background:#fafcfb; border-radius:7px; }
+.sales-workspace .total-line { font-size:12px; font-weight:400; }
+.sales-workspace .total-line.big { font-size:19px; border-top:1px solid #dce5df; color:#17382c; }
+.sales-workspace .paid-wrap { border:1px solid #c6d9cc; background:#f3f8f5; border-radius:8px; }
+.sales-workspace .paid-wrap label { font-size:12px; font-weight:500; letter-spacing:0; }
+.sales-workspace .paid-wrap input { border:1px solid #c8d9cd !important; border-radius:6px !important; font-size:23px !important; }
+.sales-workspace .paid-quick-btn { border:1px solid #d5e1d8; border-radius:5px; font-size:11px; font-weight:500; }
+.sales-workspace .cta-btn { border-radius:7px; font-size:15px; font-weight:600; background:var(--accent); box-shadow:none; min-height:47px; transform:none; }
+.sales-workspace .cta-btn:hover { background:#164b38; box-shadow:none; transform:none; }
+
+/* Sales ledger */
+.ledger-workspace .ledger-filters { border:1px solid var(--border); border-radius:10px; background:#fff; padding:20px !important; margin-bottom:24px !important; box-shadow:none; }
+.ledger-workspace .ledger-filters label { font-weight:500 !important; color:#607568 !important; font-size:12px !important; margin-bottom:7px !important; }
+.ledger-workspace .ledger-filters input { height:42px !important; border:1px solid #dbe3de !important; border-radius:6px !important; font-family:inherit; }
+.ledger-workspace .ledger-filters .btn { min-height:42px; padding:0 18px; }
+.ledger-workspace #invoices-wrapper { border:1px solid var(--border); border-radius:10px; background:#fff; overflow:auto; }
+.ledger-workspace #invoices-wrapper .table-wrap { border:0; border-radius:0; box-shadow:none; overflow:auto; }
+.ledger-workspace .table-header { padding:20px 22px; background:#fff; border-bottom:1px solid var(--border); }
+.ledger-workspace .table-title { font-size:15px; font-weight:600; }
+.ledger-workspace table { min-width:930px; }
+.ledger-workspace th { background:#f8faf9; font-size:11px; font-weight:500; color:#6d7f73; padding:13px 20px; white-space:nowrap; }
+.ledger-workspace td { padding:18px 20px; border-bottom:1px solid #edf1ee; font-size:13px; }
+.ledger-workspace tbody tr:hover { background:#fafcfb; }
+.ledger-workspace .badge { border-radius:5px; font-weight:500; font-size:11px; }
+.ledger-workspace td .btn { background:transparent; border-color:#e4eae6; font-size:11px; }
+.ledger-workspace .empty-icon { color:#779282; }
+
+@media (max-width:1200px) {
+  .sales-workspace .pos-shell { grid-template-columns:1fr; height:auto; min-height:0; }
+  .sales-workspace .books-panel { overflow:visible; }
+  .sales-workspace .books-scroll { flex:none; max-height:480px; overflow:auto; }
+  .sales-workspace .cart-table-wrap { flex:none; max-height:350px; overflow:auto; }
+  .sales-workspace .receipt-panel { height:auto; max-height:none; }
+  .sales-workspace .mobile-sticky-bar { display:flex; }
+}
+@media (max-width:800px) {
+  .catalog-workspace #manual-panel { padding-left:0; min-height:0; }
+  .catalog-workspace .stepper { position:static; width:100%; flex-direction:row; padding:12px; justify-content:space-between; margin-bottom:18px; gap:4px; }
+  .catalog-workspace .stepper::before { display:none; }
+  .catalog-workspace .step-node { padding:5px; flex-direction:column; gap:6px; }
+  .catalog-workspace .step-name { font-size:10px; }
+  .workspace-heading h1 { font-size:25px; }
+  .workspace-heading { align-items:flex-start; gap:14px; }
+  .workspace-link { padding:9px 12px; font-size:12px; }
+}
+@media (max-width:520px) {
+  .workspace-heading { flex-direction:column; margin-bottom:20px; }
+  .catalog-workspace > .mode-tabs { gap:20px; }
+  .catalog-workspace > .mode-tabs .mode-tab { font-size:12px; }
+  .catalog-workspace :is(.step-card,.csv-card) { padding:22px 18px; }
+  .catalog-workspace .wiz-row { grid-template-columns:1fr; gap:0; }
+  .catalog-workspace .step-nav { flex-wrap:wrap; }
+  .catalog-workspace .step-name { display:none; }
+  .sales-workspace .psb-item { padding:12px 8px; gap:7px; }
+  .sales-workspace .psb-icon { display:none; }
+  .sales-workspace .psb-info strong { font-size:18px; }
+  .sales-workspace .pos-stats-bar { grid-template-columns:repeat(3,1fr); }
+  .sales-workspace .pos-filter-row { flex-wrap:wrap; }
+  .sales-workspace .book-row { gap:8px; padding:10px; }
+  .sales-workspace .book-title { font-size:13px; }
+  .sales-workspace .billing-form { padding:16px; }
+  .ledger-workspace .ledger-filters { padding:16px !important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .workspace *, .workspace *::before, .workspace *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+}

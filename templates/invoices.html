@@ -1,8 +1,26 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block page_title %}সব ইনভয়েস{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'workspace.css' %}">
+{% endblock %}
+
 {% block content %}
+<div class="workspace ledger-workspace">
+<header class="workspace-heading">
+  <div>
+    <div class="workspace-eyebrow">SALES / INVOICES</div>
+    <h1>বিক্রয়ের হিসাব</h1>
+    <p>সব ইনভয়েস, পেমেন্ট ও বকেয়ার বিস্তারিত।</p>
+  </div>
+  <a class="workspace-link" href="/pos/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    নতুন বিক্রয়
+  </a>
+</header>
+
 <!--
 =============================================================================
 * সব ইনভয়েস (All Invoices)
@@ -10,7 +28,7 @@
 =============================================================================
 -->
 
-<div class="table-wrap" style="padding:14px 20px; margin-bottom:16px;">
+<div class="table-wrap ledger-filters" style="padding:14px 20px; margin-bottom:16px;">
     <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
         <div>
             <label style="display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:4px;">শুরুর তারিখ</label>
@@ -32,6 +50,7 @@
 
 <div id="invoices-wrapper">
     <div class="loading"><div class="spinner"></div> ইনভয়েস লোড হচ্ছে...</div>
+</div>
 </div>
 {% endblock %}
 
@@ -64,7 +83,7 @@ async function initInvoices() {
     const r = await api(`/sales/?${params.toString()}`);
 
     if (!r.results.length) {
-      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">🧾</div><h3>কোনো ইনভয়েস পাওয়া যায়নি</h3><p>খোঁজার শর্ত পরিবর্তন করে আবার চেষ্টা করুন।</p></div>`;
+      w.innerHTML = `<div class="empty-state" style="padding:50px 20px;"><div class="empty-icon">${icon('file-text', 36)}</div><h3>কোনো ইনভয়েস পাওয়া যায়নি</h3><p>খোঁজার শর্ত পরিবর্তন করে আবার চেষ্টা করুন।</p></div>`;
       return;
     }
 
@@ -75,7 +94,7 @@ async function initInvoices() {
     w.innerHTML = `
       <div class="table-wrap">
         <div class="table-header">
-            <span class="table-title">🧾 ইনভয়েসের তালিকা (${r.count}টি)</span>
+            <span class="table-title">ইনভয়েসের তালিকা (${r.count}টি)</span>
         </div>
         ${truncatedNote}
         <table style="width:100%; border-collapse:collapse;">

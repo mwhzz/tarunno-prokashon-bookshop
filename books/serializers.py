@@ -17,6 +17,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
+    # Multipart forms omit this field; DRF otherwise treats it as an unchecked checkbox.
+    is_active = serializers.BooleanField(required=False, default=True)
     group_name = serializers.CharField(source='group.name', read_only=True)
     current_stock = serializers.IntegerField(read_only=True)
     shop_quantity = serializers.IntegerField(source='stock_summary.shop_quantity', read_only=True, default=0)

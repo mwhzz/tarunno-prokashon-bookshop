@@ -2,3 +2,13 @@
 @media(max-width:1050px){.editor-grid{grid-template-columns:minmax(0,1fr) 270px;gap:18px}.book-editor .editor-card{padding:22px}.editor-savebar{bottom:8px}}@media(max-width:780px){.editor-grid{grid-template-columns:1fr}.editor-aside{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.inventory-card{grid-column:1/-1}.editor-heading{align-items:start;flex-direction:column;gap:14px}.book-editor h1{font-size:30px}.editor-savebar{align-items:stretch;flex-direction:column;padding:16px;gap:12px}.editor-actions button{flex:1}.editor-savebar span{display:none}}@media(max-width:480px){.editor-fields,.editor-aside{grid-template-columns:1fr}.book-editor .editor-card{padding:20px 16px}.editor-actions{gap:8px}.book-editor .editor-actions button{font-size:16px;padding:12px 9px}.editor-section-heading{gap:10px}.editor-heading p{font-size:17px}}
 
 .book-editor input[type=file]{display:block;width:100%;font:inherit;font-size:14px;margin-top:10px;color:#43604d}.book-editor input[type=file]::file-selector-button{font:inherit;border:1px solid #bdcdbf;background:white;border-radius:5px;padding:6px;cursor:pointer}
+
+/* Use real Bengali weights so labels and numbers stay clear without synthetic bold. */
+@font-face{font-family:'Editor Bangla';src:url('fonts/HindSiliguri-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Editor Bangla';src:url('fonts/HindSiliguri-Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Editor Bangla';src:url('fonts/HindSiliguri-SemiBold.ttf') format('truetype');font-weight:600 900;font-style:normal;font-display:swap}
+.book-editor,.book-editor :is(h1,h2,input,select,textarea,button,label,summary){font-family:'Editor Bangla',sans-serif;letter-spacing:0}
+.book-editor{line-height:1.65}
+.book-editor .editor-field label{font-weight:500}
+.book-editor :is(h1,h2,strong,b){font-weight:600}
+.book-editor input:not([type=file]),.book-editor select,.book-editor textarea{font-size:18px;line-height:1.65}

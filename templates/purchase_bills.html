@@ -18,7 +18,7 @@
   box-shadow: 0 2px 12px rgba(13,51,38,.05);
 }
 .pb-label { font-size:16px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
-.pb-val { font-family:'JetBrains Mono', monospace; font-size:20px; font-weight:700; color:var(--g900); margin-top:2px; }
+.pb-val { font-family:AppBangla,sans-serif; font-size:20px; font-weight:700; color:var(--g900); margin-top:2px; }
 .pb-val.due { color: var(--danger); }
 .pb-val.paid { color: var(--accent); }
 
@@ -30,7 +30,7 @@
 .pb-filters label { font-size:16px; font-weight:800; color:var(--text2); }
 .pb-filters input {
   height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;
-  font-family:'App Bangla',sans-serif; font-size:16px; outline:none;
+  font-family:AppBangla,sans-serif; font-size:16px; outline:none;
 }
 .pb-filters input:focus { border-color:var(--accent); }
 .pb-find-btn {
@@ -155,13 +155,13 @@ async function loadBills() {
         <tbody>
           ${bills.map(b => `
             <tr style="cursor:pointer" onclick="location.href='/purchase/bills/${b.id}/'" title="বিস্তারিত দেখতে ক্লিক করুন">
-              <td style="padding:10px 20px; font-family:monospace"><strong>#${b.id}</strong></td>
+              <td style="padding:10px 20px; font-family:AppBangla,sans-serif"><strong>#${b.id}</strong></td>
               <td>${b.vendor_name}${b.vendor_code ? '<br><small style="color:var(--muted)">' + b.vendor_code + '</small>' : ''}</td>
               <td>${b.memo_number || '—'}</td>
-              <td style="font-family:monospace">৳${num(b.total)}</td>
-              <td style="font-family:monospace">৳${num(b.discount)}</td>
-              <td style="font-family:monospace;color:var(--accent2)">৳${num(b.paid_amount)}</td>
-              <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(b.total)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(b.discount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--accent2)">৳${num(b.paid_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--danger)">৳${num(b.due_amount)}</td>
               <td style="color:var(--muted); font-size:16px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">

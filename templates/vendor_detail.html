@@ -17,11 +17,11 @@
   border-radius:18px; padding:20px 24px; margin-bottom:14px;
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
 }
-.vdt-hero-title { font-family:'App Bangla',sans-serif; font-size:22px; font-weight:800; color:#fff; }
+.vdt-hero-title { font-family:AppBangla,sans-serif; font-size:22px; font-weight:800; color:#fff; }
 .vdt-hero-meta { font-size:16px; color:rgba(255,255,255,.85); margin-top:5px; }
 .vdt-hero-due { text-align:right; }
 .vdt-hero-due-label { font-size:16px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:rgba(255,255,255,.7); }
-.vdt-hero-due-val { font-family:'JetBrains Mono',monospace; font-size:27px; font-weight:800; color:#fff; }
+.vdt-hero-due-val { font-family:AppBangla,sans-serif; font-size:27px; font-weight:800; color:#fff; }
 
 .vdt-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
 .vdt-stat {
@@ -29,7 +29,7 @@
   box-shadow:0 2px 12px rgba(13,51,38,.05);
 }
 .vdt-stat-label { font-size:16px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); }
-.vdt-stat-val { font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700; color:var(--g900); margin-top:3px; }
+.vdt-stat-val { font-family:AppBangla,sans-serif; font-size:21px; font-weight:700; color:var(--g900); margin-top:3px; }
 .vdt-stat-val.due { color:var(--danger); }
 .vdt-stat-val.paid { color:var(--accent); }
 
@@ -46,7 +46,7 @@
 .pb-mini-row:last-child { margin-bottom:0; }
 .pb-mini-name { flex:1; font-weight:700; color:var(--g900); }
 .pb-mini-meta { color:var(--muted); font-size:16px; white-space:nowrap; }
-.pb-mini-total { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--g900); white-space:nowrap; }
+.pb-mini-total { font-family:AppBangla,sans-serif; font-weight:700; font-size:16px; color:var(--g900); white-space:nowrap; }
 .pb-mini-total.paid { color:var(--accent); }
 
 @media (max-width:900px) { .vdt-stats { grid-template-columns:1fr 1fr; } }
@@ -157,9 +157,9 @@ function renderBooksSummary() {
         ${rows.map(r => `
           <tr>
             <td style="padding:10px 20px"><strong>${r.title}</strong></td>
-            <td style="font-family:monospace">${num(r.qty)}</td>
-            <td style="font-family:monospace">${r.bills.size}</td>
-            <td style="font-family:monospace">৳${num(r.total)}</td>
+            <td style="font-family:AppBangla,sans-serif">${num(r.qty)}</td>
+            <td style="font-family:AppBangla,sans-serif">${r.bills.size}</td>
+            <td style="font-family:AppBangla,sans-serif">৳${num(r.total)}</td>
             <td style="color:var(--muted); font-size:16px">${fmtDate(r.lastDate)}</td>
           </tr>`).join('')}
       </tbody>
@@ -197,12 +197,12 @@ async function loadBills() {
         <tbody>
           ${billsCache.map(b => `
             <tr>
-              <td style="padding:10px 20px; font-family:monospace"><strong>#${b.id}</strong></td>
+              <td style="padding:10px 20px; font-family:AppBangla,sans-serif"><strong>#${b.id}</strong></td>
               <td>${b.memo_number || '—'}</td>
-              <td style="font-family:monospace">৳${num(b.total)}</td>
-              <td style="font-family:monospace">৳${num(b.discount)}</td>
-              <td style="font-family:monospace;color:var(--accent2)">৳${num(b.paid_amount)}</td>
-              <td style="font-family:monospace;color:var(--danger)">৳${num(b.due_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(b.total)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(b.discount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--accent2)">৳${num(b.paid_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--danger)">৳${num(b.due_amount)}</td>
               <td style="color:var(--muted); font-size:16px">${fmtDate(b.purchase_date)}${b.created_by_name ? '<br>' + b.created_by_name : ''}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap">

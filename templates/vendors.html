@@ -13,18 +13,18 @@
   box-shadow:0 2px 12px rgba(13,51,38,.05); position:sticky; top:16px;
 }
 .vd-head { background:linear-gradient(135deg, var(--g800), var(--g900)); padding:13px 16px; }
-.vd-head-title { font-family:'App Bangla',sans-serif; font-size:17px; font-weight:800; color:#fff; }
+.vd-head-title { font-family:AppBangla,sans-serif; font-size:17px; font-weight:800; color:#fff; }
 .vd-body { padding:14px 16px; }
 .vd-field { margin-bottom:10px; }
 .vd-field label { display:block; font-size:16px; font-weight:800; color:var(--text2); margin-bottom:4px; }
 .vd-input {
   width:100%; min-height:38px; padding:7px 12px; border:2px solid var(--border); border-radius:9px;
-  background:var(--surface2); font-family:'App Bangla',sans-serif; font-size:16px; outline:none; transition:all .18s;
+  background:var(--surface2); font-family:AppBangla,sans-serif; font-size:16px; outline:none; transition:all .18s;
 }
 .vd-input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 4px rgba(27,122,85,.1); }
 .vd-save-btn {
   width:100%; min-height:40px; border-radius:10px; background:var(--accent); color:#fff; border:none; cursor:pointer;
-  font-family:'App Bangla',sans-serif; font-size:16px; font-weight:800; transition:all .18s;
+  font-family:AppBangla,sans-serif; font-size:16px; font-weight:800; transition:all .18s;
 }
 .vd-save-btn:hover { background:var(--accent-dark); }
 
@@ -34,7 +34,7 @@
   padding:12px 14px; box-shadow:0 2px 12px rgba(13,51,38,.05);
 }
 .vd-stat-label { font-size:16px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
-.vd-stat-val { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--g900); margin-top:2px; }
+.vd-stat-val { font-family:AppBangla,sans-serif; font-size:19px; font-weight:700; color:var(--g900); margin-top:2px; }
 </style>
 {% endblock %}
 
@@ -69,7 +69,7 @@
         <div class="table-header">
           <span class="table-title"><span data-icon="list" data-icon-size="15"></span> সব ভেন্ডর</span>
           <input type="text" id="vd-search" placeholder="নাম/ফোন/কোড দিয়ে খুঁজুন" oninput="debouncedLoad()"
-                 style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; font-family:'App Bangla',sans-serif; font-size:16px; outline:none;">
+                 style="height:36px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; font-family:AppBangla,sans-serif; font-size:16px; outline:none;">
         </div>
         <div id="vendors-wrapper">
           <div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>
@@ -131,10 +131,10 @@ async function loadVendors() {
           ${vendors.map(v => `
             <tr style="cursor:pointer" onclick="location.href='/purchase/vendors/${v.id}/'" title="বিস্তারিত দেখতে ক্লিক করুন">
               <td style="padding:10px 20px"><strong>${v.name}</strong></td>
-              <td style="font-family:monospace">${v.vendor_code || 'N/A'}</td>
+              <td style="font-family:AppBangla,sans-serif">${v.vendor_code || 'N/A'}</td>
               <td>${v.phone || '—'}</td>
-              <td style="font-family:monospace">৳${num(v.opening_due)}</td>
-              <td style="font-family:monospace; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(v.opening_due)}</td>
+              <td style="font-family:AppBangla,sans-serif; color:${Number(v.total_due) > 0 ? 'var(--danger)' : 'var(--accent)'}">৳${num(v.total_due)}</td>
               <td style="white-space:nowrap">
                 <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editVendor(${v.id})" title="সম্পাদনা" aria-label="সম্পাদনা">${icon('edit', 14)}</button>
                 <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteVendor(${v.id})" title="মুছে ফেলুন" aria-label="মুছে ফেলুন">${icon('trash', 14)}</button>

@@ -17,12 +17,12 @@
   border-radius:18px; padding:20px 24px; margin-bottom:14px;
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
 }
-.pbd-hero-title { font-family:'App Bangla',sans-serif; font-size:22px; font-weight:800; color:#fff; }
+.pbd-hero-title { font-family:AppBangla,sans-serif; font-size:22px; font-weight:800; color:#fff; }
 .pbd-hero-meta { font-size:16px; color:rgba(255,255,255,.85); margin-top:5px; line-height:1.6; }
 .pbd-hero-meta a { color:#fff; text-decoration:underline; }
 .pbd-hero-due { text-align:right; }
 .pbd-hero-due-label { font-size:16px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:rgba(255,255,255,.7); }
-.pbd-hero-due-val { font-family:'JetBrains Mono',monospace; font-size:27px; font-weight:800; color:#fff; }
+.pbd-hero-due-val { font-family:AppBangla,sans-serif; font-size:27px; font-weight:800; color:#fff; }
 
 .pbd-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:14px; }
 .pbd-stat {
@@ -30,7 +30,7 @@
   box-shadow:0 2px 12px rgba(13,51,38,.05);
 }
 .pbd-stat-label { font-size:16px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); }
-.pbd-stat-val { font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700; color:var(--g900); margin-top:3px; }
+.pbd-stat-val { font-family:AppBangla,sans-serif; font-size:21px; font-weight:700; color:var(--g900); margin-top:3px; }
 .pbd-stat-val.due { color:var(--danger); }
 .pbd-stat-val.paid { color:var(--accent); }
 
@@ -47,7 +47,7 @@
 .pb-mini-row:last-child { border-bottom:none; }
 .pb-mini-name { flex:1; font-weight:700; color:var(--g900); }
 .pb-mini-meta { color:var(--muted); font-size:16px; white-space:nowrap; }
-.pb-mini-total { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--g900); white-space:nowrap; }
+.pb-mini-total { font-family:AppBangla,sans-serif; font-weight:700; font-size:16px; color:var(--g900); white-space:nowrap; }
 .pb-mini-total.paid { color:var(--accent); }
 
 @media (max-width:900px) { .pbd-stats { grid-template-columns:1fr 1fr; } }
@@ -162,12 +162,12 @@ function render(b) {
           ${items.map(i => `
             <tr>
               <td style="padding:10px 20px"><strong>${i.book_title}</strong></td>
-              <td style="font-family:monospace">${num(i.quantity)}</td>
-              <td style="font-family:monospace">৳${num(i.mrp)}</td>
-              <td style="font-family:monospace">৳${num(i.unit_price)}</td>
-              <td style="font-family:monospace">${num(i.commission)}%</td>
-              <td style="font-family:monospace">৳${num(i.selling_price)}</td>
-              <td style="font-family:monospace"><strong>৳${num(i.total)}</strong></td>
+              <td style="font-family:AppBangla,sans-serif">${num(i.quantity)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(i.mrp)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(i.unit_price)}</td>
+              <td style="font-family:AppBangla,sans-serif">${num(i.commission)}%</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(i.selling_price)}</td>
+              <td style="font-family:AppBangla,sans-serif"><strong>৳${num(i.total)}</strong></td>
             </tr>`).join('')}
         </tbody>
       </table>`;

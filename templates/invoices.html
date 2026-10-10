@@ -4,7 +4,7 @@
 {% block page_title %}সব ইনভয়েস{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'workspace.css' %}?v=unified-1">
+<link rel="stylesheet" href="{% static 'workspace.css' %}?v=site-3">
 {% endblock %}
 
 {% block content %}
@@ -112,11 +112,11 @@ async function initInvoices() {
           </thead>
           <tbody>
             ${r.results.map(s => `<tr>
-              <td style="font-family:monospace"><strong>${s.invoice_number}</strong></td>
+              <td style="font-family:AppBangla,sans-serif"><strong>${s.invoice_number}</strong></td>
               <td>${s.customer_name}</td>
-              <td style="font-family:monospace">৳${num(s.total)}</td>
-              <td style="font-family:monospace;color:var(--accent2)">৳${num(s.paid_amount)}</td>
-              <td style="font-family:monospace;color:var(--danger)">৳${num(s.due_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(s.total)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--accent2)">৳${num(s.paid_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--danger)">৳${num(s.due_amount)}</td>
               <td>${statusBadge(s.status)}</td>
               <td style="color:var(--muted);font-size:16px">${fmtDate(s.created_at)}</td>
               <td>
@@ -155,7 +155,7 @@ async function showPaymentHistory(saleId, invNum) {
               <div style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:16px;">
                 <span style="color:var(--muted); font-size:16px; white-space:nowrap;">${fmtDate(p.created_at)}</span>
                 <span style="flex:1; font-weight:700; color:var(--g900);">${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}</span>
-                <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent);">৳${num(p.amount)}</span>
+                <span style="font-family:AppBangla,sans-serif; font-weight:700; color:var(--accent);">৳${num(p.amount)}</span>
                 <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteInvoicePayment(${saleId}, ${p.id}, '${invNum}')" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>
               </div>`).join('')
             : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('wallet', 34)}</div><h3 style="font-size:16px;">এখনো কোনো পেমেন্ট নেই</h3></div>`}

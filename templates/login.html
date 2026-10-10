@@ -5,7 +5,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>লগইন — তারুণ্য প্রকাশন</title>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,12 +19,12 @@
   --muted:   #5a6a82;
   --border:  #d4dce9;
   --red:     #dc2626;
-  --green:   #16a34a;
+  --green:   #2563eb;
 }
 
 html, body {
   height: 100%;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   color: var(--text);
 }
 
@@ -142,7 +141,7 @@ body {
   gap: 8px;
 }
 .alert.error   { background: #fef2f2; color: var(--red);   border-left: 3px solid var(--red); }
-.alert.success { background: #f0fdf4; color: var(--green); border-left: 3px solid var(--green); }
+.alert.success { background: #f8fafc; color: var(--green); border-left: 3px solid var(--green); }
 
 /* field */
 .field { margin-bottom: 18px; }
@@ -179,7 +178,7 @@ body {
   border: 1.5px solid var(--border);
   border-radius: 9px;
   font-size:16px;
-  font-family: inherit;
+  font-family:AppBangla,sans-serif;
   color: var(--text);
   background: #f7f9fc;
   transition: border-color .17s, box-shadow .17s, background .17s;
@@ -246,7 +245,7 @@ body {
   border-radius: 9px;
   font-size:17px;
   font-weight: 700;
-  font-family: inherit;
+  font-family:AppBangla,sans-serif;
   letter-spacing: .5px;
   cursor: pointer;
   box-shadow: 0 5px 18px rgba(26,58,108,.30);
@@ -302,7 +301,7 @@ body {
   .brand-sub  { letter-spacing: 2px; }
 }
 </style>
-<link rel="stylesheet" href="{% static 'app-ui.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'app-ui.css' %}?v=3">
 </head>
 <body class="app-auth">
 

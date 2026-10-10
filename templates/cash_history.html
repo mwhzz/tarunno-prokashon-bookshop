@@ -121,10 +121,10 @@ function renderMethodRows(items, emptyMsg) {
         ${items.map(i => `
             <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:16px;">
                 <span>${methodLabel(i.method)}</span>
-                <strong style="font-family:'JetBrains Mono',monospace;">৳${num(i.amount)}</strong>
+                <strong style="font-family:AppBangla,sans-serif;">৳${num(i.amount)}</strong>
             </div>`).join('')}
         <div style="display:flex; justify-content:space-between; padding:8px 0 0; font-weight:800; font-size:16px;">
-            <span>মোট</span><strong style="font-family:'JetBrains Mono',monospace;">৳${num(total)}</strong>
+            <span>মোট</span><strong style="font-family:AppBangla,sans-serif;">৳${num(total)}</strong>
         </div>`;
 }
 

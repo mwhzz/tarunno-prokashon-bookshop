@@ -140,7 +140,7 @@
 }
 
 .sc-title {
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:22px;
   font-weight: 800;
   color: var(--g900);
@@ -159,7 +159,7 @@
 }
 
 .wiz-label {
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 700;
   color: var(--text2);
@@ -185,7 +185,7 @@
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface2);
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:17px;
   font-weight: 500;
   color: var(--text);
@@ -200,7 +200,7 @@
 }
 
 .wiz-input.big {
-  font-family: 'JetBrains Mono', monospace;
+  font-family:AppBangla,sans-serif;
   font-size:20px;
   font-weight: 700;
   text-align: right;
@@ -250,7 +250,7 @@ select.wiz-input { cursor: pointer; }
 .ph-row:last-child { border-bottom: none; }
 
 .ph-row .ph-val {
-  font-family: 'JetBrains Mono', monospace;
+  font-family:AppBangla,sans-serif;
   font-weight: 700;
   color: var(--g700);
 }
@@ -334,7 +334,7 @@ select.wiz-input { cursor: pointer; }
 }
 
 .rv-value.mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family:AppBangla,sans-serif;
   color: var(--accent);
   font-size:18px;
 }
@@ -377,7 +377,7 @@ select.wiz-input { cursor: pointer; }
   color: #fff;
   border: none;
   cursor: pointer;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 800;
   box-shadow: 0 6px 20px rgba(27,122,85,.28);
@@ -400,7 +400,7 @@ select.wiz-input { cursor: pointer; }
   color: var(--text2);
   border: 1.5px solid var(--border-hard);
   cursor: pointer;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:17px;
   font-weight: 700;
   transition: all .18s;
@@ -422,7 +422,7 @@ select.wiz-input { cursor: pointer; }
   color: #fff;
   border: none;
   cursor: pointer;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:17px;
   font-weight: 800;
   box-shadow: 0 8px 28px rgba(27,122,85,.35);
@@ -481,7 +481,7 @@ select.wiz-input { cursor: pointer; }
 }
 
 .success-title {
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:24px; font-weight: 800;
   color: var(--g900); margin-bottom: 8px;
 }
@@ -576,7 +576,7 @@ select.wiz-input { cursor: pointer; }
   border-radius: 10px;
   border: none;
   background: transparent;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 700;
   color: var(--muted);
@@ -661,7 +661,7 @@ select.wiz-input { cursor: pointer; }
   border: 1.5px solid var(--border-hard);
   background: var(--surface);
   color: var(--text2);
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 700;
   cursor: pointer;
@@ -684,7 +684,7 @@ select.wiz-input { cursor: pointer; }
   border: none;
   background: var(--accent);
   color: #fff;
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 800;
   cursor: pointer;
@@ -772,7 +772,7 @@ select.wiz-input { cursor: pointer; }
 }
 
 .result-header.success { background: var(--g100); color: var(--g700); }
-.result-header.partial { background: #fefce8; color: #854d0e; }
+.result-header.partial { background: #f8fafc; color: #854d0e; }
 
 .result-stats {
   display: flex;
@@ -792,7 +792,7 @@ select.wiz-input { cursor: pointer; }
 .stat-num {
   font-size:22px;
   font-weight: 800;
-  font-family: 'JetBrains Mono', monospace;
+  font-family:AppBangla,sans-serif;
   line-height: 1;
   margin-bottom: 4px;
 }
@@ -872,7 +872,7 @@ select.wiz-input { cursor: pointer; }
 .col-ref tr:nth-child(even) td { background: var(--surface2); }
 
 .col-name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family:AppBangla,sans-serif;
   font-size:16px;
   font-weight: 700;
   color: var(--accent);
@@ -882,7 +882,7 @@ select.wiz-input { cursor: pointer; }
 .col-req { color: var(--danger); font-weight: 800; }
 .col-opt { color: var(--muted); }
 </style>
-<link rel="stylesheet" href="{% static 'workspace.css' %}?v=unified-1">
+<link rel="stylesheet" href="{% static 'workspace.css' %}?v=site-3">
 {% endblock %}
 
 {% block content %}
@@ -1021,7 +1021,7 @@ select.wiz-input { cursor: pointer; }
         <div class="success-title">বই যোগ হয়েছে!</div>
         <div class="success-sub" id="qa-success-msg"></div>
         <div class="success-actions">
-          <button onclick="resetQuickAdd()" class="btn btn-primary" style="border:none;cursor:pointer;border-radius:99px;padding:12px 24px;background:var(--accent);color:#fff;font-family:inherit;font-size:16px;font-weight:700;">
+          <button onclick="resetQuickAdd()" class="btn btn-primary" style="border:none;cursor:pointer;border-radius:99px;padding:12px 24px;background:var(--accent);color:#fff;font-family:AppBangla,sans-serif;font-size:16px;font-weight:700;">
             আরেকটি বই যোগ করুন
           </button>
           <a href="/books/" class="btn btn-ghost" style="text-decoration:none;border-radius:99px;padding:12px 24px;">

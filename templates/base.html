@@ -6,29 +6,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>তারুণ্য প্রকাশন — বই ব্যবস্থাপনা</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
     /* ════════════════════════════════════════
        DESIGN TOKENS
     ════════════════════════════════════════ */
     :root {
-      --bg:           #f2f7f4;
+      --bg:           #f8fafc;
       --surface:      #ffffff;
-      --surface2:     #f7faf8;
-      --border:       #dce9e2;
-      --border-hard:  #c4d8cc;
+      --surface2:     #f8fafc;
+      --border:       #e2e8f0;
+      --border-hard:  #94a3b8;
 
-      --g900: #0d3326;
-      --g800: #164d3a;
-      --g700: #1a6347;
-      --g600: #1f7a55;
-      --g500: #27a96e;
-      --g400: #52c98a;
-      --g300: #93e6b8;
-      --g200: #c8f5de;
-      --g100: #eafaf2;
+      --g900: #0f172a;
+      --g800: #1d4ed8;
+      --g700: #1d4ed8;
+      --g600: #2563eb;
+      --g500: #3b82f6;
+      --g400: #3b82f6;
+      --g300: #93c5fd;
+      --g200: #f8fafc;
+      --g100: #f8fafc;
 
       --accent:       var(--g600);
       --accent-dark:  var(--g800);
@@ -45,9 +43,9 @@
       --info-soft:    #dbeafe;
       --info-dark:    #1e40af;
 
-      --text:    #0f1f18;
-      --text2:   #3d5247;
-      --muted:   #7a9489;
+      --text:    #0f172a;
+      --text2:   #334155;
+      --muted:   #475569;
 
       --sidebar-w: 270px;
       --topbar-h:  72px;
@@ -65,7 +63,7 @@
     html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
     body {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -106,12 +104,12 @@
     }
 
     .brand-text h1 {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:18px; font-weight: 800;
       color: #ffffff; line-height: 1.1;
     }
 
-    .brand-text p { font-size:16px; color: #7aab93; margin-top: 3px; font-weight: 500; }
+    .brand-text p { font-size:16px; color: #475569; margin-top: 3px; font-weight: 500; }
 
     .nav-scroll {
       flex: 1;
@@ -124,7 +122,7 @@
     .nav-section-label {
       font-size:16px; font-weight: 700;
       letter-spacing: .1em; text-transform: uppercase;
-      color: #3d6050;
+      color: #1d4ed8;
       padding: 10px 10px 5px;
     }
     .nav-section-label:first-child { padding-top: 4px; }
@@ -134,7 +132,7 @@
       padding: 8px 12px;
       border-radius: 9px;
       cursor: pointer;
-      color: #a8c4b8;
+      color: #64748b;
       font-size:16px; font-weight: 600;
       transition: background .14s, color .14s;
       margin-bottom: 1px;
@@ -187,12 +185,12 @@
     .user-info { flex: 1; min-width: 0; }
 
     .user-name {
-      font-size:16px; font-weight: 700; color: #e2ede9;
+      font-size:16px; font-weight: 700; color: #f1f5f9;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .user-role {
-      font-size:16px; color: #4a7060;
+      font-size:16px; color: #334155;
       font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
     }
 
@@ -223,7 +221,7 @@
     }
 
     .topbar-title {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:20px; font-weight: 800;
       color: var(--g900); flex: 1;
     }
@@ -296,17 +294,17 @@
       font-size:16px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
     }
-    .stat-card.dark .stat-label { color: #7aab93; }
+    .stat-card.dark .stat-label { color: #475569; }
 
     .stat-value {
-      font-family: 'JetBrains Mono', monospace;
+      font-family:AppBangla,sans-serif;
       font-size:28px; font-weight: 700; color: var(--text);
       margin: 10px 0 6px;
     }
     .stat-card.dark .stat-value { color: #fff; }
 
     .stat-sub { font-size:16px; color: var(--muted); font-weight: 600; }
-    .stat-card.dark .stat-sub { color: #7aab93; }
+    .stat-card.dark .stat-sub { color: #475569; }
 
     .stat-icon {
       position: absolute; top: 18px; right: 18px;
@@ -345,7 +343,7 @@
     .cm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
     .cm-require {
       width: 100%; margin-top: 8px; padding: 9px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; font-family: inherit; font-size:16px; outline: none;
+      border-radius: 8px; font-family:AppBangla,sans-serif; font-size:16px; outline: none;
     }
     .cm-require:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(27,122,85,.1); }
     .cm-require-label { display: block; font-size:16px; font-weight: 700; color: var(--text2); margin-top: 16px; }
@@ -353,7 +351,7 @@
     .cm-confirm:disabled:hover { transform: none; }
 
     .form-card h3, .card-title {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:16px; font-weight: 800; color: var(--g900);
       margin-bottom: 20px;
       display: flex; align-items: center; gap: 8px;
@@ -373,7 +371,7 @@
     }
 
     .table-title {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:16px; font-weight: 800; color: var(--g900); flex: 1;
     }
 
@@ -388,7 +386,7 @@
     }
 
     tbody td {
-      padding: 14px 18px; border-bottom: 1px solid #f0f7f3;
+      padding: 14px 18px; border-bottom: 1px solid #f8fafc;
       color: var(--text2); font-size:17px; vertical-align: middle;
     }
 
@@ -399,7 +397,7 @@
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       padding: 10px 18px; border-radius: 99px; border: none; cursor: pointer;
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:16px; font-weight: 700;
       transition: all .15s; white-space: nowrap;
     }
@@ -456,7 +454,7 @@
       width: 100%; background: var(--surface2);
       border: 1.5px solid var(--border);
       border-radius: var(--radius); color: var(--text);
-      font-family:'App Bangla',sans-serif; font-size:17px;
+      font-family:AppBangla,sans-serif; font-size:17px;
       min-height: 42px; outline: none; padding: 10px 14px;
       transition: border-color .15s, box-shadow .15s;
     }
@@ -533,7 +531,7 @@
     }
 
     .section-header h2 {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:18px; font-weight: 800; color: var(--g900);
     }
 
@@ -546,7 +544,7 @@
     }
 
     .chart-title {
-      font-family:'App Bangla',sans-serif;
+      font-family:AppBangla,sans-serif;
       font-size:17px; font-weight: 800; color: var(--g900);
       margin-bottom: 16px;
       display: flex; align-items: center; justify-content: space-between;
@@ -653,8 +651,9 @@
     }
   </style>
 
+  <link rel="preload" href="{% static 'fonts/NotoSansBengali.ttf' %}" as="font" type="font/ttf" crossorigin>
   {% block extra_css %}{% endblock %}
-  <link rel="stylesheet" href="{% static 'app-ui.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'app-ui.css' %}?v=3">
 </head>
 
 <body>

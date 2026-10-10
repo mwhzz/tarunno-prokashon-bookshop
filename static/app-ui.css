@@ -1,94 +1,94 @@
+@font-face{font-family:AppBangla;src:url('fonts/NotoSansBengali.ttf') format('truetype');font-weight:100 900;font-stretch:62.5% 100%;font-style:normal;font-display:swap}
 /* The application-wide type and component system. Loaded after page styles. */
-@font-face { font-family:'App Bangla'; src:url('fonts/kalpurush.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
 :root {
-  --bg:#f5f5ef; --surface:#fff; --surface2:#f8faf5;
-  --border:#dce5db; --border-hard:#c3d2c0;
-  --text:#243c32; --text2:#395447; --muted:#5d7165;
-  --accent:#2b6446; --accent-dark:#1c4832; --accent-soft:#edf4e7;
-  --g900:#173c2a; --g800:#224c34; --g700:#2c6040; --g600:#34734d;
-  --g100:#eff5e9; --g200:#dcebd4;
+  --bg:#f8fafc; --surface:#fff; --surface2:#f8fafc;
+  --border:#e2e8f0; --border-hard:#64748b;
+  --text:#0f172a; --text2:#334155; --muted:#334155;
+  --accent:#1d4ed8; --accent-dark:#1d4ed8; --accent-soft:#f1f5f9;
+  --g900:#0f172a; --g800:#1d4ed8; --g700:#1d4ed8; --g600:#2563eb;
+  --g100:#f8fafc; --g200:#f1f5f9;
   --info:#315f8b; --danger:#b84740;
-  --shadow:0 4px 18px #263c2c08; --shadow-sm:0 2px 10px #263c2c05;
+  --shadow:0 4px 18px #0f172a08; --shadow-sm:0 2px 10px #0f172a05;
 }
-body { font-family:'App Bangla',sans-serif; font-size:17px; line-height:1.6; }
-button,input,select,textarea { font-family:'App Bangla',sans-serif; }
-#sidebar { background:#193c2c; border-right:1px solid #284e38; }
-.brand { padding:24px 20px; background:#224632; }
-.brand-text h1 { font-family:'App Bangla',sans-serif; font-size:23px; font-weight:600; line-height:1.35; }
-.brand-text p { font-size:15px; color:#bfd0bf; }
-.nav-section-label { font-size:14px; color:#adc3aa; letter-spacing:0; font-weight:400; padding-top:18px; }
-.nav-item { font-size:18px; font-weight:400; padding:10px 13px; color:#d1dfcc; border-radius:7px; }
-.nav-item.active { background:#376744; box-shadow:inset 3px 0 #d3c38e; }
-.nav-item:hover { background:#2a5139; }
+body { font-family:AppBangla,sans-serif; font-size:17px; line-height:1.6; }
+button,input,select,textarea { font-family:AppBangla,sans-serif; }
+#sidebar { background:#0f172a; border-right:1px solid #1d4ed8; }
+.brand { padding:24px 20px; background:#0f172a; }
+.brand-text h1 { font-family:AppBangla,sans-serif; font-size:23px; font-weight:600; line-height:1.35; }
+.brand-text p { font-size:15px; color:#64748b; }
+.nav-section-label { font-size:14px; color:#64748b; letter-spacing:0; font-weight:400; padding-top:18px; }
+.nav-item { font-size:18px; font-weight:400; padding:10px 13px; color:#94a3b8; border-radius:7px; }
+.nav-item.active { background:#2563eb; box-shadow:inset 3px 0 #d3c38e; }
+.nav-item:hover { background:#1d4ed8; }
 .nav-icon { width:30px; height:30px; background:#ffffff09; }
 .user-name { font-size:17px; }
-.user-role { font-size:15px; color:#bacfb8; }
-#topbar { background:#fffef8; min-height:76px; height:auto; padding:15px 28px; }
-.topbar-title { font-family:'App Bangla',sans-serif; font-size:27px; font-weight:600; line-height:1.4; }
+.user-role { font-size:15px; color:#64748b; }
+#topbar { background:#f8fafc; min-height:76px; height:auto; padding:15px 28px; }
+.topbar-title { font-family:AppBangla,sans-serif; font-size:27px; font-weight:600; line-height:1.4; }
 .status-pill { font-size:15px; font-weight:400; border-radius:6px; padding:5px 12px; }
 #content { background:var(--bg); padding:30px; min-width:0; }
 #content > * { min-width:0; }
-.workspace { --muted:#5c7062; --border:#dce5db; --surface2:#f8faf5; --accent:#2b6446; font-family:'App Bangla',sans-serif; }
-.workspace-heading { padding:24px 28px; border:1px solid #dce3d5; border-left:4px solid #b29b63; border-radius:10px; background:linear-gradient(110deg,#fffdf5,#edf4e7); margin-bottom:26px; flex-wrap:wrap; }
-.workspace-eyebrow { font-family:'App Bangla',sans-serif; font-size:15px; letter-spacing:.03em; color:#57704f; }
+.workspace { --muted:#334155; --border:#e2e8f0; --surface2:#f8fafc; --accent:#1d4ed8; font-family:AppBangla,sans-serif; }
+.workspace-heading { padding:24px 28px; border:1px solid #e2e8f0; border-left:4px solid #b29b63; border-radius:10px; background:linear-gradient(110deg,#f8fafc,#f1f5f9); margin-bottom:26px; flex-wrap:wrap; }
+.workspace-eyebrow { font-family:AppBangla,sans-serif; font-size:15px; letter-spacing:.03em; color:#334155; }
 .workspace-heading h1 { font-size:34px; line-height:1.4; font-weight:600; }
-.workspace-heading p { font-size:17px; color:#526a58; }
+.workspace-heading p { font-size:17px; color:#334155; }
 .workspace-link { font-size:17px; min-height:46px; border-radius:7px; }
-.table-wrap,.form-card { border-color:#dce5db; border-radius:10px; box-shadow:0 3px 16px #23422c05; }
-.table-header { flex-wrap:wrap; align-items:center; padding:20px 22px; background:#fafcf7; }
-.table-title { font-family:'App Bangla',sans-serif; font-size:21px; font-weight:600; flex:1 1 230px; min-width:200px; line-height:1.5; }
+.table-wrap,.form-card { border-color:#e2e8f0; border-radius:10px; box-shadow:0 3px 16px #0f172a05; }
+.table-header { flex-wrap:wrap; align-items:center; padding:20px 22px; background:#f8fafc; }
+.table-title { font-family:AppBangla,sans-serif; font-size:21px; font-weight:600; flex:1 1 230px; min-width:200px; line-height:1.5; }
 .table-header > select { width:auto; flex:0 1 210px; min-width:160px; }
 .table-header > input { flex:1 1 240px; min-width:180px; width:auto; }
-thead th { font-family:'App Bangla',sans-serif; color:#4f6656; background:#f0f5eb; font-size:16px; font-weight:600; padding:15px 18px; letter-spacing:0; text-transform:none; }
-tbody td { font-size:17px; color:#354d3e; padding:16px 18px; }
-tbody tr:hover td { background:#f7faf3; }
-.btn { font-family:'App Bangla',sans-serif; border-radius:7px; min-height:44px; font-size:17px; font-weight:400; box-shadow:none; }
+thead th { font-family:AppBangla,sans-serif; color:#334155; background:#f8fafc; font-size:16px; font-weight:600; padding:15px 18px; letter-spacing:0; text-transform:none; }
+tbody td { font-size:17px; color:#334155; padding:16px 18px; }
+tbody tr:hover td { background:#f8fafc; }
+.btn { font-family:AppBangla,sans-serif; border-radius:7px; min-height:44px; font-size:17px; font-weight:400; box-shadow:none; }
 .btn:hover { transform:none; }
-.btn-primary { background:#2b6446; box-shadow:none; }
-.btn-primary:hover { background:#204d35; box-shadow:none; }
-.btn-ghost { border-width:1px; border-color:#c9d8c4; }
+.btn-primary { background:#1d4ed8; box-shadow:none; }
+.btn-primary:hover { background:#1d4ed8; box-shadow:none; }
+.btn-ghost { border-width:1px; border-color:#94a3b8; }
 .btn-danger { background:#b74a43; }
 .btn-sm { font-size:16px; padding:7px 12px; min-height:38px; }
-.badge { font-family:'App Bangla',sans-serif; font-size:15px; font-weight:400; border-radius:5px; padding:4px 8px; line-height:1.4; }
-.form-group label,label { color:#405b48; font-size:16px; font-weight:400; }
+.badge { font-family:AppBangla,sans-serif; font-size:15px; font-weight:400; border-radius:5px; padding:4px 8px; line-height:1.4; }
+.form-group label,label { color:#334155; font-size:16px; font-weight:400; }
 input,select { min-height:46px; font-size:17px; border-width:1px; background:#fff; border-radius:7px; }
-input[type=checkbox],input[type=radio] { min-height:0; accent-color:#34734d; }
+input[type=checkbox],input[type=radio] { min-height:0; accent-color:#2563eb; }
 textarea { font-size:17px; border-width:1px; background:#fff; }
-input::placeholder,textarea::placeholder { color:#708275; opacity:1; }
-input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0 3px #326b4310; }
-.stat-card { border-radius:10px; box-shadow:none; border:1px solid #dce5db; }
-.stat-label { font-size:17px; color:#506852; font-weight:400; }
-.stat-value { font-size:32px; font-family:'App Bangla',sans-serif; }
-.stat-sub,.stat-hint { font-size:15px; color:#5e745f; }
-.app-table-scroll { width:100%; max-width:100%; overflow-x:auto; scrollbar-width:thin; scrollbar-color:#c4d4be #f6f8f3; }
+input::placeholder,textarea::placeholder { color:#475569; opacity:1; }
+input:focus,select:focus,textarea:focus { border-color:#475569; box-shadow:0 0 0 3px #2563eb10; }
+.stat-card { border-radius:10px; box-shadow:none; border:1px solid #e2e8f0; }
+.stat-label { font-size:17px; color:#334155; font-weight:400; }
+.stat-value { font-size:32px; font-family:AppBangla,sans-serif; }
+.stat-sub,.stat-hint { font-size:15px; color:#334155; }
+.app-table-scroll { width:100%; max-width:100%; overflow-x:auto; scrollbar-width:thin; scrollbar-color:#94a3b8 #f8fafc; }
 .app-wide-table { min-width:1050px; }
 .app-medium-table { min-width:700px; }
-.app-table-scroll:focus-visible { outline:2px solid #7f9d75; outline-offset:-2px; }
-:is(button,a,input,select,textarea):focus-visible { outline:3px solid #8cae7d; outline-offset:3px; }
-.loading,.empty,.empty-state p { font-size:17px; color:#56715c; }
+.app-table-scroll:focus-visible { outline:2px solid #475569; outline-offset:-2px; }
+:is(button,a,input,select,textarea):focus-visible { outline:3px solid #64748b; outline-offset:3px; }
+.loading,.empty,.empty-state p { font-size:17px; color:#334155; }
 .empty-state h3 { font-size:23px; }
 /* Inventory has its own fixed column geometry so large type cannot squeeze amounts. */
 .inventory-workspace { max-width:1600px; }
-.inventory-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); border-color:#d5e0d0; }
+.inventory-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); border-color:#94a3b8; }
 .inventory-metric { padding:22px; background:#fff; }
-.inventory-metric > span { color:#4d674f; font-size:17px; margin-bottom:8px; }
-.inventory-metric strong { font-family:'App Bangla',sans-serif; font-size:32px; color:#24583a; overflow-wrap:normal; white-space:nowrap; }
-.inventory-metric small { font-size:15px; color:#627660; line-height:1.55; }
+.inventory-metric > span { color:#334155; font-size:17px; margin-bottom:8px; }
+.inventory-metric strong { font-family:AppBangla,sans-serif; font-size:32px; color:#1d4ed8; overflow-wrap:normal; white-space:nowrap; }
+.inventory-metric small { font-size:15px; color:#334155; line-height:1.55; }
 .inventory-metric:nth-child(4) strong { font-size:27px; }
-.inventory-metric:last-child { background:#fcf8ed; }
+.inventory-metric:last-child { background:#f8fafc; }
 .inventory-metric:last-child strong { color:#906c2f; }
-.inventory-toolbar { background:#fafcf8; display:grid; grid-template-columns:minmax(260px,2fr) repeat(3,minmax(155px,1fr)) auto; gap:16px; align-items:end; }
-.inventory-toolbar label { font-size:16px; color:#4e694f; }
+.inventory-toolbar { background:#f8fafc; display:grid; grid-template-columns:minmax(260px,2fr) repeat(3,minmax(155px,1fr)) auto; gap:16px; align-items:end; }
+.inventory-toolbar label { font-size:16px; color:#334155; }
 .inventory-toolbar :is(input,select) { font-size:17px; height:48px; }
-.inventory-toolbar input::placeholder { color:#738470; }
+.inventory-toolbar input::placeholder { color:#475569; }
 .inventory-reset { height:48px; }
 .inventory-table-heading { padding:20px 22px; }
 .inventory-table-heading h2 { font-size:23px; }
-.inventory-table-heading h2 span { font-size:16px; color:#3e6440; background:#e8f0e1; }
-.inventory-table-heading > span { font-size:15px; color:#587051; }
+.inventory-table-heading h2 span { font-size:16px; color:#1d4ed8; background:#f1f5f9; }
+.inventory-table-heading > span { font-size:15px; color:#334155; }
 .inventory-table { min-width:1380px; table-layout:fixed; }
-.inventory-table th { font-size:16px; font-weight:600; background:#edf3e7; color:#50684e; padding:15px; }
-.inventory-table td { font-size:18px; padding:18px 15px; color:#35513c; }
+.inventory-table th { font-size:16px; font-weight:600; background:#f1f5f9; color:#334155; padding:15px; }
+.inventory-table td { font-size:18px; padding:18px 15px; color:#1d4ed8; }
 .inventory-table th:nth-child(1) { width:25%; }
 .inventory-table th:nth-child(2) { width:8%; }
 .inventory-table th:nth-child(3),.inventory-table th:nth-child(4),.inventory-table th:nth-child(5) { width:8%; }
@@ -97,26 +97,26 @@ input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0
 .inventory-table th:nth-child(8) { width:12%; }
 .inventory-table th:nth-child(9) { width:11%; }
 .inventory-book { min-width:0; max-width:none; }
-.inventory-book > a { font-size:21px; font-weight:600; color:#204c30; line-height:1.6; }
-.inventory-book > small { font-size:16px; color:#65785f; }
-.inventory-code { font-size:15px; color:#61715a; letter-spacing:0; }
-.inventory-source { font-size:16px; color:#55704f; }
-.inventory-table .quantity-zero { color:#76856e; }
+.inventory-book > a { font-size:21px; font-weight:600; color:#1d4ed8; line-height:1.6; }
+.inventory-book > small { font-size:16px; color:#334155; }
+.inventory-code { font-size:15px; color:#334155; letter-spacing:0; }
+.inventory-source { font-size:16px; color:#334155; }
+.inventory-table .quantity-zero { color:#475569; }
 .inventory-status { font-size:15px; padding:5px 8px; }
-.inventory-status.available { color:#346540; background:#e9f2e3; }
+.inventory-status.available { color:#1d4ed8; background:#f1f5f9; }
 .inventory-status.empty { color:#79574e; background:#f6eeea; }
 .inventory-status.inactive { color:#5f6573; }
 .inventory-status.low { color:#805b21; }
-.inventory-add { font-size:16px; padding:7px 9px; color:#305d36; background:#f7fbf3; }
+.inventory-add { font-size:16px; padding:7px 9px; color:#1d4ed8; background:#f8fafc; }
 .inventory-damage { width:34px; height:36px; color:#876d5d; }
 .inventory-damage:disabled { opacity:.45; }
-.inventory-footer { font-size:16px; color:#52694d; }
+.inventory-footer { font-size:16px; color:#334155; }
 .inventory-footer a { font-size:17px; }
 /* Preserve the workflow-specific layouts while aligning their type and controls. */
-.catalog-workspace .sc-title { font-family:'App Bangla',sans-serif; font-size:27px; }
-.catalog-workspace .wiz-label { font-size:17px; color:#37563e; }
+.catalog-workspace .sc-title { font-family:AppBangla,sans-serif; font-size:27px; }
+.catalog-workspace .wiz-label { font-size:17px; color:#1d4ed8; }
 .catalog-workspace .wiz-input { font-size:18px; min-height:48px; }
-.catalog-workspace .wiz-hint,.catalog-workspace .sc-desc { font-size:16px; color:#5e735e; }
+.catalog-workspace .wiz-hint,.catalog-workspace .sc-desc { font-size:16px; color:#334155; }
 .catalog-workspace .step-name { font-size:16px; }
 .catalog-workspace .step-circle { width:32px; height:32px; font-size:16px; }
 .catalog-workspace .stepper { width:220px; padding:18px 8px; }
@@ -138,15 +138,15 @@ input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0
 .sales-workspace .pos-filter-row select,.sales-workspace .filter-check { font-size:16px; }
 .ledger-workspace th { font-size:16px; }
 .ledger-workspace td { font-size:17px; }
-.ledger-workspace .ledger-filters label { font-size:16px !important; color:#496447 !important; }
+.ledger-workspace .ledger-filters label { font-size:16px !important; color:#334155 !important; }
 .ledger-workspace .ledger-filters input { height:46px !important; }
 .ledger-workspace td .btn { font-size:16px; }
 .ledger-workspace table { min-width:1250px; }
 .form-card { max-width:100%; }
-.app-auth { font-family:'App Bangla',sans-serif; background:linear-gradient(135deg,#f9f5e8,#eef4e7); --navy:#28543b; --navy-dk:#193c29; --gold:#b29a5c; --text:#253f30; --muted:#5c715b; }
-.app-auth .card,.app-auth .register-card { border:1px solid #dce5d5; box-shadow:0 10px 36px #294d3210; border-radius:12px; }
-.app-auth label,.app-auth input,.app-auth button { font-family:'App Bangla',sans-serif; font-size:18px; }
-.app-auth .card-head { background:#28543b; }
+.app-auth { font-family:AppBangla,sans-serif; background:linear-gradient(135deg,#f8fafc,#f1f5f9); --navy:#1d4ed8; --navy-dk:#0f172a; --gold:#b29a5c; --text:#0f172a; --muted:#334155; }
+.app-auth .card,.app-auth .register-card { border:1px solid #e2e8f0; box-shadow:0 10px 36px #1d4ed810; border-radius:12px; }
+.app-auth label,.app-auth input,.app-auth button { font-family:AppBangla,sans-serif; font-size:18px; }
+.app-auth .card-head { background:#1d4ed8; }
 @media (max-width:1250px) {
   .inventory-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .inventory-toolbar { grid-template-columns:repeat(3,minmax(140px,1fr)); }
@@ -185,16 +185,68 @@ input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0
 }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
 
-.stock-cost-line { display:block; color:#245534; font-weight:600; font-size:19px; }
-.stock-retail-line { display:block; color:#62735e; font-size:16px; margin-top:5px; }
+.stock-cost-line { display:block; color:#1d4ed8; font-weight:600; font-size:19px; }
+.stock-retail-line { display:block; color:#334155; font-size:16px; margin-top:5px; }
 .stock-cost-line small,.stock-retail-line small { font-size:15px; font-weight:400; margin-left:4px; }
 .stock-cost-warning { display:block; color:#93602c; font-size:15px; white-space:normal; }
-.inventory-metric.inventory-cost { background:#eef5e7; }
+.inventory-metric.inventory-cost { background:#f8fafc; }
 .inventory-metric:nth-child(3) { border-right:0; }
 
-.inventory-metrics { gap:1px; background:#dce5db; }
+.inventory-metrics { gap:1px; background:#e2e8f0; }
 .inventory-metric { border:0; }
 @media (max-width:600px) {
   .inventory-metric:last-child { grid-column:auto; display:block; }
   .inventory-metric:last-child strong { grid-column:auto; grid-row:auto; }
 }
+
+/* Shared slate and blue palette, with separate colors for financial states. */
+:root{
+  --bg:#f3f5f9;--surface:#fff;--surface2:#f8fafc;
+  --text:#0f172a;--text2:#334155;--muted:#475569;
+  --border:#dbe2ea;--border-hard:#b6c4d4;
+  --accent:#2563eb;--accent-dark:#1d4ed8;--accent-soft:#eff6ff;
+  --g900:#0f172a;--g800:#1e3a8a;--g700:#1d4ed8;--g600:#2563eb;
+  --g500:#3b82f6;--g400:#60a5fa;--g300:#93c5fd;--g200:#dbeafe;--g100:#eff6ff;
+}
+body{font-family:AppBangla,sans-serif;font-weight:400;line-height:1.65}
+#topbar{background:#fff;border-bottom-color:#dbe2ea}
+.brand-text p,.nav-section-label,.user-role{color:#cbd5e1}
+.nav-item{color:#cbd5e1}
+.nav-item.active{color:#fff;background:#2563eb;box-shadow:inset 3px 0 #93c5fd}
+.nav-item:hover{background:#1e293b;color:#fff}
+.workspace-heading,.bc-header{background:#fff;border-color:#dbe2ea;border-left-color:#2563eb}
+.workspace-heading p,.bc-header p{color:#475569}
+.bc-heading-mark{color:#2563eb}
+.btn-primary,.bc-button-primary{background:#2563eb;border-color:#2563eb;color:white}
+.btn-primary:hover,.bc-button-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.badge-green,.inventory-status.available{color:#166534;background:#dcfce7}
+.bc-stock.available{color:#166534}
+.bc-stock.available .bc-stock-dot{background:#16a34a;box-shadow:0 0 0 3px #dcfce7}
+.status-pill{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.status-dot{background:#16a34a}
+.stock-cost-warning,.inventory-status.low{color:#92400e}
+.inventory-metric.inventory-cost{background:#eff6ff}
+.inventory-metric:last-child{background:#fffbeb}
+.inventory-metric:last-child strong{color:#92400e}
+.stock-retail-line{color:#475569}
+.sales-desk .order-progress{background:#0f172a}
+.sales-desk .order-progress button{color:#cbd5e1}
+.sales-desk .order-progress button.active{color:#fff;border-bottom-color:#60a5fa}
+.sales-desk .book-title,.sales-desk .ci-name strong,.book-editor h2{color:#0f172a}
+.sales-desk .book-author,.sales-desk .book-meta,.sales-desk .search-tip{color:#475569}
+.sales-desk .book-row.selected{background:#eff6ff;border-left-color:#2563eb}
+.sales-desk .book-row:hover{background:#f1f5f9}
+.sales-desk .primary,.sales-desk .mobile-cart,.book-editor .editor-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.sales-desk .primary:hover,.book-editor .editor-primary:hover{background:#1d4ed8}
+.sales-desk .paid-wrap>input{background:#fff;border-color:#94a3b8}
+.sales-desk .pos-search input{background:#fff;border-color:#94a3b8}
+.sales-desk .pos-search input:focus{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb18}
+.sales-desk .total-line.big,.sales-desk .cart-footer-total>strong{color:#0f172a}
+.modal-check{background:#dcfce7;color:#166534}
+.modal-title,.modal-invoice{color:#0f172a}
+.modal-change{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
+.book-editor .cost-field{background:#eff6ff;border-color:#bfdbfe}
+.book-editor input:focus,.book-editor select:focus,.book-editor textarea:focus{border-color:#2563eb;outline-color:#2563eb20}
+.book-editor .editor-cover{background:#f1f5f9}
+.app-auth{background:#f3f5f9;--navy:#2563eb;--navy-dk:#1e3a8a;--gold:#93c5fd;--text:#0f172a;--muted:#475569}
+.app-auth .card-head{background:#0f172a}

@@ -62,11 +62,11 @@ async function initDue() {
           </thead>
           <tbody>
             ${invoices.length ? invoices.map(s => `<tr>
-              <td style="font-family:monospace"><strong>${s.invoice_number}</strong></td>
+              <td style="font-family:AppBangla,sans-serif"><strong>${s.invoice_number}</strong></td>
               <td><strong>${s.customer_name}</strong></td>
               <td style="color:var(--muted)">${s.customer_phone || '—'}</td>
-              <td style="font-family:monospace">৳${num(s.total)}</td>
-              <td style="font-family:monospace;color:var(--danger);font-weight:700">৳${num(s.due_amount)}</td>
+              <td style="font-family:AppBangla,sans-serif">৳${num(s.total)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--danger);font-weight:700">৳${num(s.due_amount)}</td>
               <td>${statusBadge(s.status)}</td>
               <td style="color:var(--muted);font-size:16px">${fmtDate(s.created_at)}</td>
               <td style="white-space:nowrap">
@@ -97,10 +97,10 @@ async function initDue() {
           </thead>
           <tbody>
             ${customerDues.map(c => `<tr>
-              <td style="font-family:monospace">${c.customer_code || '—'}</td>
+              <td style="font-family:AppBangla,sans-serif">${c.customer_code || '—'}</td>
               <td><strong>${c.name}</strong></td>
               <td style="color:var(--muted)">${c.phone || '—'}</td>
-              <td style="font-family:monospace;color:var(--danger);font-weight:700">৳${num(c.amount)}</td>
+              <td style="font-family:AppBangla,sans-serif;color:var(--danger);font-weight:700">৳${num(c.amount)}</td>
               <td>
                 <button class="btn btn-success btn-sm" onclick="collectCustomerDue(${c.id}, ${c.amount})">
                   ৳ পেমেন্ট নিন

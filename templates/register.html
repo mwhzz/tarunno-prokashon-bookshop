@@ -5,7 +5,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>রেজিস্ট্রেশন — তারুণ্য প্রকাশন</title>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --accent: #0f766e;
@@ -20,7 +19,7 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family:'App Bangla',sans-serif;
+  font-family:AppBangla,sans-serif;
   background:
     radial-gradient(circle at top left, rgba(37, 99, 235, .11), transparent 34%),
     linear-gradient(135deg, #f8fafc 0%, #eef2f6 54%, #e2e8f0 100%);
@@ -53,7 +52,7 @@ body {
 .form-group input {
   width: 100%; min-height: 44px; padding: 12px;
   border: 1px solid var(--border); border-radius: 8px !important;
-  box-sizing: border-box; font-size:16px; font-family: inherit;
+  box-sizing: border-box; font-size:16px; font-family:AppBangla,sans-serif;
   transition: border 0.2s;
 }
 .form-group input:focus {
@@ -62,7 +61,7 @@ body {
 }
 
 .role-note {
-  background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px;
+  background: #f8fafc; border: 1px solid #93c5fd; border-radius: 8px;
   padding: 10px 12px; font-size:16px; color: #0f766e; margin-bottom: 18px;
 }
 
@@ -87,7 +86,7 @@ body {
   .form-grid { grid-template-columns: 1fr; gap: 0; }
 }
 </style>
-<link rel="stylesheet" href="{% static 'app-ui.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'app-ui.css' %}?v=3">
 </head>
 <body class="app-auth">
 

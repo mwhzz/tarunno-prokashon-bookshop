@@ -4,11 +4,11 @@
 {% block extra_css %}
 <style>
 #dash {
-  --dv-bg: #F8FAF9;
+  --dv-bg: #f8fafc;
   --dv-card: #FFFFFF;
-  --dv-primary: #157347;
-  --dv-primary-dark: #146C43;
-  --dv-primary-soft: #E7F5EE;
+  --dv-primary: #2563eb;
+  --dv-primary-dark: #2563eb;
+  --dv-primary-soft: #f8fafc;
   --dv-border: #E5E7EB;
   --dv-text: #111827;
   --dv-text2: #6B7280;
@@ -18,7 +18,7 @@
   --dv-warning-soft: #FEF3C7;
   --dv-blue: #2563EB;
   --dv-blue-soft: #DBEAFE;
-  --dv-success: #16A34A;
+  --dv-success: #2563eb;
   --dv-radius: 12px;
   --dv-shadow: 0 2px 8px rgba(0,0,0,.04);
   max-width: 1600px;
@@ -66,7 +66,7 @@
   width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
 }
 #dash .dv-stat-value {
-  font-family: 'JetBrains Mono', monospace; font-size:27px; font-weight: 700; color: var(--dv-text);
+  font-family:AppBangla,sans-serif; font-size:27px; font-weight: 700; color: var(--dv-text);
   margin-top: 10px; line-height: 1.1;
 }
 #dash .dv-stat-delta { font-size:16px; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
@@ -119,7 +119,7 @@
 #dash .dv-donut-hole {
   width: 96px; aspect-ratio: 1; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center;
 }
-#dash .dv-donut-hole strong { display: block; font-family: 'JetBrains Mono', monospace; font-size:23px; font-weight: 700; color: var(--dv-text); }
+#dash .dv-donut-hole strong { display: block; font-family:AppBangla,sans-serif; font-size:23px; font-weight: 700; color: var(--dv-text); }
 #dash .dv-donut-hole small { font-size:16px; color: var(--dv-text2); font-weight: 600; }
 #dash .dv-donut-legend { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 #dash .dv-leg { display: flex; align-items: center; gap: 8px; font-size:16px; font-weight: 600; color: var(--dv-text); }
@@ -145,14 +145,14 @@
 #dash .dv-badge {
   display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size:16px; font-weight: 700;
 }
-#dash .dv-badge.green { background: #DCFCE7; color: var(--dv-success); }
+#dash .dv-badge.green { background: #f8fafc; color: var(--dv-success); }
 #dash .dv-badge.red   { background: var(--dv-danger-soft); color: var(--dv-danger); }
 
 /* ── Right rail rows ── */
 #dash .dv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size:16px; }
 #dash .dv-row:last-of-type { border-bottom: none; }
 #dash .dv-row span { color: var(--dv-text2); }
-#dash .dv-row strong { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--dv-text); }
+#dash .dv-row strong { font-family:AppBangla,sans-serif; font-weight: 700; color: var(--dv-text); }
 #dash .dv-row strong.ok { color: var(--dv-success); }
 #dash .dv-row strong.bad { color: var(--dv-danger); }
 #dash .dv-row.sub span, #dash .dv-row.sub strong { font-size:16px; }
@@ -442,12 +442,12 @@ async function loadDash() {
               <div class="dv-card dv-donut-card">
                 <div class="dv-card-head"><h3>লাভের হার</h3></div>
                 <div class="dv-donut-wrap">
-                  <div class="dv-donut" style="background:conic-gradient(var(--dv-success) 0deg ${donutDeg}deg, #EEF2F1 ${donutDeg}deg 360deg)">
+                  <div class="dv-donut" style="background:conic-gradient(var(--dv-success) 0deg ${donutDeg}deg, #f1f5f9 ${donutDeg}deg 360deg)">
                     <div class="dv-donut-hole"><strong>${profitPct}%</strong><small>লাভ</small></div>
                   </div>
                   <div class="dv-donut-legend">
                     <div class="dv-leg"><span class="dot" style="background:var(--dv-success)"></span>লাভ ৳${num(t.realized_profit)} (${profitPct}%)</div>
-                    <div class="dv-leg"><span class="dot" style="background:#EEF2F1;border:1px solid var(--dv-border)"></span>খরচ ৳${num(costPortion)} (${100 - profitPct}%)</div>
+                    <div class="dv-leg"><span class="dot" style="background:#f1f5f9;border:1px solid var(--dv-border)"></span>খরচ ৳${num(costPortion)} (${100 - profitPct}%)</div>
                   </div>
                 </div>
               </div>
@@ -466,10 +466,10 @@ async function loadDash() {
                   <tbody>
                     ${recentSales.length ? recentSales.map(sale => `
                       <tr>
-                        <td style="font-family:'JetBrains Mono',monospace">${sale.invoice_number}</td>
+                        <td style="font-family:AppBangla,sans-serif">${sale.invoice_number}</td>
                         <td>${sale.customer_name}</td>
                         <td style="color:var(--dv-text2)">${itemsSummary(sale.items)}</td>
-                        <td style="font-family:'JetBrains Mono',monospace;font-weight:700">৳${num(sale.total)}</td>
+                        <td style="font-family:AppBangla,sans-serif;font-weight:700">৳${num(sale.total)}</td>
                         <td>${methodBadge(sale.payment_method)}</td>
                         <td style="color:var(--dv-text2)">${fmtTime(sale.created_at)}</td>
                       </tr>`).join('') : `<tr><td colspan="6" class="dv-empty-row">এখনো কোনো বিক্রয় নেই</td></tr>`}

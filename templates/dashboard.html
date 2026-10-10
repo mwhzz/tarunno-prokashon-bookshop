@@ -397,8 +397,8 @@ async function loadDash() {
           })}
           ${statCard({
             icon: 'inventory', iconBg: 'var(--dv-blue-soft)', iconColor: 'var(--dv-blue)',
-            label: 'ইনভেন্টরির মূল্য', value: s.total_stock_value,
-            sub: `মোট ${num(s.total_book_types)} ধরনের বই`,
+            label: 'স্টকের কস্টিং মূল্য', value: s.cost_stock_value,
+            sub: `বিক্রয়মূল্যে ৳${num(s.retail_stock_value)} · ${num(s.total_book_types)} ধরনের বই`,
           })}
         </div>
 

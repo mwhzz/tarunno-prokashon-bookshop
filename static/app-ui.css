@@ -69,7 +69,7 @@ input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0
 .empty-state h3 { font-size:23px; }
 /* Inventory has its own fixed column geometry so large type cannot squeeze amounts. */
 .inventory-workspace { max-width:1600px; }
-.inventory-metrics { grid-template-columns:repeat(5,minmax(0,1fr)); border-color:#d5e0d0; }
+.inventory-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); border-color:#d5e0d0; }
 .inventory-metric { padding:22px; background:#fff; }
 .inventory-metric > span { color:#4d674f; font-size:17px; margin-bottom:8px; }
 .inventory-metric strong { font-family:'App Bangla',sans-serif; font-size:32px; color:#24583a; overflow-wrap:normal; white-space:nowrap; }
@@ -184,3 +184,17 @@ input:focus,select:focus,textarea:focus { border-color:#6e9a73; box-shadow:0 0 0
   .form-card { padding:20px; }
 }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
+
+.stock-cost-line { display:block; color:#245534; font-weight:600; font-size:19px; }
+.stock-retail-line { display:block; color:#62735e; font-size:16px; margin-top:5px; }
+.stock-cost-line small,.stock-retail-line small { font-size:15px; font-weight:400; margin-left:4px; }
+.stock-cost-warning { display:block; color:#93602c; font-size:15px; white-space:normal; }
+.inventory-metric.inventory-cost { background:#eef5e7; }
+.inventory-metric:nth-child(3) { border-right:0; }
+
+.inventory-metrics { gap:1px; background:#dce5db; }
+.inventory-metric { border:0; }
+@media (max-width:600px) {
+  .inventory-metric:last-child { grid-column:auto; display:block; }
+  .inventory-metric:last-child strong { grid-column:auto; grid-row:auto; }
+}

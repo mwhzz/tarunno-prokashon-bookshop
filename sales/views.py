@@ -146,7 +146,7 @@ class SaleViewSet(viewsets.ModelViewSet):
         except InvalidOperation:
             return Response({'error': 'Invalid amount/discount format'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if amount < 0 or discount < 0:
+        if not amount.is_finite() or not discount.is_finite() or amount < 0 or discount < 0:
             return Response({'error': 'Amount/discount must not be negative'}, status=status.HTTP_400_BAD_REQUEST)
         if amount + discount <= 0:
             return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -174,21 +174,12 @@ class SaleViewSet(viewsets.ModelViewSet):
                 sale.customer.total_due -= (amount + discount)
                 sale.customer.save()
 
-            # ৪. নগদ পেমেন্ট হলে ক্যাশ লেজারে যোগ করা (আগে এটা বাদ পড়েছিল — ভেন্ডর পেমেন্টের
-            # মতোই কাস্টমারের কাছ থেকে নগদ বাকি আদায় করলেও হাতের ক্যাশে যোগ হওয়া উচিত)
+            # Payment's signal is the sole creator of the cash ledger entry.
             if amount > 0 and method == 'cash':
-                daily_cash = DailyCash.get_for_today()
                 note = f"বাকি আদায়: {sale.customer_name} — ইনভয়েস #{sale.invoice_number}"
                 if discount > 0:
                     note += f" [ছাড় ৳{discount}]"
-                CashTransaction.objects.create(
-                    daily_cash=daily_cash,
-                    transaction_type='sale',
-                    amount=amount,
-                    note=note,
-                    reference_id=f"sale_payment_{payment.id}",
-                )
-                daily_cash.update_closing_balance()
+                CashTransaction.objects.filter(reference_id=f"pay_{payment.id}").update(note=note)
 
         return Response(SaleSerializer(sale).data)
 
@@ -218,7 +209,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                 sale.customer.save()
 
             reference = f"sale_payment_{payment.id}"
-            cash_txns = CashTransaction.objects.filter(reference_id=reference)
+            cash_txns = CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"])
             daily_cash_ids = list(cash_txns.values_list('daily_cash_id', flat=True).distinct())
             cash_txns.delete()
 
@@ -383,7 +374,7 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
                 note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
             )
 
-        daily_cash_ids = CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct()
+        daily_cash_ids = CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).values_list('daily_cash_id', flat=True).distinct()
         for dc_id in daily_cash_ids:
             DailyCash.objects.get(id=dc_id).update_closing_balance()
 
@@ -395,8 +386,8 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
 
         instance = self.get_object()
         reference = f"ext_{instance.id}"
-        daily_cash_ids = list(CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct())
-        CashTransaction.objects.filter(reference_id=reference).delete()
+        daily_cash_ids = list(CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).values_list('daily_cash_id', flat=True).distinct())
+        CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).delete()
         instance.delete()
         for dc_id in daily_cash_ids:
             DailyCash.objects.get(id=dc_id).update_closing_balance()

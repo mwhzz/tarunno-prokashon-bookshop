@@ -22,7 +22,8 @@
     <div class="inventory-metric"><span>মোট বই</span><strong id="stock-stat-books">—</strong><small>সক্রিয় ও নিষ্ক্রিয় সব বই</small></div>
     <div class="inventory-metric"><span>দোকানে</span><strong id="stock-stat-shop">—</strong><small>বিক্রয়ের জন্য রাখা কপি</small></div>
     <div class="inventory-metric"><span>গোডাউনে</span><strong id="stock-stat-godown">—</strong><small>সংরক্ষিত কপি</small></div>
-    <div class="inventory-metric"><span>স্টকের মূল্য</span><strong id="stock-stat-value">—</strong><small>বিক্রয়মূল্য অনুযায়ী</small></div>
+    <div class="inventory-metric inventory-cost"><span>স্টকের মূল্য · কস্টিং</span><strong id="stock-stat-cost">—</strong><small id="stock-cost-note">ক্রয় / উৎপাদন খরচ অনুযায়ী</small></div>
+    <div class="inventory-metric"><span>স্টকের মূল্য · বিক্রয়</span><strong id="stock-stat-value">—</strong><small>সম্ভাব্য বিক্রয়মূল্য অনুযায়ী</small></div>
     <div class="inventory-metric"><span>স্টক নেই</span><strong id="stock-stat-empty">—</strong><small>স্টক যোগ করা প্রয়োজন</small></div>
   </div>
 
@@ -34,13 +35,13 @@
       </div>
       <div><label for="stock-source-filter">বইয়ের উৎস</label><select id="stock-source-filter" onchange="renderStockRows()"><option value="">সব উৎস</option><option value="own">নিজস্ব বই</option><option value="external">বাইরের বই</option></select></div>
       <div><label for="stock-status-filter">স্টকের অবস্থা</label><select id="stock-status-filter" onchange="renderStockRows()"><option value="">সব বই</option><option value="available">স্টক আছে</option><option value="empty">স্টক নেই</option><option value="low">কম স্টক (১–৫)</option><option value="inactive">নিষ্ক্রিয় বই</option></select></div>
-      <div><label for="stock-sort">সাজান</label><select id="stock-sort" onchange="renderStockRows()"><option value="name">নাম অনুযায়ী</option><option value="quantity-desc">বেশি স্টক আগে</option><option value="quantity-asc">কম স্টক আগে</option><option value="value-desc">বেশি মূল্য আগে</option></select></div>
+      <div><label for="stock-sort">সাজান</label><select id="stock-sort" onchange="renderStockRows()"><option value="name">নাম অনুযায়ী</option><option value="quantity-desc">বেশি স্টক আগে</option><option value="quantity-asc">কম স্টক আগে</option><option value="value-desc">বেশি কস্টিং মূল্য আগে</option></select></div>
       <button class="btn btn-ghost inventory-reset" onclick="resetStockFilters()">রিসেট</button>
     </div>
     <div class="inventory-table-heading"><h2>বইয়ের তালিকা <span id="stock-result-count" aria-live="polite">লোড হচ্ছে…</span></h2><span>স্টক না থাকা বইও এখানে দেখা যাবে</span></div>
     <div class="inventory-table-scroll" tabindex="0" role="region" aria-label="স্টক টেবিল; ছোট স্ক্রিনে পাশে স্ক্রল করুন">
       <table class="inventory-table">
-        <thead><tr><th scope="col">বইয়ের বিবরণ</th><th scope="col">উৎস</th><th scope="col" class="numeric">দোকান</th><th scope="col" class="numeric">গোডাউন</th><th scope="col" class="numeric">মোট কপি</th><th scope="col">অবস্থা</th><th scope="col" class="numeric">বিক্রয়মূল্য</th><th scope="col" class="numeric">স্টকের মূল্য</th><th scope="col">অ্যাকশন</th></tr></thead>
+        <thead><tr><th scope="col">বইয়ের বিবরণ</th><th scope="col">উৎস</th><th scope="col" class="numeric">দোকান</th><th scope="col" class="numeric">গোডাউন</th><th scope="col" class="numeric">মোট কপি</th><th scope="col">অবস্থা</th><th scope="col" class="numeric">প্রতি কপির মূল্য</th><th scope="col" class="numeric">স্টকের মূল্য</th><th scope="col">অ্যাকশন</th></tr></thead>
         <tbody id="stock-tbody"><tr><td colspan="9"><div class="loading"><div class="spinner"></div> স্টক তালিকা লোড হচ্ছে…</div></td></tr></tbody>
       </table>
     </div>
@@ -85,12 +86,17 @@ async function initStock() {
       total_shop_quantity: rows.reduce((sum, row) => sum + Number(row.shop_quantity || 0), 0),
       total_godown_quantity: rows.reduce((sum, row) => sum + Number(row.godown_quantity || 0), 0),
       out_of_stock_count: rows.filter(row => Number(row.quantity) <= 0).length,
+      cost_stock_value: rows.reduce((sum, row) => sum + Number(row.cost_stock_value || 0), 0),
       total_stock_value: rows.reduce((sum, row) => sum + Number(row.stock_value || 0), 0),
     };
     for (const [id, value] of Object.entries({
       books: report.total_book_types, shop: report.total_shop_quantity,
       godown: report.total_godown_quantity, empty: report.out_of_stock_count,
     })) document.getElementById('stock-stat-' + id).textContent = num(value);
+    const missingCost = rows.filter(row => Number(row.quantity) > 0 && Number(row.purchase_price) <= 0).length;
+    document.getElementById('stock-cost-note').textContent = missingCost ? `${num(missingCost)}টি বইয়ের কস্টিং দেওয়া নেই` : 'ক্রয় / উৎপাদন খরচ অনুযায়ী';
+    document.getElementById('stock-cost-note').classList.toggle('stock-cost-warning', missingCost > 0);
+    document.getElementById('stock-stat-cost').textContent = '৳' + num(report.cost_stock_value);
     document.getElementById('stock-stat-value').textContent = '৳' + num(report.total_stock_value);
     stockIsLoading = false;
     renderStockRows();
@@ -113,8 +119,8 @@ function stockRowHtml(s) {
     <td class="numeric ${s.godown_quantity <= 0 ? 'quantity-zero' : ''}">${num(s.godown_quantity)}</td>
     <td class="numeric inventory-total">${num(s.quantity)}</td>
     <td><span class="inventory-status ${statusClass}">${status}</span></td>
-    <td class="numeric">৳${num(s.selling_price)}</td>
-    <td class="numeric inventory-value">৳${num(s.stock_value)}</td>
+    <td class="numeric"><strong class="stock-cost-line">৳${num(s.purchase_price)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.selling_price)} <small>বিক্রয়</small></span></td>
+    <td class="numeric inventory-value"><strong class="stock-cost-line">৳${num(s.cost_stock_value)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.stock_value)} <small>বিক্রয়</small></span>${Number(s.purchase_price) <= 0 && s.quantity > 0 ? '<small class="stock-cost-warning">কস্টিং দেওয়া নেই</small>' : ''}</td>
     <td><div class="inventory-row-actions">
       ${s.is_active ? `<a class="inventory-add" href="/stock/add/?book=${s.book}">${icon('plus', 13)} স্টক</a>` : `<a class="inventory-add" href="/books/edit/${s.book}/">বই দেখুন</a>`}
       <button type="button" class="inventory-damage" data-damage-book="${s.book}" ${empty ? 'disabled' : ''} aria-label="ড্যামেজ রেকর্ড করুন" title="ড্যামেজ রেকর্ড করুন">${icon('alert-triangle', 14)}</button>
@@ -135,7 +141,7 @@ function renderStockRows() {
   rows.sort((a, b) => {
     if (sort === 'quantity-desc') return b.quantity - a.quantity;
     if (sort === 'quantity-asc') return a.quantity - b.quantity;
-    if (sort === 'value-desc') return Number(b.stock_value) - Number(a.stock_value);
+    if (sort === 'value-desc') return Number(b.cost_stock_value) - Number(a.cost_stock_value);
     return String(a.book_title || '').localeCompare(String(b.book_title || ''), 'bn');
   });
   document.getElementById('stock-tbody').innerHTML = rows.length ? rows.map(stockRowHtml).join('') : '<tr><td colspan="9"><div class="inventory-empty"><h3>কোনো বই পাওয়া যায়নি</h3><p>নাম বা ফিল্টার পরিবর্তন করে দেখুন।</p><button class="btn btn-ghost" onclick="resetStockFilters()">সব বই দেখুন</button></div></td></tr>';

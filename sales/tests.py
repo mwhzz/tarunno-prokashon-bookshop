@@ -182,3 +182,63 @@ class DailyTelegramReportTests(TestCase):
 
         self.assertEqual(get_updates_payloads[0][0]["timeout"], 25)
         self.assertGreaterEqual(get_updates_payloads[0][1], 35)
+
+
+class DuePaymentCashTests(TestCase):
+    def setUp(self):
+        from rest_framework.test import APIClient
+        from sales.models import Sale, Customer
+        self.client = APIClient()
+        self.customer = Customer.objects.create(name='Due customer', phone='01711111111', total_due=1000)
+        self.sale = Sale.objects.create(customer=self.customer, customer_name='Due customer', subtotal=1000, total=1000, paid_amount=0)
+
+    def test_cash_due_collection_creates_one_ledger_entry(self):
+        from sales.models import Payment
+        response = self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'discount':20, 'method':'cash'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        payment = Payment.objects.get(sale=self.sale)
+        self.assertEqual(CashTransaction.objects.filter(transaction_type='sale').count(), 1)
+        self.assertEqual(CashTransaction.objects.get().reference_id, f'pay_{payment.pk}')
+        self.sale.refresh_from_db(); self.customer.refresh_from_db()
+        self.assertEqual(self.sale.paid_amount, 100)
+        self.assertEqual(self.sale.due_amount, 880)
+        self.assertEqual(self.customer.total_due, 880)
+        self.assertEqual(DailyCash.get_for_today().closing_balance, 100)
+
+    def test_removing_payment_also_removes_signal_cash_entry(self):
+        from sales.models import Payment
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'method':'cash'}, format='json')
+        payment = Payment.objects.get(sale=self.sale)
+        result = self.client.post(f'/api/sales/{self.sale.pk}/remove_payment/', {'payment_id':payment.pk}, format='json')
+        self.assertEqual(result.status_code, 200)
+        self.assertFalse(CashTransaction.objects.exists())
+        self.assertEqual(DailyCash.get_for_today().closing_balance, 0)
+        self.sale.refresh_from_db()
+        self.assertEqual(self.sale.due_amount, 1000)
+
+    def test_non_cash_and_discount_only_do_not_increase_cash(self):
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':100, 'method':'bank'}, format='json')
+        self.client.post(f'/api/sales/{self.sale.pk}/add_payment/', {'amount':0, 'discount':100, 'method':'cash'}, format='json')
+        self.assertFalse(CashTransaction.objects.exists())
+
+    def test_proven_legacy_duplicates_and_carried_balances_are_repaired(self):
+        import importlib
+        from datetime import timedelta
+        from django.apps import apps
+        from django.db import connection
+        from sales.models import Payment
+        payment = Payment.objects.create(sale=self.sale, amount=100, method='cash')
+        day = DailyCash.get_for_today()
+        CashTransaction.objects.create(daily_cash=day, transaction_type='sale', amount=100, reference_id=f'sale_payment_{payment.pk}')
+        day.refresh_from_db()
+        carried = DailyCash.objects.create(date=day.date+timedelta(days=1), opening_balance=200, closing_balance=200)
+        manual = DailyCash.objects.create(date=day.date+timedelta(days=2), opening_balance=999, closing_balance=999)
+        repair = importlib.import_module('accounts.migrations.0002_remove_duplicate_due_cash').repair_duplicate_cash
+        from types import SimpleNamespace
+        repair(apps, SimpleNamespace(connection=connection))
+        self.assertEqual(CashTransaction.objects.count(), 1)
+        day.refresh_from_db(); carried.refresh_from_db(); manual.refresh_from_db()
+        self.assertEqual(day.closing_balance, 100)
+        self.assertEqual(carried.opening_balance, 100)
+        self.assertEqual(carried.closing_balance, 100)
+        self.assertEqual(manual.opening_balance, 999)

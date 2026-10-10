@@ -15,6 +15,10 @@ def stock_catalog_queryset():
     ).annotate(
         inventory_total=F('inventory_shop') + F('inventory_godown'),
     ).annotate(
+        inventory_cost_value=ExpressionWrapper(
+            F('inventory_total') * F('purchase_price'),
+            output_field=DecimalField(max_digits=20, decimal_places=2),
+        ),
         inventory_value=ExpressionWrapper(
             F('inventory_total') * F('selling_price'),
             output_field=DecimalField(max_digits=20, decimal_places=2),
@@ -92,6 +96,7 @@ class StockSummaryViewSet(viewsets.ReadOnlyModelViewSet):
         total_combined = total_godown + total_shop
         
         total_value = catalog.aggregate(total=Sum('inventory_value'))['total'] or 0
+        cost_value = catalog.aggregate(total=Sum('inventory_cost_value'))['total'] or 0
         out_of_stock = catalog.filter(inventory_total__lte=0).count()
 
         return Response({
@@ -100,6 +105,9 @@ class StockSummaryViewSet(viewsets.ReadOnlyModelViewSet):
             'total_godown_quantity': total_godown,
             'total_shop_quantity': total_shop,
             'total_stock_value': total_value,
+            'retail_stock_value': total_value,
+            'cost_stock_value': cost_value,
+            'missing_cost_count': catalog.filter(inventory_total__gt=0, purchase_price__lte=0).count(),
             'out_of_stock_count': out_of_stock,
         })
 

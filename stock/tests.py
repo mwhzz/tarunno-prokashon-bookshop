@@ -7,7 +7,7 @@ from .models import StockSummary
 class StockCatalogTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.stocked = Book.objects.create(title='Stocked', selling_price='10.00')
+        self.stocked = Book.objects.create(title='Stocked', selling_price='10.00', purchase_price='6.00')
         self.fresh = Book.objects.create(
             title='Fresh book', selling_price='20.00', product_code='NEW-101',
             isbn='9789849990895',
@@ -31,6 +31,8 @@ class StockCatalogTests(TestCase):
         self.assertFalse(rows[self.inactive.pk]['is_active'])
         self.assertEqual(rows[self.stocked.pk]['quantity'], 5)
         self.assertEqual(rows[self.stocked.pk]['stock_value'], '50.00')
+        self.assertEqual(rows[self.stocked.pk]['cost_stock_value'], '30.00')
+        self.assertEqual(rows[self.stocked.pk]['purchase_price'], '6.00')
         self.assertEqual(StockSummary.objects.count(), 1)
 
     def test_report_counts_books_without_stock_and_preserves_stock_totals(self):
@@ -41,6 +43,8 @@ class StockCatalogTests(TestCase):
         self.assertEqual(data['total_godown_quantity'], 2)
         self.assertEqual(data['total_quantity'], 5)
         self.assertEqual(data['total_stock_value'], 50)
+        self.assertEqual(data['cost_stock_value'], 30)
+        self.assertEqual(data['retail_stock_value'], 50)
 
     def test_all_pages_include_each_book_once(self):
         first = self.client.get('/api/stock/summary/catalog/?page_size=2').data

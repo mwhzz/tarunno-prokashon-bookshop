@@ -13,6 +13,9 @@ class StockCatalogSerializer(serializers.ModelSerializer):
     shop_quantity = serializers.IntegerField(source='inventory_shop', read_only=True)
     godown_quantity = serializers.IntegerField(source='inventory_godown', read_only=True)
     quantity = serializers.IntegerField(source='inventory_total', read_only=True)
+    cost_stock_value = serializers.DecimalField(
+        source='inventory_cost_value', max_digits=20, decimal_places=2, read_only=True,
+    )
     stock_value = serializers.DecimalField(
         source='inventory_value', max_digits=20, decimal_places=2, read_only=True,
     )
@@ -21,7 +24,7 @@ class StockCatalogSerializer(serializers.ModelSerializer):
         model = Book
         fields = [
             'book', 'book_title', 'book_author', 'book_source', 'product_code',
-            'isbn', 'is_active', 'selling_price', 'shop_quantity',
+            'isbn', 'is_active', 'purchase_price', 'cost_stock_value', 'selling_price', 'shop_quantity',
             'godown_quantity', 'quantity', 'stock_value',
         ]
 

@@ -7,7 +7,7 @@ from .models import DailyCash, CashTransaction
 @receiver(post_save, sender=Payment)
 def record_payment_cash(sender, instance, created, **kwargs):
     """ইনভয়েস পেমেন্ট হলে ক্যাশ লেজারে যোগ করুন"""
-    if created and instance.method == 'cash':
+    if created and instance.method == 'cash' and instance.amount > 0:
         daily_cash = DailyCash.get_for_today()
         CashTransaction.objects.create(
             daily_cash=daily_cash,

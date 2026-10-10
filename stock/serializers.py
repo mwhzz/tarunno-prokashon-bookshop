@@ -1,6 +1,29 @@
 from rest_framework import serializers
 from .models import StockEntry, StockSummary, StockTransfer
 from books.serializers import BookListSerializer
+from books.models import Book
+
+
+class StockCatalogSerializer(serializers.ModelSerializer):
+    """Inventory rows include books which have never received stock."""
+    book = serializers.IntegerField(source='pk', read_only=True)
+    book_title = serializers.CharField(source='title', read_only=True)
+    book_author = serializers.CharField(source='author', read_only=True)
+    book_source = serializers.CharField(source='source', read_only=True)
+    shop_quantity = serializers.IntegerField(source='inventory_shop', read_only=True)
+    godown_quantity = serializers.IntegerField(source='inventory_godown', read_only=True)
+    quantity = serializers.IntegerField(source='inventory_total', read_only=True)
+    stock_value = serializers.DecimalField(
+        source='inventory_value', max_digits=20, decimal_places=2, read_only=True,
+    )
+
+    class Meta:
+        model = Book
+        fields = [
+            'book', 'book_title', 'book_author', 'book_source', 'product_code',
+            'isbn', 'is_active', 'selling_price', 'shop_quantity',
+            'godown_quantity', 'quantity', 'stock_value',
+        ]
 
 
 class StockEntrySerializer(serializers.ModelSerializer):

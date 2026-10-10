@@ -1,9 +1,25 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q, Value, DecimalField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+from books.models import Book
 from .models import StockEntry, StockSummary, StockTransfer
-from .serializers import StockEntrySerializer, StockSummarySerializer, StockTransferSerializer
+from .serializers import StockEntrySerializer, StockSummarySerializer, StockTransferSerializer, StockCatalogSerializer
+
+
+def stock_catalog_queryset():
+    return Book.objects.annotate(
+        inventory_shop=Coalesce('stock_summary__shop_quantity', Value(0)),
+        inventory_godown=Coalesce('stock_summary__godown_quantity', Value(0)),
+    ).annotate(
+        inventory_total=F('inventory_shop') + F('inventory_godown'),
+    ).annotate(
+        inventory_value=ExpressionWrapper(
+            F('inventory_total') * F('selling_price'),
+            output_field=DecimalField(max_digits=20, decimal_places=2),
+        ),
+    ).order_by('title', 'pk')
 
 
 class StockEntryViewSet(viewsets.ModelViewSet):
@@ -30,6 +46,25 @@ class StockSummaryViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['book__title', 'book__author']
 
+    @action(detail=False, methods=['get'])
+    def catalog(self, request):
+        qs = stock_catalog_queryset()
+        search = request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(author__icontains=search)
+                | Q(product_code__icontains=search) | Q(isbn__icontains=search)
+            )
+        source = request.query_params.get('book_source')
+        if source:
+            qs = qs.filter(source=source)
+        if request.query_params.get('available') == 'true':
+            qs = qs.filter(inventory_total__gt=0)
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            return self.get_paginated_response(StockCatalogSerializer(page, many=True).data)
+        return Response(StockCatalogSerializer(qs, many=True).data)
+
     def get_queryset(self):
         qs = super().get_queryset()
         # শুধু positive stock
@@ -46,19 +81,18 @@ class StockSummaryViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def report(self, request):
         """স্টকের সারাংশ রিপোর্ট"""
-        total_books = StockSummary.objects.count()
-        total_qty = StockSummary.objects.aggregate(
-            godown=Sum('godown_quantity'),
-            shop=Sum('shop_quantity')
+        catalog = stock_catalog_queryset()
+        total_books = catalog.count()
+        total_qty = catalog.aggregate(
+            godown=Sum('inventory_godown'),
+            shop=Sum('inventory_shop')
         )
         total_godown = total_qty['godown'] or 0
         total_shop = total_qty['shop'] or 0
         total_combined = total_godown + total_shop
         
-        total_value = StockSummary.objects.annotate(
-            value=(F('godown_quantity') + F('shop_quantity')) * F('book__selling_price')
-        ).aggregate(total=Sum('value'))['total'] or 0
-        out_of_stock = StockSummary.objects.filter(godown_quantity=0, shop_quantity=0).count()
+        total_value = catalog.aggregate(total=Sum('inventory_value'))['total'] or 0
+        out_of_stock = catalog.filter(inventory_total__lte=0).count()
 
         return Response({
             'total_book_types': total_books,

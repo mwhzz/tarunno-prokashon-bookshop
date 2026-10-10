@@ -961,6 +961,9 @@ async function initPage() {
       next = r.next;
       page++;
     }
+    const requestedBookId = Number(new URLSearchParams(window.location.search).get('book'));
+    const requestedBook = allBooks.find(b => b.id === requestedBookId);
+    if (requestedBook) selectBook(requestedBook);
   } catch(e) {
     toast('বই লোড হয়নি। সার্ভার চালু আছে কিনা দেখুন।', 'error');
   }

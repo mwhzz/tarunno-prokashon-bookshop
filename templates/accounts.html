@@ -415,11 +415,21 @@
   .ledger-hero { grid-template-columns: 1fr; }
   .type-grid   { grid-template-columns: 1fr 1fr; }
 }
+.other-accounts { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; align-items:stretch; }
+.other-accounts:empty { display:none; }
+.oa-card { flex:1 1 150px; border:1px solid var(--border); border-radius:12px; padding:10px 14px; background:var(--card, #fff); }
+.oa-card span { display:block; font-size:14px; color:var(--muted); }
+.oa-card strong { display:block; font-size:20px; margin-top:2px; font-variant-numeric:tabular-nums; }
+.oa-card.total { border-color:#2563eb; }
+.oa-link { display:flex; align-items:center; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:700; color:#2563eb; border:1px dashed #2563eb; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="ledger-page">
+
+  <!-- ── অন্য অ্যাকাউন্টের ব্যালেন্স ── -->
+  <div class="other-accounts" id="other-accounts"></div>
 
   <!-- ── HERO SUMMARY ── -->
   <div class="ledger-hero">
@@ -572,7 +582,21 @@ function selectType(type) {
 /* ══════════════════════════
    FETCH DATA
 ══════════════════════════ */
+// ক্যাশ ছাড়া বিকাশ/নগদ/ব্যাংকে কত আছে — হিসাব আসে টাকার হিসাব পেজের একই জায়গা থেকে
+async function loadOtherAccounts() {
+  const box = document.getElementById('other-accounts');
+  try {
+    const data = await api('/accounts/money/');
+    const cards = data.accounts.filter(a => a.account !== 'cash').map(a => `
+      <div class="oa-card"><span>${a.label}</span><strong>৳${num(a.balance)}</strong></div>`).join('');
+    box.innerHTML = cards + `
+      <div class="oa-card total"><span>সব অ্যাকাউন্ট মিলিয়ে (ক্যাশসহ)</span><strong>৳${num(data.total)}</strong></div>
+      <a class="oa-link" href="/accounts/money/">ট্রান্সফার / বিস্তারিত →</a>`;
+  } catch (e) { box.innerHTML = ''; }
+}
+
 async function fetchTodayCash() {
+  loadOtherAccounts();
   const txList = document.getElementById('tx-list');
   txList.innerHTML = `<div class="loading" style="padding:40px"><div class="spinner"></div>&nbsp;লোড হচ্ছে...</div>`;
 

@@ -158,6 +158,27 @@ class SaleViewSet(viewsets.ModelViewSet):
         return Response(collect_invoice_due(self.get_object().pk, request.data))
 
     @action(detail=True, methods=['post'])
+    def edit(self, request, pk=None):
+        """ভুল মেমো ঠিক করা; আগের অবস্থা ইতিহাসে থেকে যায়"""
+        from .sale_edits import edit_sale
+        sale = edit_sale(self.get_object().pk, request.data, request.user)
+        return Response(SaleSerializer(sale).data)
+
+    @action(detail=True, methods=['get'])
+    def edit_history(self, request, pk=None):
+        sale = self.get_object()
+        edits = sale.edits.select_related('edited_by')
+        return Response({
+            'edit_count': edits.count(),
+            'has_returns': sale.returns.exists(),
+            'edits': [
+                {'id': e.id, 'created_at': e.created_at, 'reason': e.reason, 'changes': e.changes,
+                 'edited_by': e.edited_by.get_full_name() or e.edited_by.get_username() if e.edited_by else ''}
+                for e in edits
+            ],
+        })
+
+    @action(detail=True, methods=['post'])
     def remove_payment(self, request, pk=None):
         """ভুলবশত (যেমন ডাবল-ক্লিকে) দুইবার পেমেন্ট বসে গেলে একটা মুছে ইনভয়েস/কাস্টমারের
         হিসাব আগের অবস্থায় ফিরিয়ে আনার জন্য।"""
@@ -171,6 +192,8 @@ class SaleViewSet(viewsets.ModelViewSet):
             payment = sale.payments.get(id=payment_id)
         except Payment.DoesNotExist:
             return Response({'error': 'এই পেমেন্ট পাওয়া যায়নি।'}, status=status.HTTP_404_NOT_FOUND)
+        if payment.amount < 0:
+            return Response({'error': 'বই ফেরতের টাকা ফেরত মোছা যাবে না।'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             sale.discount -= payment.discount
@@ -196,69 +219,10 @@ class SaleViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def return_items(self, request, pk=None):
-        """বই ফেরত নেওয়া"""
-        sale = self.get_object()
-        items_data = request.data.get('items') # [{'book_id': 1, 'quantity': 2}]
-        
-        if not items_data:
-            return Response({'error': 'No items to return'}, status=status.HTTP_400_BAD_REQUEST)
-            
-        from django.db import transaction
-        from .models import SaleReturn, SaleItem
-        from stock.models import StockSummary, StockEntry
-        
-        with transaction.atomic():
-            for item in items_data:
-                book_id = item['book_id']
-                qty = int(item['quantity'])
-                
-                # ১. চেক করা যে বইটা এই ইনভয়েসে ছিল কিনা
-                sale_item = sale.items.filter(book_id=book_id).first()
-                if not sale_item:
-                    return Response({'error': f'Book ID {book_id} was not part of this sale'}, status=status.HTTP_400_BAD_REQUEST)
-                
-                if qty > sale_item.quantity:
-                    return Response({'error': f'Cannot return more than sold quantity for Book ID {book_id}'}, status=status.HTTP_400_BAD_REQUEST)
-                
-                # ২. রিটার্ন রেকর্ড তৈরি
-                SaleReturn.objects.create(
-                    sale=sale,
-                    book_id=book_id,
-                    quantity=qty,
-                    reason=request.data.get('reason', 'Customer Return')
-                )
-                
-                # ৩. স্টক আপডেট (দোকানে ফিরে আসবে)
-                StockSummary.update_stock(sale_item.book, qty, location='shop')
-                StockEntry.objects.create(
-                    book=sale_item.book,
-                    quantity=qty,
-                    source='return',
-                    location='shop',
-                    reference_id=sale.id,
-                    note=f"Return from Invoice #{sale.invoice_number}"
-                )
-                
-                # ৪. হিসাব সমন্বয় (বকেয়া থাকলে বকেয়া থেকে কমানো)
-                # ফেরত দেওয়া বইয়ের দাম
-                return_value = (sale_item.unit_price * qty)
-                
-                if sale.due_amount >= return_value:
-                    sale.due_amount -= return_value
-                    if sale.customer:
-                        sale.customer.total_due -= return_value
-                        sale.customer.save()
-                else:
-                    # যদি বকেয়া কম থাকে, তবে বাকি অংশ ক্যাশ রিফান্ড হিসেবে ধরা যেতে পারে
-                    # এখানে আমরা শুধু বকেয়া ০ করে দিচ্ছি
-                    if sale.customer:
-                        sale.customer.total_due -= sale.due_amount
-                        sale.customer.save()
-                    sale.due_amount = 0
-                
-                sale.save()
-                
-        return Response({'message': 'Return processed successfully'})
+        """বই ফেরত — স্টক দোকানে ফেরে, বিল কমে, দরকার হলে টাকা ফেরত যায়"""
+        from .sale_returns import return_sale_items
+        result = return_sale_items(self.get_object().pk, request.data)
+        return Response({**result, 'sale': SaleSerializer(Sale.objects.get(pk=pk)).data})
 
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
@@ -450,10 +414,20 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
         if location not in ('shop', 'godown'):
             return Response({'error': 'সঠিক লোকেশন দিন (shop/godown)।'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # ক্রয়মূল্য কখনো বিক্রয়ের দাম হিসেবে বসানো হয় না — নাহলে POS-এ কেনা দাম দেখা যেত
         try:
-            selling_price = Decimal(str(request.data.get('selling_price') or trade.selling_price or trade.purchase_price))
+            selling_price = Decimal(str(request.data.get('selling_price') or trade.selling_price or 0))
         except InvalidOperation:
             return Response({'error': 'সঠিক বিক্রয়মূল্য দিন।'}, status=status.HTTP_400_BAD_REQUEST)
+        if selling_price <= 0:
+            return Response({'error': 'বিক্রয়মূল্য/কপি লিখুন।'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # গায়ের মূল্য (বডি রেট) থাকলে POS-এ সেটা দেখাবে, আর বিক্রয়মূল্য পর্যন্ত বাকিটা কমিশন
+        if trade.body_rate > 0:
+            mrp = trade.body_rate
+            commission = max(Decimal('0'), min(Decimal('100'), (1 - selling_price / mrp) * 100)).quantize(Decimal('0.01'))
+        else:
+            mrp, commission = selling_price, Decimal('0')
 
         book = Book.objects.create(
             title=trade.book_title,
@@ -462,8 +436,8 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
             source='external',
             purchase_price=trade.purchase_price,
             selling_price=selling_price,
-            mrp=trade.body_rate if trade.body_rate > 0 else selling_price,
-            commission=trade.sale_commission,
+            mrp=mrp,
+            commission=commission,
             notes=f"বাইরের ক্রয়-বিক্রয় থেকে যোগ করা হয়েছে (External Trade #{trade.id})",
         )
 

@@ -27,7 +27,7 @@ def record_payment_cash(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Expense)
 def record_expense_cash(sender, instance, created, **kwargs):
     """খরচ হলে ক্যাশ লেজার থেকে বিয়োগ করুন"""
-    if created:
+    if created and instance.account == 'cash':
         daily_cash = DailyCash.get_for_today()
         CashTransaction.objects.create(
             daily_cash=daily_cash,

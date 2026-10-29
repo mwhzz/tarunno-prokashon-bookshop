@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from books.models import Book
 from django.db.models import Sum
@@ -51,6 +52,8 @@ class Sale(models.Model):
     ]
     PAYMENT_CHOICES = [
         ('cash', 'Cash'),
+        ('bkash', 'bKash'),
+        ('nagad', 'Nagad'),
         ('bank', 'Bank Transfer'),
         ('mobile', 'Mobile Banking'),
         ('credit', 'Credit'),
@@ -102,6 +105,12 @@ class Sale(models.Model):
         item_discount = self.items.aggregate(total=Sum('discount'))['total'] or 0
         return self.discount + item_discount
 
+    @property
+    def gross_subtotal(self):
+        """গায়ের মূল্যে বইগুলোর মোট দাম (কমিশনের আগে) — ইনভয়েসে এর থেকে কমিশন বিয়োগ দেখানো হয়"""
+        item_discount = self.items.aggregate(total=Sum('discount'))['total'] or 0
+        return self.subtotal + item_discount
+
     def save(self, *args, **kwargs):
         if not self.invoice_number:
             self.invoice_number = self._generate_invoice_number()
@@ -135,10 +144,29 @@ class Sale(models.Model):
 
     @property
     def realized_profit(self):
-        """আদায়কৃত লাভ (পেইড অ্যামাউন্ট অনুযায়ী)"""
-        if self.total <= 0: return 0
-        ratio = self.paid_amount / self.total
-        return self.total_profit * ratio
+        """আদায়কৃত লাভ: আগে ক্রয়মূল্য উঠবে, তারপর যা আদায় হবে সবই লাভ।
+        যেমন বিল ১০০০, খরচ ৮০০ — ৫০০ আদায়ে লাভ ০, ৯০০ আদায়ে লাভ ১০০।
+        পুরো পরিশোধ হলে (লোকসানের বিল হলেও) পুরো total_profit।"""
+        if self.due_amount <= 0:
+            return self.total_profit
+        return max(self.paid_amount - self.total_cost, 0)
+
+
+class SaleEdit(models.Model):
+    """বিক্রয়ের পরে মেমো ঠিক করার রেকর্ড — আগের ও পরের অবস্থা দুটোই রাখা হয়"""
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='edits')
+    edited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.TextField(blank=True)
+    before = models.JSONField()
+    after = models.JSONField()
+    changes = models.JSONField(default=list, help_text="মানুষের পড়ার মতো পরিবর্তনের তালিকা")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Edit of #{self.sale.invoice_number} at {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class SaleSubmission(models.Model):
@@ -188,6 +216,7 @@ class SaleReturn(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='returns')
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="ফেরত বইয়ের দাম (কমিশন বাদে), যা বিল থেকে কমেছে")
     reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -273,6 +302,14 @@ class SaleItem(models.Model):
     @property
     def profit(self):
         return self.total - (self.cost_price * self.quantity)
+
+    @property
+    def commission_percent(self):
+        """ছাড় টাকায় সেভ থাকে; ইনভয়েসে কমিশন % দেখানোর জন্য গ্রস দাম থেকে হিসাব করা হয়"""
+        gross = self.unit_price * self.quantity
+        if not gross:
+            return 0
+        return self.discount * 100 / gross
 
     def __str__(self):
         return f"{self.book.title} x {self.quantity}"

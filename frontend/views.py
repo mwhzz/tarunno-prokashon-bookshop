@@ -99,6 +99,12 @@ def cash_history_view(request):
     return render(request, 'cash_history.html')
 
 @login_required
+def money_accounts_view(request):
+    if not request.user.is_superuser and getattr(getattr(request.user, 'profile', None), 'role', None) != 'admin':
+        return redirect('dashboard')
+    return render(request, 'money_accounts.html')
+
+@login_required
 def manage_users_view(request):
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'admin':
         return redirect('dashboard')

@@ -80,6 +80,16 @@ class BookSerializer(serializers.ModelSerializer):
 
 class BookListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for lists"""
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        role = getattr(getattr(user, 'profile', None), 'role', None)
+        if not (user and (user.is_superuser or role in ('admin', 'manager'))):
+            data.pop('purchase_price', None)
+        return data
+
     group_name = serializers.CharField(source='group.name', read_only=True)
     current_stock = serializers.IntegerField(read_only=True)
     shop_quantity = serializers.IntegerField(source='stock_summary.shop_quantity', read_only=True, default=0)
@@ -89,7 +99,7 @@ class BookListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = [
-            'id', 'title', 'product_code', 'isbn', 'author', 'mrp', 'selling_price',
+            'id', 'title', 'product_code', 'isbn', 'author', 'mrp', 'purchase_price', 'selling_price',
             'commission', 'discount', 'discount_type', 'source', 'source_display',
             'current_stock', 'shop_quantity', 'godown_quantity', 'group_name',
             'is_active', 'image',

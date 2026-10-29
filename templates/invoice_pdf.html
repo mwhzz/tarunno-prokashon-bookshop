@@ -144,9 +144,9 @@
             <tr>
                 <th style="width: 5%;">নং</th>
                 <th>বইয়ের নাম</th>
-                <th class="text-right" style="width: 12%;">মূল্য</th>
+                <th class="text-right" style="width: 12%;">গায়ের মূল্য</th>
                 <th class="text-right" style="width: 10%;">পরিমাণ</th>
-                <th class="text-right" style="width: 12%;">ডিসকাউন্ট</th>
+                <th class="text-right" style="width: 14%;">কমিশন</th>
                 <th class="text-right" style="width: 15%;">মোট</th>
             </tr>
         </thead>
@@ -157,7 +157,7 @@
                 <td>{{ item.book.title }}</td>
                 <td class="text-right">{{ item.unit_price }}</td>
                 <td class="text-right">{{ item.quantity }}</td>
-                <td class="text-right">{{ item.discount }}</td>
+                <td class="text-right">{% if item.discount > 0 %}{{ item.commission_percent|floatformat:"-2" }}% (৳{{ item.discount }}){% else %}-{% endif %}</td>
                 <td class="text-right">{{ item.total }}</td>
             </tr>
             {% endfor %}
@@ -167,11 +167,11 @@
     <div class="summary-wrapper">
         <table class="summary-table">
             <tr>
-                <td>উপ-মোট:</td>
-                <td class="text-right">৳{{ sale.subtotal }}</td>
+                <td>মোট গায়ের মূল্য:</td>
+                <td class="text-right">৳{{ sale.gross_subtotal }}</td>
             </tr>
             <tr>
-                <td>ডিসকাউন্ট:</td>
+                <td>কমিশন:</td>
                 <td class="text-right">- ৳{{ sale.total_discount }}</td>
             </tr>
             {% if sale.packaging_charge > 0 %}

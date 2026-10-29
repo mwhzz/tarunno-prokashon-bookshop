@@ -292,6 +292,16 @@
         </div>
 
         <div class="ec-field">
+          <label for="exp-account">কোন অ্যাকাউন্ট থেকে খরচ?</label>
+          <select id="exp-account" style="width:100%; height:42px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px;">
+            <option value="cash">ক্যাশ (হাতে)</option>
+            <option value="bkash">বিকাশ</option>
+            <option value="nagad">নগদ (Nagad)</option>
+            <option value="bank">ব্যাংক</option>
+          </select>
+        </div>
+
+        <div class="ec-field">
           <label>নোট / বিবরণ</label>
           <textarea id="exp-note" placeholder="খরচের কারণ বা বিস্তারিত লিখুন..."></textarea>
         </div>
@@ -443,7 +453,7 @@ async function loadExpenses() {
           <div class="exp-cat-icon">${icon}</div>
           <div class="exp-info">
             <strong>${e.category_name}</strong>
-            <small>${e.note || '—'} &nbsp;•&nbsp; ${dt}</small>
+            <small>${e.note || '—'} &nbsp;•&nbsp; ${dt}${e.account && e.account !== 'cash' ? ` &nbsp;•&nbsp; ${{bkash:'বিকাশ', nagad:'নগদ (Nagad)', bank:'ব্যাংক'}[e.account] || e.account}` : ''}</small>
           </div>
           <div class="exp-amount">৳${num(e.amount)}</div>
           <button class="del-btn" onclick="deleteExp(${e.id})">🗑️</button>
@@ -479,6 +489,7 @@ async function addExpense() {
     await api('/expenses/records/', 'POST', {
       category: selectedCatId,
       amount,
+      account: document.getElementById('exp-account').value,
       note: document.getElementById('exp-note').value
     });
     toast('খরচ রেকর্ড সেভ হয়েছে ✓');
@@ -489,7 +500,7 @@ async function addExpense() {
     document.getElementById('exp-category').value = '';
     loadExpenses();
   } catch(e) {
-    toast(e?.error || 'সেভ করা যায়নি। ক্যাশ ব্যালেন্স পর্যাপ্ত কিনা দেখুন।','error');
+    toast(e?.error || 'সেভ করা যায়নি। অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স আছে কিনা দেখুন।','error');
   } finally {
     btn.disabled = false; btn.innerHTML = '💸 খরচ সেভ করুন';
   }

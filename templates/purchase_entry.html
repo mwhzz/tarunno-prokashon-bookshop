@@ -259,8 +259,10 @@
       <div class="sum-field">
         <label>একাউন্ট</label>
         <select class="pe-input" id="s-account">
-          <option value="cash">Cash</option>
-          <option value="bank">Bank</option>
+          <option value="cash">Cash (ক্যাশ)</option>
+          <option value="bkash">বিকাশ</option>
+          <option value="nagad">নগদ (Nagad)</option>
+          <option value="bank">Bank (ব্যাংক)</option>
         </select>
       </div>
 
@@ -395,7 +397,8 @@ function selectBook(b) {
   selectedBook = b;
   document.getElementById('b-search').value = b.title;
   document.getElementById('b-mrp').value = b.mrp || '';
-  document.getElementById('b-price').value = b.purchase_price || '';
+  // আগের ক্রয়মূল্য বসে যায়; দরকার হলে এই বিলের জন্য বদলানো যাবে
+  document.getElementById('b-price').value = Number(b.purchase_price) > 0 ? b.purchase_price : '';
   document.getElementById('b-commission').value = b.commission || '';
   document.getElementById('b-selling').value = b.selling_price || '';
   document.getElementById('b-suggest').classList.remove('show');

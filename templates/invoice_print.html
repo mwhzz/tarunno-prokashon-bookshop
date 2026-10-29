@@ -273,8 +273,8 @@
             <th style="width:26px" class="center">নং</th>
             <th>বইয়ের নাম</th>
             <th class="center" style="width:42px">পরি.</th>
-            <th class="num" style="width:65px">দাম</th>
-            <th class="num" style="width:60px">ছাড়</th>
+            <th class="num" style="width:65px">গায়ের মূল্য</th>
+            <th class="num" style="width:78px">কমিশন</th>
             <th class="num" style="width:75px">মোট</th>
           </tr>
         </thead>
@@ -285,7 +285,7 @@
             <td>{{ item.book.title }}</td>
             <td class="center">{{ item.quantity }}</td>
             <td class="num">৳{{ item.unit_price }}</td>
-            <td class="num">৳{{ item.discount }}</td>
+            <td class="num">{% if item.discount > 0 %}{{ item.commission_percent|floatformat:"-2" }}%<br><small>৳{{ item.discount }}</small>{% else %}—{% endif %}</td>
             <td class="num">৳{{ item.total }}</td>
           </tr>
           {% endfor %}
@@ -293,8 +293,8 @@
       </table>
 
       <table class="totals">
-        <tr><td>সাবটোটাল</td><td>৳{{ sale.subtotal }}</td></tr>
-        {% if sale.total_discount > 0 %}<tr><td>ছাড়</td><td>- ৳{{ sale.total_discount }}</td></tr>{% endif %}
+        <tr><td>মোট গায়ের মূল্য</td><td>৳{{ sale.gross_subtotal }}</td></tr>
+        {% if sale.total_discount > 0 %}<tr><td>কমিশন</td><td>- ৳{{ sale.total_discount }}</td></tr>{% endif %}
         {% if sale.packaging_charge > 0 %}<tr><td>প্যাকিং চার্জ</td><td>৳{{ sale.packaging_charge }}</td></tr>{% endif %}
         {% if sale.courier_charge > 0 %}<tr><td>কুরিয়ার চার্জ</td><td>৳{{ sale.courier_charge }}</td></tr>{% endif %}
         {% if sale.transaction_fee > 0 %}<tr><td>ট্রানজেকশন ফি</td><td>৳{{ sale.transaction_fee }}</td></tr>{% endif %}

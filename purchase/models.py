@@ -47,6 +47,8 @@ class PurchaseBill(models.Model):
     ]
     ACCOUNT_CHOICES = [
         ('cash', 'Cash'),
+        ('bkash', 'bKash'),
+        ('nagad', 'Nagad'),
         ('bank', 'Bank'),
     ]
     LOCATION_CHOICES = [

@@ -147,7 +147,7 @@ function renderPOS(container) {
     <div class="payment-layout"><div class="payment-card">
       <div class="payment-title"><span>ক্রেতার কাছ থেকে নিন</span><strong id="t-total">৳০</strong><p id="checkout-count"></p></div>
       <fieldset class="settlement-choices"><legend>টাকা পেয়েছেন?</legend><div><button type="button" id="mode-full" aria-pressed="false" onclick="chooseSettlement('full')"><span class="choice-mark">✓</span><b>পুরো টাকা পেয়েছি</b></button><button type="button" id="mode-partial" aria-pressed="false" onclick="chooseSettlement('partial')"><span class="choice-mark">◐</span><b>কিছু টাকা পেয়েছি</b></button><button type="button" id="mode-due" aria-pressed="false" onclick="chooseSettlement('due')"><span class="choice-mark">○</span><b>বাকি থাকবে</b></button></div></fieldset>
-      <div id="payment-entry" hidden><fieldset id="payment-methods" class="method-choices"><legend>কীভাবে পেয়েছেন?</legend><div><button type="button" id="method-cash" aria-pressed="true" onclick="choosePaymentMethod('cash')">নগদ</button><button type="button" id="method-mobile" aria-pressed="false" onclick="choosePaymentMethod('mobile')">বিকাশ / নগদ</button><button type="button" id="method-bank" aria-pressed="false" onclick="choosePaymentMethod('bank')">ব্যাংক</button></div></fieldset><select id="pay-method" hidden><option value="cash">নগদ</option><option value="mobile">বিকাশ / নগদ</option><option value="bank">ব্যাংক</option><option value="credit">বাকি</option></select>
+      <div id="payment-entry" hidden><fieldset id="payment-methods" class="method-choices"><legend>কীভাবে পেয়েছেন?</legend><div><button type="button" id="method-cash" aria-pressed="true" onclick="choosePaymentMethod('cash')">নগদ</button><button type="button" id="method-bkash" aria-pressed="false" onclick="choosePaymentMethod('bkash')">বিকাশ</button><button type="button" id="method-nagad" aria-pressed="false" onclick="choosePaymentMethod('nagad')">নগদ (Nagad)</button><button type="button" id="method-bank" aria-pressed="false" onclick="choosePaymentMethod('bank')">ব্যাংক</button></div></fieldset><select id="pay-method" hidden><option value="cash">নগদ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ (Nagad)</option><option value="bank">ব্যাংক</option><option value="credit">বাকি</option></select>
       <div class="received-field" id="received-field"><label for="paid" id="paid-label">হাতে কত টাকা এসেছে?</label><div class="received-input"><span>৳</span><input id="paid" type="text" inputmode="decimal" autocomplete="off" value="0" oninput="onPaidInput()" aria-describedby="payment-input-hint"></div><p id="payment-input-hint" class="field-help"></p><div id="cash-shortcuts" class="cash-shortcuts"></div></div>
       <div class="payment-outcome" id="payment-outcome" role="status" aria-live="polite"><span id="outcome-label"></span><strong id="outcome-amount"></strong><p id="outcome-help"></p></div>
       <div class="customer-area" id="customer-area" hidden><h3 id="customer-heading">কার নামে বাকি রাখবেন?</h3><div class="bf-row"><div class="bf-field"><label for="cus-name">ক্রেতার নাম</label><input id="cus-name" maxlength="200" placeholder="নাম লিখুন" oninput="saveCartDraft()"></div><div class="bf-field"><label for="cus-phone">ফোন নম্বর</label><input id="cus-phone" type="tel" maxlength="20" placeholder="01XXXXXXXXX" oninput="onPhoneInput();saveCartDraft()" onfocus="refreshCustomersIfStale()"><small id="phone-check-indicator"></small></div></div><div id="prev-due-row" class="previous-due" style="display:none">আগের বাকি <strong id="t-prev-due"></strong><p>আগের বাকি এই বিলে আদায় হচ্ছে না। <a href="/sales/due/" target="_blank" rel="noopener">বাকি আদায় করুন ↗</a></p></div><p id="customer-help" class="field-help"></p></div>
@@ -274,7 +274,7 @@ function filterBooks() {
   if(!list.length){grid.innerHTML='<div class="picker-empty">বই পাওয়া যায়নি। অন্য নাম বা কোড লিখুন, অথবা স্টক ফিল্টার সরান।</div>';return;}
   grid.innerHTML=list.map(b=>{
     const out=Number(b.shop_quantity)<=0,selected=cart.find(i=>i.bid===b.id);
-    return `<button type="button" class="book-row ${out?'out':''}" ${out?'disabled':''} onclick="addToCart(${b.id})" aria-label="${escapeHTML(b.title)} খাতায় লিখুন"><span><strong>${escapeHTML(b.title)}</strong><small>${escapeHTML(b.author||'')}${b.product_code?' · কোড '+escapeHTML(b.product_code):''} · ${out?'দোকানে নেই':money(b.shop_quantity)+' কপি আছে'}${selected?' · খাতায় '+money(selected.qty)+' কপি':''}</small></span><b>৳${money(defaultBookPrice(b))}</b><span class="book-write">${out?'স্টক নেই':'+ লিখুন'}</span></button>`;
+    return `<button type="button" class="book-row ${out?'out':''}" ${out?'disabled':''} onclick="addToCart(${b.id})" aria-label="${escapeHTML(b.title)} খাতায় লিখুন"><span><strong>${escapeHTML(b.title)}</strong><small>${escapeHTML(b.author||'')}${b.product_code?' · কোড '+escapeHTML(b.product_code):''} · ${out?'দোকানে নেই':money(b.shop_quantity)+' কপি আছে'}${selected?' · খাতায় '+money(selected.qty)+' কপি':''}</small></span><b>৳${money(defaultBookPrice(b))}${Number(b.mrp)>0&&Number(b.commission)>0?`<small class="book-mrp">গায়ের মূল্য ৳${money(b.mrp)} · ${money(b.commission)}%</small>`:''}</b><span class="book-write">${out?'স্টক নেই':'+ লিখুন'}</span></button>`;
   }).join('');
 }
 
@@ -327,7 +327,7 @@ function setQty(id,value) {
   const row=document.getElementById('qty-'+id).closest?.('tr');row?.classList.remove('stock-invalid');row?.querySelector('.stock-error')?.remove();
   document.getElementById('qty-'+id).value=qty;
   document.getElementById('minus-'+id).disabled=qty<=1;document.getElementById('plus-'+id).disabled=qty>=item.max;
-  document.getElementById('unit-'+id).innerHTML=unitPriceHTML(item);setText('line-total-'+id,'৳'+money(itemNet(item)));
+  document.getElementById('unit-'+id).innerHTML=unitPriceHTML(item);setText('commission-line-'+id,commissionLineHTML(item));setText('line-total-'+id,'৳'+money(itemNet(item)));
   calcTotals();filterBooks();
 }
 
@@ -371,12 +371,14 @@ async function clearCart() {
 }
 
 function invalidatePaymentReview(){if(posStep==='books'&&!pendingSalePayload){settlementMode=null;reviewedTotalCents=null;document.getElementById('paid').value='0';}}
+function commissionLineHTML(item){const pct=itemCommissionPct(item);return 'গায়ের মূল্য ৳'+money(item.price)+(pct>0?' · কমিশন '+money(Math.round(pct*100)/100)+'% (−৳'+money(itemDiscount(item))+')':'');}
 function unitPriceHTML(item){const unit=amountCents(itemNet(item)/item.qty);const exact=unit*item.qty===amountCents(itemNet(item));return (exact?'':'<small class="approximate-price" title="পয়সা মিলিয়ে সঠিক মোট টাকা পাশের ঘরে দেখানো হয়েছে।">প্রায় </small>')+'৳'+money(unit/100);}
 function renderCart() {
   const el=document.getElementById('cart-scroll');if(!el)return;
   setText('cart-count-lbl',cart.length ? money(cart.length)+' ধরনের বই খাতায় লেখা হয়েছে' : 'এখনো কোনো বই লেখা হয়নি');
   if(!cart.length)el.innerHTML=`<tr><td colspan="5" class="ledger-empty"><span>${icon('book',36)}</span><h3>বইয়ের নাম দিয়ে শুরু করুন</h3><p>উপরের ঘরে বই খুঁজে বাছুন। এখানে নাম, পরিমাণ ও দাম নিজে বসবে।</p></td></tr>`;
-  else el.innerHTML=cart.map((i,index)=>`<tr class="${i.qty>i.max?'stock-invalid':''}"><td class="ledger-book"><div class="ledger-book-content"><span class="line-number">${money(index+1)}</span><div><strong>${escapeHTML(i.title)}</strong>${i.qty>i.max?'<small class="stock-error">দোকানে '+money(i.max)+' কপি আছে। পরিমাণ ঠিক করুন অথবা বইটি মুছুন।</small>':''}<div class="line-adjust"><label for="extra-${i.bid}">বাড়তি ছাড় %</label><input id="extra-${i.bid}" type="number" min="0" max="100" step="0.01" value="${i.extraCommission||0}" onchange="setExtraCommission(${i.bid},this.value);renderCart()"></div></div></div></td><td data-label="পরিমাণ"><div class="ci-qty"><button type="button" id="minus-${i.bid}" class="qb" aria-label="এক কপি কমান" ${i.qty<=1?'disabled':''} onclick="changeQty(${i.bid},-1)">−</button><input id="qty-${i.bid}" aria-label="${escapeHTML(i.title)} পরিমাণ" class="ci-count-input" type="text" inputmode="numeric" value="${i.qty}" onchange="setQty(${i.bid},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();document.getElementById('book-search').focus()}"><button type="button" id="plus-${i.bid}" class="qb" aria-label="এক কপি বাড়ান" ${i.qty>=i.max?'disabled':''} onclick="changeQty(${i.bid},1)">+</button></div></td><td data-label="প্রতি বইয়ের দাম" class="ledger-unit" id="unit-${i.bid}">${unitPriceHTML(i)}</td><td data-label="মোট টাকা" class="ledger-line-total" id="line-total-${i.bid}">৳${money(itemNet(i))}</td><td class="ledger-remove"><button type="button" aria-label="${escapeHTML(i.title)} মুছুন" onclick="removeItem(${i.bid})">${icon('close',18)}</button></td></tr>`).join('');
+  // সবশেষে যোগ করা বই সবার উপরে দেখাই; cart-এর ক্রম (ইনভয়েসের ক্রম) বদলায় না
+  else el.innerHTML=cart.map((i,index)=>[i,index]).reverse().map(([i,index])=>`<tr class="${i.qty>i.max?'stock-invalid':''}"><td class="ledger-book"><div class="ledger-book-content"><span class="line-number">${money(index+1)}</span><div><strong>${escapeHTML(i.title)}</strong><small class="line-commission" id="commission-line-${i.bid}">${commissionLineHTML(i)}</small>${i.qty>i.max?'<small class="stock-error">দোকানে '+money(i.max)+' কপি আছে। পরিমাণ ঠিক করুন অথবা বইটি মুছুন।</small>':''}<div class="line-adjust"><label for="extra-${i.bid}">বাড়তি ছাড় %</label><input id="extra-${i.bid}" type="number" min="0" max="100" step="0.01" value="${i.extraCommission||0}" onchange="setExtraCommission(${i.bid},this.value);renderCart()"></div></div></div></td><td data-label="পরিমাণ"><div class="ci-qty"><button type="button" id="minus-${i.bid}" class="qb" aria-label="এক কপি কমান" ${i.qty<=1?'disabled':''} onclick="changeQty(${i.bid},-1)">−</button><input id="qty-${i.bid}" aria-label="${escapeHTML(i.title)} পরিমাণ" class="ci-count-input" type="text" inputmode="numeric" value="${i.qty}" onchange="setQty(${i.bid},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();document.getElementById('book-search').focus()}"><button type="button" id="plus-${i.bid}" class="qb" aria-label="এক কপি বাড়ান" ${i.qty>=i.max?'disabled':''} onclick="changeQty(${i.bid},1)">+</button></div></td><td data-label="প্রতি বইয়ের দাম" class="ledger-unit" id="unit-${i.bid}">${unitPriceHTML(i)}</td><td data-label="মোট টাকা" class="ledger-line-total" id="line-total-${i.bid}">৳${money(itemNet(i))}</td><td class="ledger-remove"><button type="button" aria-label="${escapeHTML(i.title)} মুছুন" onclick="removeItem(${i.bid})">${icon('close',18)}</button></td></tr>`).join('');
   filterBooks();saveCartDraft();
 }
 
@@ -610,14 +612,16 @@ function renderPaymentState() {
   const total=billCents(),received=inputCents(document.getElementById('paid').value);
   const paid=settlementMode==='due'?0:received??0;
   const due=Math.max(0,total-paid),change=Math.max(0,paid-total);
+  // আগের সেভ করা খসড়ায় পুরনো "বিকাশ / নগদ" থাকলে বিকাশ ধরে নেওয়া হয়
+  if(document.getElementById('pay-method').value==='mobile')document.getElementById('pay-method').value='bkash';
   const method=document.getElementById('pay-method').value;
   ['full','partial','due'].forEach(mode=>document.getElementById('mode-'+mode).setAttribute('aria-pressed',String(settlementMode===mode)));
-  ['cash','mobile','bank'].forEach(value=>document.getElementById('method-'+value).setAttribute('aria-pressed',String(method===value)));
+  ['cash','bkash','nagad','bank'].forEach(value=>document.getElementById('method-'+value).setAttribute('aria-pressed',String(method===value)));
   document.getElementById('payment-entry').hidden=false;
   document.getElementById('payment-methods').hidden=false;
   document.getElementById('received-field').hidden=false;
   document.getElementById('paid').disabled=!settlementMode||settlementMode==='due'||saleSubmitting||!!pendingSalePayload;
-  ['cash','mobile','bank'].forEach(value=>document.getElementById('method-'+value).disabled=settlementMode==='due'||saleSubmitting||!!pendingSalePayload);
+  ['cash','bkash','nagad','bank'].forEach(value=>document.getElementById('method-'+value).disabled=settlementMode==='due'||saleSubmitting||!!pendingSalePayload);
   const needsCustomer=settlementMode==='partial'||settlementMode==='due';
   const wholesale=document.getElementById('sale-type').value==='wholesale';
   document.getElementById('customer-area').hidden=false;
@@ -649,7 +653,7 @@ function renderPaymentState() {
   const btn=document.getElementById('complete-btn');
   const valid=settlementMode==='due'||(received!==null&&(settlementMode==='full'?paid>=total&&(method==='cash'||paid===total):settlementMode==='partial'&&paid>0&&paid<total));
   btn.disabled=saleSubmitting||catalogLoading||!cart.length||(!pendingSalePayload&&(cart.some(i=>i.qty>i.max)||!valid));
-  const methodLabel={cash:'নগদ',mobile:'মোবাইল',bank:'ব্যাংকে',credit:'বাকি'}[method]||'';
+  const methodLabel={cash:'নগদ',bkash:'বিকাশে',nagad:'Nagad-এ',mobile:'মোবাইল',bank:'ব্যাংকে',credit:'বাকি'}[method]||'';
   btn.textContent=saleSubmitting?'বিক্রয় সেভ হচ্ছে…':pendingSalePayload?'আগের বিক্রয় সেভ হয়েছে কি না যাচাই করুন':!settlementMode?'আগে টাকা পেয়েছেন কি না বাছুন':!valid?'উপরের টাকার অঙ্ক ঠিক করুন':settlementMode==='due'?'৳'+money(total/100)+' বাকি রেখে বিক্রয় শেষ করুন':'বিক্রয় শেষ করুন · '+methodLabel+' ৳'+money(Math.min(total,paid)/100)+' জমা';
 }
 function onPaidInput() {document.getElementById('checkout-error').hidden=true;renderPaymentState();saveCartDraft();}

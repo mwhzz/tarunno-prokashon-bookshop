@@ -38,6 +38,34 @@ def _method_breakdown(date_from=None, date_to=None):
         'vendor_payments': [{'method': v['method'], 'amount': v['total'] or 0} for v in vendor_payments],
     }
 
+class MoneyAccountsViewSet(viewsets.ViewSet):
+    """সব অ্যাকাউন্টের ব্যালেন্স, ট্রান্সফার, সমন্বয় ও লেনদেনের তালিকা"""
+    permission_classes = [IsAdmin]
+
+    def list(self, request):
+        from .money import all_balances
+        return Response(all_balances())
+
+    @action(detail=False, methods=['get'], url_path=r'statement/(?P<account>[a-z]+)')
+    def statement(self, request, account=None):
+        from .money import ACCOUNT_LABELS, statement
+        if account not in ACCOUNT_LABELS or account == 'cash':
+            return Response({'error': 'অ্যাকাউন্ট পাওয়া যায়নি।'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(statement(account))
+
+    @action(detail=False, methods=['post'])
+    def transfer(self, request):
+        from .money import all_balances, transfer
+        movement = transfer(request.data, request.user)
+        return Response({'id': movement.pk, **all_balances()}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'])
+    def adjust(self, request):
+        from .money import adjust, all_balances
+        movement = adjust(request.data, request.user)
+        return Response({'id': movement.pk, **all_balances()}, status=status.HTTP_201_CREATED)
+
+
 class DailyCashViewSet(viewsets.ModelViewSet):
     queryset = DailyCash.objects.all().order_by('-date')
     serializer_class = DailyCashSerializer
@@ -117,7 +145,7 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
     AUTO_LINKED_TYPES = {'sale', 'expense', 'purchase'}
 
     def _block_if_auto_linked(self, instance):
-        reconciled = (instance.reference_id or '').startswith(('cash_offset_repair_', 'opening_count_repair_')) or CashTransaction.objects.filter(
+        reconciled = (instance.reference_id or '').startswith(('cash_offset_repair_', 'opening_count_repair_', 'money_')) or CashTransaction.objects.filter(
             reference_id=f'cash_offset_repair_20261010_{instance.pk}',
         ).exists()
         if instance.transaction_type in self.AUTO_LINKED_TYPES or reconciled:

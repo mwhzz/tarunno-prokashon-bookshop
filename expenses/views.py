@@ -97,17 +97,15 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         })
 
     def create(self, request, *args, **kwargs):
-        from accounts.models import DailyCash
-        from rest_framework.response import Response
-        from rest_framework import status
-        
+        from accounts.money import ACCOUNT_LABELS, account_balance
+
         amount = float(request.data.get('amount', 0))
-        daily_cash = DailyCash.get_for_today()
-        daily_cash.update_closing_balance()
-        
-        if daily_cash.closing_balance < amount:
-            return Response({
-                'error': f'অপর্যাপ্ত ক্যাশ ব্যালেন্স! আপনার বর্তমান ক্যাশ আছে ৳{daily_cash.closing_balance}, তাই আপনি ৳{amount} খরচ করতে পারবেন না।'
-            }, status=status.HTTP_400_BAD_REQUEST)
-            
+        account = request.data.get('account') or 'cash'
+        if account in dict(Expense.ACCOUNT_CHOICES):
+            balance = account_balance(account)
+            if balance < amount:
+                return Response({
+                    'error': f'অপর্যাপ্ত ব্যালেন্স! {ACCOUNT_LABELS[account]}-এ আছে ৳{balance}, তাই আপনি ৳{amount} খরচ করতে পারবেন না।'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         return super().create(request, *args, **kwargs)

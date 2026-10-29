@@ -51,6 +51,40 @@ class DailyCash(models.Model):
             if previous_old == previous_new:
                 break
 
+ACCOUNT_CHOICES = [
+    ('cash', 'ক্যাশ'),
+    ('bkash', 'বিকাশ'),
+    ('nagad', 'নগদ (Nagad)'),
+    ('bank', 'ব্যাংক'),
+    ('mobile', 'মোবাইল ব্যাংকিং (পুরনো)'),
+]
+
+
+class MoneyMovement(models.Model):
+    """অ্যাকাউন্টের মধ্যে টাকা সরানো বা ব্যালেন্স সমন্বয়। ক্যাশের অংশ CashTransaction-এও বসে
+    (reference_id = money_<id>), যাতে দৈনিক ক্যাশ লেজার মিলে থাকে।"""
+    KIND_CHOICES = [
+        ('transfer', 'ট্রান্সফার'),
+        ('adjustment', 'ব্যালেন্স সমন্বয়'),
+    ]
+    request_id = models.UUIDField(unique=True)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    from_account = models.CharField(max_length=20, choices=ACCOUNT_CHOICES, blank=True)
+    to_account = models.CharField(max_length=20, choices=ACCOUNT_CHOICES, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="ট্রান্সফারের চার্জ — খরচ হিসেবে বসে")
+    fee_expense = models.OneToOneField('expenses.Expense', on_delete=models.SET_NULL, null=True, blank=True, related_name='money_movement')
+    note = models.TextField(blank=True)
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.from_account or '-'} → {self.to_account or '-'} ৳{self.amount}"
+
+
 class CashTransaction(models.Model):
     """ক্যাশ লেজার এন্ট্রি"""
     TYPE_CHOICES = [

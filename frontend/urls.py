@@ -39,6 +39,7 @@ urlpatterns = [
     
     # Cash History
     path('accounts/history/', views.cash_history_view, name='cash_history'),
+    path('accounts/money/', views.money_accounts_view, name='money_accounts'),
     
     # User Management
     path('users/manage/', views.manage_users_view, name='manage_users'),

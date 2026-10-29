@@ -40,14 +40,19 @@ def sales_report(date_from, date_to):
     ).aggregate(total=Sum('item_profit'))['total'] or 0
     
     # আদায়কৃত লাভ (Realized Profit) = Gross Profit * (Paid / Total)
+    # বাকি বিলের লাভ দেখানো হয় না — শুধু আদায় হওয়া অংশের লাভ গোনা হয়
     realized_profit = 0
+    realized_by_day = {}
     for s in sales:
-        realized_profit += float(s.realized_profit)
+        day_realized = float(s.realized_profit)
+        realized_profit += day_realized
+        day_key = timezone.localtime(s.created_at).date()
+        realized_by_day[day_key] = realized_by_day.get(day_key, 0) + day_realized
 
     # নিট লাভ (Net Profit) = আদায়কৃত লাভ - মোট খরচ
     external_trades_sold = ExternalTrade.objects.filter(status='sold', sold_at__date__gte=date_from, sold_at__date__lte=date_to)
     external_trade_profit = external_trades_sold.aggregate(total=Sum(ExpressionWrapper((F('selling_price') - F('purchase_price')) * F('quantity'), output_field=DecimalField())))['total'] or 0
-    total_profit = float(gross_profit) + float(external_trade_profit)
+    total_profit = float(realized_profit) + float(external_trade_profit)
     net_profit = float(realized_profit) + float(external_trade_profit) - float(total_expenses)
 
     # দৈনিক breakdown
@@ -55,19 +60,11 @@ def sales_report(date_from, date_to):
     current = date_from
     while current <= date_to:
         day_sales = sales.filter(created_at__date=current)
-        day_items = items.filter(sale__created_at__date=current)
         day_expenses = expenses.filter(date__date=current)
         
         day_revenue = day_sales.aggregate(t=Sum('total'))['t'] or 0
         day_paid = day_sales.aggregate(t=Sum('paid_amount'))['t'] or 0
         day_exp = day_expenses.aggregate(t=Sum('amount'))['t'] or 0
-        
-        day_gross_profit = day_items.annotate(
-            item_profit=ExpressionWrapper(
-                (F('unit_price') - F('cost_price')) * F('quantity') - F('discount'),
-                output_field=DecimalField()
-            )
-        ).aggregate(total=Sum('item_profit'))['total'] or 0
         
         daily.append({
             'date': str(current),
@@ -75,7 +72,7 @@ def sales_report(date_from, date_to):
             'revenue': float(day_revenue),
             'paid': float(day_paid),
             'expenses': float(day_exp),
-            'profit': float(day_gross_profit),
+            'profit': realized_by_day.get(current, 0),
         })
         current += timedelta(days=1)
 

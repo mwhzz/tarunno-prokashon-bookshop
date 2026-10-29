@@ -130,6 +130,12 @@ async function initInvoices() {
                   <button class="btn btn-ghost btn-sm" onclick="showReturnUI(${s.id}, '${s.invoice_number}')">
                     ${icon('corner-down-left', 13)} ফেরত
                   </button>
+                  <button class="btn btn-ghost btn-sm" onclick="showEditUI(${s.id})">
+                    ${icon('edit', 13)} এডিট
+                  </button>
+                  <button class="btn btn-ghost btn-sm" onclick="showEditHistory(${s.id}, '${s.invoice_number}')">
+                    ${icon('clipboard', 13)} ইতিহাস
+                  </button>
                 </div>
               </td>
             </tr>`).join('')}
@@ -154,9 +160,9 @@ async function showPaymentHistory(saleId, invNum) {
             ${payments.length ? payments.map(p => `
               <div style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:16px;">
                 <span style="color:var(--muted); font-size:16px; white-space:nowrap;">${fmtDate(p.created_at)}</span>
-                <span style="flex:1; font-weight:700; color:var(--g900);">${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}</span>
-                <span style="font-family:AppBangla,sans-serif; font-weight:700; color:var(--accent);">৳${num(p.amount)}</span>
-                <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteInvoicePayment(${saleId}, ${p.id}, '${invNum}')" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>
+                <span style="flex:1; font-weight:700; color:var(--g900);">${p.amount < 0 ? 'বই ফেরতের টাকা ফেরত • ' : ''}${p.method_display}${p.discount > 0 ? ` (ছাড় ৳${num(p.discount)})` : ''}</span>
+                <span style="font-family:AppBangla,sans-serif; font-weight:700; color:${p.amount < 0 ? 'var(--danger)' : 'var(--accent)'};">${p.amount < 0 ? '−' : ''}৳${num(Math.abs(p.amount))}</span>
+                ${p.amount < 0 ? '<span style="width:38px"></span>' : `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteInvoicePayment(${saleId}, ${p.id}, '${invNum}')" title="ভুলে দুইবার বসে গেলে মুছুন">${icon('trash', 12)}</button>`}
               </div>`).join('')
             : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('wallet', 34)}</div><h3 style="font-size:16px;">এখনো কোনো পেমেন্ট নেই</h3></div>`}
           </div>
@@ -190,63 +196,305 @@ async function deleteInvoicePayment(saleId, paymentId, invNum) {
   }
 }
 
+let returnSale = null;
+
 async function showReturnUI(saleId, invNum) {
   try {
     const s = await api(`/sales/${saleId}/`);
-    let html = `
-      <div id="return-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
-        <div class="form-card" style="width:450px; padding:20px">
-          <h3 style="margin-bottom:15px">বই ফেরত নিন (#${invNum})</h3>
-          <p style="font-size:16px; color:var(--muted); margin-bottom:15px">যে বইটি ফেরত আসছে তার পরিমাণ লিখুন:</p>
+    if (!s.items.length) { toast('এই মেমোর সব বই আগেই ফেরত এসেছে।', 'error'); return; }
+    returnSale = s;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="return-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:16px">
+        <div class="form-card" style="width:520px; max-height:92vh; overflow:auto; padding:20px">
+          <h3 style="margin-bottom:6px">বই ফেরত নিন (#${invNum})</h3>
+          <p style="font-size:15px; color:var(--muted); margin-bottom:15px">যত কপি ফেরত আসছে লিখুন। দাম কমিশন বাদ দিয়ে ধরা হবে। আগে বাকি থেকে কমবে, তারপর বাড়তি টাকা থাকলে ফেরত দিতে হবে।</p>
           <div id="return-items-list">
             ${s.items.map(item => `
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border)">
                 <div style="flex:1">
                   <div style="font-size:16px; font-weight:600">${item.book_title}</div>
-                  <div style="font-size:16px; color:var(--muted)">কেনা হয়েছিল: ${item.quantity}টি</div>
+                  <div style="font-size:15px; color:var(--muted)">মেমোতে আছে: ${num(item.quantity)} কপি • প্রতি কপি ৳${num(item.total / item.quantity)}</div>
                 </div>
-                <input type="number" class="return-qty" data-id="${item.book}" data-max="${item.quantity}" value="0" min="0" max="${item.quantity}" style="width:60px; padding:4px"
-                       oninput="if(Number(this.value)>Number(this.dataset.max))this.value=this.dataset.max; if(Number(this.value)<0)this.value=0;">
-              </div>
-            `).join('')}
+                <button type="button" class="btn btn-ghost btn-sm" onclick="setReturnAll(this)">সব</button>
+                <input type="number" class="return-qty" data-id="${item.book}" data-max="${item.quantity}" data-total="${item.total}" value="0" min="0" max="${item.quantity}" style="width:70px; padding:4px"
+                       oninput="clampReturnQty(this)">
+              </div>`).join('')}
           </div>
-          <div class="form-group" style="margin-top:15px">
-            <label>ফেরত নেওয়ার কারণ (Reason)</label>
-            <input id="return-reason" placeholder="যেমন: কাস্টমার বদলে অন্য বই নিয়েছে">
+          <div class="form-group" style="margin-top:12px">
+            <label>ফেরত নেওয়ার কারণ</label>
+            <input id="return-reason" placeholder="যেমন: অর্ধেক বিক্রি হয়েছে, বাকি ফেরত">
           </div>
+          <div class="form-group" id="refund-method-row" style="display:none">
+            <label for="refund-method">টাকা কীভাবে ফেরত দেবেন?</label>
+            <select id="refund-method"><option value="cash">ক্যাশ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ</option><option value="bank">ব্যাংক</option></select>
+          </div>
+          <div id="return-preview" style="background:var(--g100, #eafaf2); border-radius:8px; padding:10px 14px; font-size:16px"></div>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px">
             <button class="btn btn-ghost" onclick="document.getElementById('return-modal').remove()">বাতিল</button>
-            <button class="btn btn-primary" onclick="processReturn(${saleId})">রিটার্ন কনফার্ম করুন</button>
+            <button class="btn btn-primary" id="return-save" onclick="processReturn(${saleId})">রিটার্ন কনফার্ম করুন</button>
           </div>
         </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', html);
+      </div>`);
+    previewReturn();
   } catch(e) { toast('ডাটা লোড করা যায়নি', 'error'); }
 }
 
-async function processReturn(saleId) {
-  const inputs = document.querySelectorAll('.return-qty');
-  const items = [];
-  inputs.forEach(input => {
-    const qty = parseInt(input.value);
-    if (qty > 0) {
-      items.push({ book_id: input.dataset.id, quantity: qty });
-    }
-  });
+function setReturnAll(btn) {
+  const input = btn.nextElementSibling;
+  input.value = input.dataset.max;
+  previewReturn();
+}
 
+function clampReturnQty(input) {
+  if (Number(input.value) > Number(input.dataset.max)) input.value = input.dataset.max;
+  if (Number(input.value) < 0) input.value = 0;
+  previewReturn();
+}
+
+function previewReturn() {
+  // সার্ভারের মতোই হিসাব: সব কপি ফেরত এলে লাইনের পুরো টাকা, নাহলে কপি অনুপাতে
+  let value = 0;
+  document.querySelectorAll('.return-qty').forEach(input => {
+    const qty = Number(input.value) || 0, max = Number(input.dataset.max), total = Number(input.dataset.total);
+    value += qty >= max ? total : Math.round(total / max * qty * 100) / 100;
+  });
+  const s = returnSale, charges = Number(s.packaging_charge) + Number(s.courier_charge) + Number(s.transaction_fee);
+  const subtotal = Math.max(0, Number(s.subtotal) - value);
+  const newTotal = subtotal - Math.min(Number(s.discount), subtotal) + charges;
+  const paid = Number(s.paid_amount), refund = Math.max(0, paid - newTotal);
+  const dueReduced = Math.max(0, Number(s.due_amount) - Math.max(0, newTotal - paid));
+  document.getElementById('refund-method-row').style.display = refund > 0 ? 'block' : 'none';
+  document.getElementById('return-preview').innerHTML = value <= 0
+    ? '<span style="color:var(--muted)">ফেরত পরিমাণ লিখলে হিসাব এখানে দেখাবে।</span>'
+    : `ফেরত বইয়ের দাম: <strong>৳${num(value)}</strong><br>
+       বিল: ৳${num(s.total)} → <strong>৳${num(newTotal)}</strong><br>
+       বাকি কমবে: <strong>৳${num(dueReduced)}</strong><br>
+       ${refund > 0 ? `<span style="color:var(--danger)">গ্রাহককে টাকা ফেরত দিতে হবে: <strong>৳${num(refund)}</strong></span>` : 'টাকা ফেরত দিতে হবে না।'}
+       ${charges > 0 ? '<br><small style="color:var(--muted)">প্যাকিং/কুরিয়ার চার্জ ফেরত হয় না।</small>' : ''}`;
+}
+
+async function processReturn(saleId) {
+  const items = [];
+  document.querySelectorAll('.return-qty').forEach(input => {
+    const qty = parseInt(input.value);
+    if (qty > 0) items.push({ book_id: Number(input.dataset.id), quantity: qty });
+  });
   if (!items.length) { toast('অন্তত একটি বইয়ের পরিমাণ লিখুন', 'error'); return; }
 
-  const reason = document.getElementById('return-reason').value;
-
+  const btn = document.getElementById('return-save');
+  btn.disabled = true;
   try {
-    await api(`/sales/${saleId}/return_items/`, 'POST', { items, reason });
-    toast('বই ফেরত নেওয়া হয়েছে এবং স্টক আপডেট হয়েছে ✓');
+    const r = await api(`/sales/${saleId}/return_items/`, 'POST', {
+      items, reason: document.getElementById('return-reason').value.trim(),
+      refund_method: document.getElementById('refund-method').value,
+    });
+    const methods = { cash: 'ক্যাশ', bkash: 'বিকাশ', nagad: 'নগদ', bank: 'ব্যাংক' };
+    toast(Number(r.refund) > 0
+      ? `ফেরত হয়েছে ✓ ${methods[r.refund_method]} থেকে ৳${num(r.refund)} গ্রাহককে দিন।`
+      : `ফেরত হয়েছে ✓ বাকি কমেছে ৳${num(r.due_reduced)}।`);
     document.getElementById('return-modal').remove();
     initInvoices();
   } catch(e) {
-    toast(e.error || 'রিটার্ন প্রসেস করা যায়নি', 'error');
+    const msg = e && typeof e === 'object'
+      ? (e.detail || e.error || Object.values(e).flat().map(v => typeof v === 'object' ? Object.values(v).flat().join(' ') : v).join(' '))
+      : String(e);
+    toast('রিটার্ন হয়নি: ' + msg, 'error');
+    btn.disabled = false;
   }
+}
+
+/* ══════════════ মেমো এডিট ══════════════ */
+let editState = null;
+let editBookTimer = null;
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const round2 = v => Math.round((Number(v) || 0) * 100) / 100;
+
+async function showEditUI(saleId) {
+  try {
+    const [s, h] = await Promise.all([api(`/sales/${saleId}/`), api(`/sales/${saleId}/edit_history/`)]);
+    if (h.has_returns) { toast('এই মেমো থেকে বই ফেরত নেওয়া হয়েছে, তাই এডিট করা যাবে না।', 'error'); return; }
+    const paymentDiscount = (s.payments || []).reduce((t, p) => t + Number(p.discount || 0), 0);
+    editState = {
+      sale: s, editCount: h.edit_count, paymentDiscount,
+      items: s.items.map(i => {
+        const gross = Number(i.unit_price) * i.quantity;
+        return { book: i.book, title: i.book_title, qty: i.quantity, price: Number(i.unit_price),
+                 discount: Number(i.discount), pct: gross ? round2(Number(i.discount) / gross * 100) : 0 };
+      }),
+    };
+    const field = (id, label, value, type = 'number') => `
+      <div class="form-group" style="margin:0"><label for="${id}">${label}</label>
+        <input id="${id}" type="${type}" ${type === 'number' ? 'min="0" step="0.01"' : ''} value="${esc(value)}" oninput="renderEditTotals()"></div>`;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="edit-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:16px">
+        <div class="form-card" style="width:760px; max-height:92vh; overflow:auto; padding:20px">
+          <h3 style="margin-bottom:4px; display:flex; align-items:center; gap:8px">${icon('edit', 18)} মেমো এডিট (#${esc(s.invoice_number)})</h3>
+          <p style="font-size:15px; color:var(--muted); margin-bottom:14px">সেভ করলে স্টক ও গ্রাহকের বাকি নিজে থেকে মিলে যাবে। আগের মেমো "ইতিহাস"-এ থেকে যাবে।</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px">
+            ${field('ed-name', 'গ্রাহকের নাম', s.customer_name, 'text')}
+            ${field('ed-phone', 'ফোন', s.customer_phone, 'text')}
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%; border-collapse:collapse; min-width:560px">
+              <thead><tr><th>বই</th><th style="width:90px">পরিমাণ</th><th style="width:110px">দাম</th><th style="width:100px">কমিশন %</th><th style="width:110px" class="num">মোট</th><th style="width:40px"></th></tr></thead>
+              <tbody id="ed-items"></tbody>
+            </table>
+          </div>
+          <div style="position:relative; margin:10px 0 14px">
+            <input id="ed-book-search" placeholder="নতুন বই যোগ করুন — নাম বা কোড লিখুন..." oninput="searchEditBook()" autocomplete="off"
+                   style="width:100%; height:38px; padding:0 12px; border:1.5px solid var(--border); border-radius:8px">
+            <div id="ed-book-results" style="position:absolute; left:0; right:0; top:42px; background:var(--card, #fff); border:1px solid var(--border); border-radius:8px; z-index:5; display:none; max-height:220px; overflow:auto"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:10px">
+            ${field('ed-discount', 'বাড়তি ছাড় ৳', round2(Number(s.discount) - paymentDiscount))}
+            ${field('ed-pack', 'প্যাকিং চার্জ', s.packaging_charge)}
+            ${field('ed-courier', 'কুরিয়ার চার্জ', s.courier_charge)}
+            ${field('ed-txfee', 'ট্রানজেকশন ফি', s.transaction_fee)}
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px">
+            ${field('ed-note', 'নোট', s.note, 'text')}
+            ${field('ed-reason', 'কেন এডিট করছেন? (ইতিহাসে থাকবে)', '', 'text')}
+          </div>
+          <div id="ed-totals" style="background:var(--g100, #eafaf2); border-radius:8px; padding:10px 14px; font-size:16px"></div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px">
+            <button class="btn btn-ghost" onclick="closeEditUI()">বাতিল</button>
+            <button class="btn btn-primary" id="ed-save" onclick="saveSaleEdit()">${icon('save', 14)} সেভ করুন</button>
+          </div>
+        </div>
+      </div>`);
+    wireModalDismiss(document.getElementById('edit-modal'), closeEditUI);
+    renderEditItems();
+  } catch (e) { toast('মেমো লোড করা যায়নি', 'error'); }
+}
+
+function closeEditUI() { document.getElementById('edit-modal')?.remove(); editState = null; }
+
+function lineNet(i) { return round2(i.price * i.qty - i.discount); }
+
+function renderEditItems() {
+  document.getElementById('ed-items').innerHTML = editState.items.map((i, idx) => `
+    <tr>
+      <td>${esc(i.title)}</td>
+      <td><input type="number" min="1" step="1" value="${i.qty}" style="width:70px" onchange="updateEditLine(${idx}, 'qty', this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="${i.price}" style="width:95px" onchange="updateEditLine(${idx}, 'price', this.value)"></td>
+      <td><input type="number" min="0" max="100" step="0.01" value="${i.pct}" style="width:80px" onchange="updateEditLine(${idx}, 'pct', this.value)"></td>
+      <td class="num" style="font-family:AppBangla,sans-serif">৳${num(lineNet(i))}${i.discount > 0 ? `<br><small style="color:var(--muted)">কমিশন ৳${num(i.discount)}</small>` : ''}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" title="বাদ দিন" onclick="removeEditLine(${idx})">${icon('trash', 12)}</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--danger)">কমপক্ষে একটি বই লাগবে।</td></tr>';
+  renderEditTotals();
+}
+
+function updateEditLine(idx, key, value) {
+  const i = editState.items[idx];
+  if (key === 'qty') i.qty = Math.max(1, parseInt(value) || 1);
+  if (key === 'price') i.price = Math.max(0, round2(value));
+  if (key === 'pct') i.pct = Math.min(100, Math.max(0, round2(value)));
+  // কমিশন % ঠিক রেখে টাকার ছাড় নতুন করে বসে, POS-এর মতো
+  i.discount = round2(i.price * i.qty * i.pct / 100);
+  renderEditItems();
+}
+
+function removeEditLine(idx) { editState.items.splice(idx, 1); renderEditItems(); }
+
+function editVal(id) { return round2(document.getElementById(id).value); }
+
+function editTotal() {
+  const subtotal = editState.items.reduce((t, i) => t + lineNet(i), 0);
+  return round2(subtotal - editVal('ed-discount') - editState.paymentDiscount + editVal('ed-pack') + editVal('ed-courier') + editVal('ed-txfee'));
+}
+
+function renderEditTotals() {
+  if (!editState || !document.getElementById('ed-totals')) return;
+  const s = editState.sale, total = editTotal(), paid = Number(s.paid_amount), due = round2(total - paid);
+  document.getElementById('ed-totals').innerHTML = `
+    আগের বিল: <strong>৳${num(s.total)}</strong> → নতুন বিল: <strong>৳${num(total)}</strong> •
+    পাওয়া গেছে: <strong>৳${num(paid)}</strong> •
+    বাকি: <strong style="color:${due < 0 ? 'var(--danger)' : 'inherit'}">৳${num(due)}</strong>
+    ${due < 0 ? '<div style="color:var(--danger); margin-top:4px">নতুন বিল পাওয়া টাকার চেয়ে কম — আগে "পেমেন্ট" থেকে বাড়তি পেমেন্ট মুছুন।</div>' : ''}`;
+}
+
+function searchEditBook() {
+  const q = document.getElementById('ed-book-search').value.trim();
+  const box = document.getElementById('ed-book-results');
+  clearTimeout(editBookTimer);
+  if (!q) { box.style.display = 'none'; return; }
+  editBookTimer = setTimeout(async () => {
+    try {
+      const r = await api(`/books/?search=${encodeURIComponent(q)}&page_size=8`);
+      const books = (r.results || []).filter(b => b.is_active);
+      editState.searchResults = books;
+      box.innerHTML = books.length ? books.map((b, idx) => `
+        <div style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border)" onclick="addEditBook(${idx})">
+          <strong>${esc(b.title)}</strong> <small style="color:var(--muted)">৳${num(b.mrp || b.selling_price)} • দোকানে ${num(b.shop_quantity)} কপি</small>
+        </div>`).join('') : '<div style="padding:8px 12px; color:var(--muted)">বই পাওয়া যায়নি</div>';
+      box.style.display = 'block';
+    } catch (e) { box.style.display = 'none'; }
+  }, 250);
+}
+
+function addEditBook(idx) {
+  const b = editState.searchResults[idx];
+  const existing = editState.items.find(i => i.book === b.id);
+  if (existing) existing.qty += 1;
+  else {
+    const price = Number(b.mrp) || Number(b.selling_price) || 0, pct = Number(b.commission) || 0;
+    editState.items.push({ book: b.id, title: b.title, qty: 1, price, pct, discount: 0 });
+  }
+  const line = existing || editState.items[editState.items.length - 1];
+  line.discount = round2(line.price * line.qty * line.pct / 100);
+  document.getElementById('ed-book-search').value = '';
+  document.getElementById('ed-book-results').style.display = 'none';
+  renderEditItems();
+}
+
+async function saveSaleEdit() {
+  if (!editState.items.length) { toast('কমপক্ষে একটি বই লাগবে।', 'error'); return; }
+  const btn = document.getElementById('ed-save');
+  btn.disabled = true;
+  try {
+    const s = await api(`/sales/${editState.sale.id}/edit/`, 'POST', {
+      edit_count: editState.editCount,
+      customer_name: document.getElementById('ed-name').value.trim(),
+      customer_phone: document.getElementById('ed-phone').value.trim(),
+      discount: editVal('ed-discount'), packaging_charge: editVal('ed-pack'),
+      courier_charge: editVal('ed-courier'), transaction_fee: editVal('ed-txfee'),
+      note: document.getElementById('ed-note').value, reason: document.getElementById('ed-reason').value.trim(),
+      items: editState.items.map(i => ({ book: i.book, quantity: i.qty, unit_price: i.price.toFixed(2), discount: i.discount.toFixed(2) })),
+    });
+    toast(`মেমো #${s.invoice_number} আপডেট হয়েছে ✓`);
+    closeEditUI();
+    initInvoices();
+  } catch (e) {
+    const msg = e && typeof e === 'object'
+      ? (e.detail || Object.values(e).flat().map(v => typeof v === 'object' ? Object.values(v).flat().join(' ') : v).join(' '))
+      : String(e);
+    toast('সেভ হয়নি: ' + msg, 'error');
+    btn.disabled = false;
+  }
+}
+
+async function showEditHistory(saleId, invNum) {
+  try {
+    const h = await api(`/sales/${saleId}/edit_history/`);
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="history-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:16px">
+        <div class="form-card" style="width:560px; max-height:88vh; overflow:auto; padding:20px">
+          <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px">${icon('clipboard', 18)} এডিটের ইতিহাস (#${esc(invNum)})</h3>
+          ${h.edits.length ? h.edits.map(e => `
+            <div style="padding:10px 0; border-bottom:1px solid var(--border)">
+              <div style="font-size:15px; color:var(--muted)">${new Date(e.created_at).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}${e.edited_by ? ' • ' + esc(e.edited_by) : ''}</div>
+              ${e.reason ? `<div style="margin:4px 0"><strong>কারণ:</strong> ${esc(e.reason)}</div>` : ''}
+              <ul style="margin:4px 0 0 18px; font-size:15px">${e.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+            </div>`).join('')
+          : `<div class="empty-state" style="padding:24px 10px;"><div class="empty-icon">${icon('clipboard', 34)}</div><h3 style="font-size:16px;">এই মেমো কখনো এডিট হয়নি</h3></div>`}
+          <div style="display:flex; justify-content:flex-end; margin-top:16px">
+            <button class="btn btn-ghost" onclick="document.getElementById('history-modal').remove()">বন্ধ করুন</button>
+          </div>
+        </div>
+      </div>`);
+    const modalEl = document.getElementById('history-modal');
+    wireModalDismiss(modalEl, () => modalEl.remove());
+  } catch (e) { toast('ইতিহাস লোড করা যায়নি', 'error'); }
 }
 
 document.addEventListener('DOMContentLoaded', initInvoices);

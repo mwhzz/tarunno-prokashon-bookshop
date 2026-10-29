@@ -752,7 +752,12 @@
       {% if request.user.is_superuser or request.user.profile.role == 'admin' %}
       <div class="nav-section-label">রিপোর্ট ও অ্যাডমিন</div>
 
-      <a href="/accounts/" class="nav-item {% if '/accounts/' in request.path %}active{% endif %}">
+      <a href="/accounts/money/" class="nav-item {% if request.path == '/accounts/money/' %}active{% endif %}">
+        <span class="nav-icon" data-icon="bank"></span>
+        <span class="nav-label">টাকার হিসাব (সব অ্যাকাউন্ট)</span>
+      </a>
+
+      <a href="/accounts/" class="nav-item {% if request.path == '/accounts/' %}active{% endif %}">
         <span class="nav-icon" data-icon="wallet"></span>
         <span class="nav-label">হিসাব বিবরণী</span>
       </a>

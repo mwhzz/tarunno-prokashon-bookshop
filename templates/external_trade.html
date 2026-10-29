@@ -807,7 +807,7 @@ async function loadTrades() {
               <option value="shop">🏪 দোকান</option>
               <option value="godown">🏭 গোডাউন</option>
             </select>
-            <input type="number" min="0" id="sf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳" value="${t.selling_price && Number(t.selling_price) > 0 ? t.selling_price : ''}">
+            <input type="number" min="0" id="sf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳ *" value="${t.selling_price && Number(t.selling_price) > 0 ? t.selling_price : ''}">
             <button onclick="addToStock(${t.id}, event)">🏪 স্টকে যোগ করুন</button>
             <button class="cancel-link" onclick="toggleStockForm(${t.id})">বাতিল</button>
             <p style="width:100%; font-size:16px; color:var(--muted); margin:2px 0 0;">
@@ -953,6 +953,7 @@ function toggleStockForm(id) {
 async function addToStock(id, evt) {
   const location = document.getElementById(`sf-loc-${id}`).value;
   const price = document.getElementById(`sf-price-${id}`).value;
+  if (!price || Number(price) <= 0) { shakeEl(`sf-price-${id}`); toast('বিক্রয়মূল্য/কপি লিখুন!', 'error'); return; }
   const btn = evt?.target;
   const originalLabel = btn?.textContent;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ হচ্ছে...'; }

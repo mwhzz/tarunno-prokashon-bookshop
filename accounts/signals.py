@@ -24,6 +24,12 @@ def record_payment_cash(sender, instance, created, **kwargs):
             reference_id=f"pay_{instance.id}"
         )
 
+@receiver(post_delete, sender=Expense)
+def remove_expense_cash(sender, instance, **kwargs):
+    """খরচ মুছলে ক্যাশ লেজার থেকেও তার এন্ট্রি সরে, নাহলে ক্যাশ কম দেখাত"""
+    CashTransaction.objects.filter(reference_id=f"exp_{instance.id}", transaction_type='expense').delete()
+
+
 @receiver(post_save, sender=Expense)
 def record_expense_cash(sender, instance, created, **kwargs):
     """খরচ হলে ক্যাশ লেজার থেকে বিয়োগ করুন"""

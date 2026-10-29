@@ -167,3 +167,39 @@ class MoneyAccountTests(TestCase):
         client = APIClient()
         client.force_authenticate(user=staff)
         self.assertEqual(client.get('/api/accounts/money/').status_code, 403)
+
+
+class DeleteKeepsCashRightTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='boss', password='pw')
+        self.user.profile.role = 'admin'
+        self.user.profile.save()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        day = DailyCash.get_for_today()
+        CashTransaction.objects.create(daily_cash=day, transaction_type='cash_in', amount=Decimal('1000'))
+
+    def cash(self):
+        day = DailyCash.get_for_today()
+        day.refresh_from_db()
+        return day.closing_balance
+
+    def test_deleting_an_expense_gives_the_cash_back(self):
+        category = ExpenseCategory.objects.create(name='Tea')
+        response = self.client.post('/api/expenses/records/', {'category': category.pk, 'amount': '200'}, format='json')
+        self.assertEqual(self.cash(), Decimal('800.00'))
+        self.assertEqual(self.client.delete(f"/api/expenses/records/{response.data['id']}/").status_code, 204)
+        self.assertEqual(self.cash(), Decimal('1000.00'))
+
+    def test_deleting_an_outside_book_trade_works_and_returns_its_cash(self):
+        response = self.client.post('/api/sales/external-trades/', {'book_title': 'X', 'purchase_price': '300', 'quantity': 1}, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(self.cash(), Decimal('700.00'))
+        self.assertEqual(self.client.delete(f"/api/sales/external-trades/{response.data['id']}/").status_code, 204)
+        self.assertEqual(self.cash(), Decimal('1000.00'))
+
+    def test_editing_an_outside_book_trade_updates_cash(self):
+        response = self.client.post('/api/sales/external-trades/', {'book_title': 'X', 'purchase_price': '300', 'quantity': 1}, format='json')
+        edit = self.client.patch(f"/api/sales/external-trades/{response.data['id']}/", {'purchase_price': '250'}, format='json')
+        self.assertEqual(edit.status_code, 200, edit.data)
+        self.assertEqual(self.cash(), Decimal('750.00'))

@@ -310,7 +310,7 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
                 note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
             )
 
-        daily_cash_ids = CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).values_list('daily_cash_id', flat=True).distinct()
+        daily_cash_ids = CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct()
         for dc_id in daily_cash_ids:
             DailyCash.objects.get(id=dc_id).update_closing_balance()
 
@@ -322,8 +322,8 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
 
         instance = self.get_object()
         reference = f"ext_{instance.id}"
-        daily_cash_ids = list(CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).values_list('daily_cash_id', flat=True).distinct())
-        CashTransaction.objects.filter(reference_id__in=[reference, f"pay_{payment.id}"]).delete()
+        daily_cash_ids = list(CashTransaction.objects.filter(reference_id=reference).values_list('daily_cash_id', flat=True).distinct())
+        CashTransaction.objects.filter(reference_id=reference).delete()
         instance.delete()
         for dc_id in daily_cash_ids:
             DailyCash.objects.get(id=dc_id).update_closing_balance()

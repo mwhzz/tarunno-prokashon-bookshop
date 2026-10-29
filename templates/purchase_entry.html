@@ -183,21 +183,22 @@
           </div>
           <div class="pe-field">
             <label>MRP ৳</label>
-            <input class="pe-input" id="b-mrp" type="number" min="0" placeholder="০">
+            <input class="pe-input" id="b-mrp" type="number" min="0" placeholder="০" oninput="priceFromCommission(); showBuyCommission()">
           </div>
           <div class="pe-field">
             <label>ক্রয়মূল্য/কপি ৳ <span style="color:var(--danger)">*</span></label>
-            <input class="pe-input" id="b-price" type="number" min="0" placeholder="০">
+            <input class="pe-input" id="b-price" type="number" min="0" placeholder="০" oninput="showBuyCommission()">
+            <small id="b-buy-commission" style="display:block; font-size:13px; color:var(--muted); margin-top:3px;"></small>
           </div>
           <div class="pe-field">
             <label>বিক্রয় কমিশন %</label>
-            <input class="pe-input" id="b-commission" type="number" min="0" max="100" placeholder="০">
+            <input class="pe-input" id="b-commission" type="number" min="0" max="100" placeholder="০" oninput="priceFromCommission()">
           </div>
         </div>
         <div class="pe-row2">
           <div class="pe-field">
             <label>বিক্রয়মূল্য ৳</label>
-            <input class="pe-input" id="b-selling" type="number" min="0" placeholder="ঐচ্ছিক">
+            <input class="pe-input" id="b-selling" type="number" min="0" placeholder="MRP ও কমিশন দিলে নিজে বসবে" oninput="commissionFromPrice()">
           </div>
           <div class="pe-field" style="display:flex; align-items:flex-end;">
             <button class="add-list-btn" style="width:100%;" onclick="addToCart()"><span data-icon="plus" data-icon-size="14"></span> তালিকায় যোগ করুন</button>
@@ -393,6 +394,27 @@ function onBookInput() {
   }, 250);
 }
 
+/* MRP ↔ বিক্রয় কমিশন % ↔ বিক্রয়মূল্য — একটা বদলালে অন্যটা নিজে মিলে যায় */
+function priceFromCommission() {
+  const mrp = Number(document.getElementById('b-mrp').value) || 0;
+  const pct = Number(document.getElementById('b-commission').value) || 0;
+  if (mrp > 0) document.getElementById('b-selling').value = Math.round(mrp * (1 - Math.min(100, pct) / 100));
+}
+
+function commissionFromPrice() {
+  const mrp = Number(document.getElementById('b-mrp').value) || 0;
+  const selling = Number(document.getElementById('b-selling').value) || 0;
+  if (mrp > 0 && selling > 0 && selling <= mrp)
+    document.getElementById('b-commission').value = Math.round((1 - selling / mrp) * 10000) / 100;
+}
+
+function showBuyCommission() {
+  const mrp = Number(document.getElementById('b-mrp').value) || 0;
+  const price = Number(document.getElementById('b-price').value) || 0;
+  const el = document.getElementById('b-buy-commission');
+  el.textContent = mrp > 0 && price > 0 && price <= mrp ? `কেনা কমিশন: ${num(Math.round((1 - price / mrp) * 100))}%` : '';
+}
+
 function selectBook(b) {
   selectedBook = b;
   document.getElementById('b-search').value = b.title;
@@ -401,6 +423,8 @@ function selectBook(b) {
   document.getElementById('b-price').value = Number(b.purchase_price) > 0 ? b.purchase_price : '';
   document.getElementById('b-commission').value = b.commission || '';
   document.getElementById('b-selling').value = b.selling_price || '';
+  if (!(Number(b.selling_price) > 0)) priceFromCommission();
+  showBuyCommission();
   document.getElementById('b-suggest').classList.remove('show');
 }
 
@@ -438,6 +462,7 @@ async function addToCart() {
   document.getElementById('b-price').value = '';
   document.getElementById('b-commission').value = '';
   document.getElementById('b-selling').value = '';
+  document.getElementById('b-buy-commission').textContent = '';
   selectedBook = null;
   document.getElementById('b-search').focus();
 

@@ -14,7 +14,7 @@ from .serializers import CustomerSerializer, SaleSerializer
 
 
 class DuePaymentInput(serializers.Serializer):
-    request_id = serializers.UUIDField(error_messages={'required': 'পেমেন্ট নেওয়ার আগে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।'})
+    request_id = serializers.UUIDField(error_messages={'required': 'পেমেন্ট নেওয়ার আগে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।'})
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, default=0)
     discount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, default=0)
     expected_due = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
@@ -22,7 +22,7 @@ class DuePaymentInput(serializers.Serializer):
 
     def validate(self, data):
         if data['amount'] + data['discount'] <= 0:
-            raise serializers.ValidationError('পরিমাণ অথবা ছাড় দিন।')
+            raise serializers.ValidationError('পরিমাণ অথবা ছাড় দিন।')
         return data
 
 
@@ -68,7 +68,7 @@ def collect_invoice_due(sale_id, raw):
     if 'expected_due' in data and data['expected_due'] != sale.due_amount:
         raise serializers.ValidationError('এই বিলের বাকি বদলেছে। তালিকা থেকে আবার পেমেন্ট নিন।')
     if delta > sale.due_amount:
-        raise serializers.ValidationError('পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না।')
+        raise serializers.ValidationError('পরিমাণ ও ছাড় মিলিয়ে মোট বাকির বেশি হতে পারবে না।')
     due = sale.due_amount - delta
     status = 'paid' if due == 0 else 'partial' if sale.paid_amount + amount > 0 else 'due'
     # The conditional write also protects SQLite, which ignores SELECT FOR UPDATE.
@@ -98,8 +98,6 @@ def collect_customer_due(customer_id, raw):
     data, attempt = _start(raw, 'customer', customer_id)
     if attempt and attempt.result is not None:
         return attempt.result
-    if data['method'] != 'cash':
-        raise serializers.ValidationError('ওপেনিং বাকি আদায়ের এই ফর্মে শুধু হাতে পাওয়া নগদ জমা হবে।')
     customer = Customer.objects.select_for_update().get(pk=customer_id)
     amount, discount = data['amount'], data['discount']
     invoice_due = customer.sales.filter(due_amount__gt=0).aggregate(total=Sum('due_amount'))['total'] or 0
@@ -108,7 +106,7 @@ def collect_customer_due(customer_id, raw):
         raise serializers.ValidationError('এই ক্রেতার বাকি বদলেছে। তালিকা থেকে আবার পেমেন্ট নিন।')
     # Do not accidentally collect an invoice again through the opening-due form.
     if delta > customer.total_due - invoice_due:
-        raise serializers.ValidationError('পরিমাণ ও ছাড় ইনভয়েসের বাইরের বর্তমান বাকির বেশি হতে পারবে না।')
+        raise serializers.ValidationError('পরিমাণ ও ছাড় ইনভয়েসের বাইরের বর্তমান বাকির বেশি হতে পারবে না।')
     changed = Customer.objects.filter(pk=customer_id, total_due__gte=invoice_due + delta).update(total_due=Round(F('total_due') - delta, 2))
     if changed != 1:
         raise serializers.ValidationError('ক্রেতার বাকি বদলে গেছে। আবার যাচাই করুন।')
@@ -117,9 +115,16 @@ def collect_customer_due(customer_id, raw):
         note = f'বাকি আদায় (ওপেনিং ব্যালেন্স): {customer.name}'
         if discount > 0:
             note += f' [ছাড় ৳{discount}]'
-        CashTransaction.objects.create(
-            daily_cash=DailyCash.get_for_today(), transaction_type='sale', amount=amount,
-            note=note, reference_id=f'customer_due_{reference}',
-        )
+        if data['method'] == 'cash':
+            CashTransaction.objects.create(
+                daily_cash=DailyCash.get_for_today(), transaction_type='sale', amount=amount,
+                note=note, reference_id=f'customer_due_{reference}',
+            )
+        else:
+            # বিকাশ/নগদ/ব্যাংকে পাওয়া টাকা সেই অ্যাকাউন্টের ব্যালেন্সে যোগ হয়
+            from accounts.models import MoneyMovement
+            MoneyMovement.objects.create(
+                request_id=reference, kind='collection', to_account=data['method'], amount=amount, note=note,
+            )
     customer.refresh_from_db()
     return _finish(attempt, CustomerSerializer(customer).data)

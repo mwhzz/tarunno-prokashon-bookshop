@@ -85,3 +85,33 @@ class SaleEditTests(TestCase):
         response = self.client.get(f'/api/sales/{self.sale_id}/edit_history/')
         self.assertEqual(response.data['edit_count'], 1)
         self.assertIn('নোট: — → ঠিক করা', response.data['edits'][0]['changes'])
+
+    def test_wrong_received_amount_is_corrected_with_cash_and_due_in_step(self):
+        from accounts.models import CashTransaction, DailyCash
+        response = self.edit(paid_amount='150.00', payment_method='cash')  # আগে ১০০ লেখা হয়েছিল
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual((response.data['paid_amount'], response.data['due_amount']), ('150.00', '170.00'))
+        self.assertEqual(self.refresh().total_due, Decimal('170.00'))
+        self.assertEqual(DailyCash.get_for_today().closing_balance, Decimal('150.00'))
+        response = self.edit(edit_count=1, paid_amount='80.00', payment_method='cash')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(self.refresh().total_due, Decimal('240.00'))
+        self.assertEqual(DailyCash.get_for_today().closing_balance, Decimal('80.00'))
+        self.assertTrue(CashTransaction.objects.filter(transaction_type='cash_out', amount=Decimal('70.00')).exists())
+
+    def test_received_more_than_bill_is_rejected(self):
+        self.assertEqual(self.edit(paid_amount='321.00').status_code, 400)
+
+    def test_received_by_bkash_goes_to_bkash(self):
+        from sales.models import Payment
+        self.assertEqual(self.edit(paid_amount='320.00', payment_method='bkash').status_code, 200)
+        self.assertEqual(Payment.objects.get(method='bkash').amount, Decimal('220.00'))
+        self.assertEqual(self.refresh().total_due, Decimal('0.00'))
+
+    def test_address_and_sale_type_are_editable_and_in_history(self):
+        response = self.edit(customer_address='বাংলাবাজার, ঢাকা', sale_type='wholesale')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(self.refresh().address, 'বাংলাবাজার, ঢাকা')
+        changes = SaleEdit.objects.get().changes
+        self.assertTrue(any(c.startswith('ঠিকানা') for c in changes))
+        self.assertTrue(any(c.startswith('বিক্রয়ের ধরন') for c in changes))

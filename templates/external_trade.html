@@ -492,6 +492,10 @@
           </div>
         </div>
         <div class="commission-hint">বডি রেট ও ক্রয় কমিশন % দিলে ক্রয়মূল্য নিজে থেকেই হিসাব হয়ে যাবে — চাইলে সরাসরি ক্রয়মূল্যও লিখতে পারেন।</div>
+        <div class="ec-field">
+          <label for="e-purchase-account">কেনার টাকা কোন অ্যাকাউন্ট থেকে দিলেন?</label>
+          <select class="ec-input" id="e-purchase-account"><option value="cash">ক্যাশ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ (Nagad)</option><option value="bank">ব্যাংক</option></select>
+        </div>
 
         <div class="ec-field">
           <label>বিক্রয় অবস্থা</label>
@@ -516,6 +520,10 @@
             </div>
           </div>
           <div class="commission-hint">বডি রেট দেওয়া থাকলে বিক্রয় কমিশন % থেকে বিক্রয়মূল্য অটো হিসাব হবে।</div>
+          <div class="ec-field">
+            <label for="e-sale-account">বিক্রির টাকা কোন অ্যাকাউন্টে পেলেন?</label>
+            <select class="ec-input" id="e-sale-account"><option value="cash">ক্যাশ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ (Nagad)</option><option value="bank">ব্যাংক</option></select>
+          </div>
           <div class="ec-row">
             <div class="ec-field">
               <label>গ্রাহকের নাম</label>
@@ -795,6 +803,7 @@ async function loadTrades() {
           <div class="tr-complete-form" id="cf-${t.id}">
             ${Number(t.body_rate) > 0 ? `<input type="number" min="0" max="100" id="cf-commission-${t.id}" placeholder="বিক্রয় কমিশন %" oninput="recalcCompletePrice(${t.id})" style="width:110px">` : ''}
             <input type="number" min="0" id="cf-price-${t.id}" placeholder="বিক্রয়মূল্য/কপি ৳">
+            <select id="cf-account-${t.id}" title="টাকা কোন অ্যাকাউন্টে পেলেন"><option value="cash">ক্যাশ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ (Nagad)</option><option value="bank">ব্যাংক</option></select>
             <input type="text" id="cf-cname-${t.id}" placeholder="গ্রাহকের নাম (ঐচ্ছিক)">
             <input type="text" id="cf-cphone-${t.id}" placeholder="ফোন (ঐচ্ছিক)">
             <button onclick="completeSale(${t.id}, event)">✅ সম্পন্ন করুন</button>
@@ -854,6 +863,7 @@ async function addTrade() {
     body_rate: document.getElementById('e-body-rate').value || 0,
     purchase_commission: document.getElementById('e-purchase-commission').value || 0,
     purchase_price: purchasePrice,
+    purchase_account: document.getElementById('e-purchase-account').value,
     already_sold: soldMode,
     note: document.getElementById('e-note').value,
   };
@@ -867,6 +877,7 @@ async function addTrade() {
     }
     payload.selling_price = sp;
     payload.sale_commission = document.getElementById('e-sale-commission').value || 0;
+    payload.sale_account = document.getElementById('e-sale-account').value;
     payload.customer_name = document.getElementById('e-cust-name').value;
     payload.customer_phone = document.getElementById('e-cust-phone').value;
   }
@@ -930,6 +941,7 @@ async function completeSale(id, evt) {
       sale_commission: (commissionInp && commissionInp.value) ? commissionInp.value : undefined,
       customer_name: document.getElementById(`cf-cname-${id}`).value,
       customer_phone: document.getElementById(`cf-cphone-${id}`).value,
+      sale_account: document.getElementById(`cf-account-${id}`).value,
     });
     toast('বিক্রি সম্পন্ন হয়েছে ✓');
     loadSummary();

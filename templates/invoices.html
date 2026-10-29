@@ -333,10 +333,13 @@ async function showEditUI(saleId) {
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px">
             ${field('ed-name', 'গ্রাহকের নাম', s.customer_name, 'text')}
             ${field('ed-phone', 'ফোন', s.customer_phone, 'text')}
+            ${field('ed-address', 'ঠিকানা', s.customer_address || '', 'text')}
+            <div class="form-group" style="margin:0"><label for="ed-sale-type">বিক্রয়ের ধরন</label>
+              <select id="ed-sale-type"><option value="retail">খুচরা</option><option value="wholesale">পাইকারি</option></select></div>
           </div>
           <div style="overflow-x:auto">
-            <table style="width:100%; border-collapse:collapse; min-width:560px">
-              <thead><tr><th>বই</th><th style="width:90px">পরিমাণ</th><th style="width:110px">দাম</th><th style="width:100px">কমিশন %</th><th style="width:110px" class="num">মোট</th><th style="width:40px"></th></tr></thead>
+            <table style="width:100%; border-collapse:collapse; min-width:640px">
+              <thead><tr><th>বই</th><th style="width:80px">পরিমাণ</th><th style="width:100px">গায়ের মূল্য</th><th style="width:190px">কমিশন % → প্রতি বইয়ের দাম</th><th style="width:110px">মোট টাকা</th><th style="width:40px"></th></tr></thead>
               <tbody id="ed-items"></tbody>
             </table>
           </div>
@@ -355,6 +358,11 @@ async function showEditUI(saleId) {
             ${field('ed-note', 'নোট', s.note, 'text')}
             ${field('ed-reason', 'কেন এডিট করছেন? (ইতিহাসে থাকবে)', '', 'text')}
           </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px">
+            ${field('ed-paid', 'মোট পাওয়া টাকা (ভুল থাকলে ঠিক করুন)', round2(s.paid_amount))}
+            <div class="form-group" style="margin:0"><label for="ed-pay-method">বাড়তি/কম টাকা কোন মাধ্যমে</label>
+              <select id="ed-pay-method"><option value="cash">ক্যাশ</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ (Nagad)</option><option value="bank">ব্যাংক</option></select></div>
+          </div>
           <div id="ed-totals" style="background:var(--g100, #eafaf2); border-radius:8px; padding:10px 14px; font-size:16px"></div>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px">
             <button class="btn btn-ghost" onclick="closeEditUI()">বাতিল</button>
@@ -363,6 +371,7 @@ async function showEditUI(saleId) {
         </div>
       </div>`);
     wireModalDismiss(document.getElementById('edit-modal'), closeEditUI);
+    document.getElementById('ed-sale-type').value = s.sale_type || 'retail';
     renderEditItems();
   } catch (e) { toast('মেমো লোড করা যায়নি', 'error'); }
 }
@@ -382,9 +391,12 @@ function renderEditItems() {
     <tr>
       <td>${esc(i.title)}</td>
       <td><input type="number" min="1" step="1" value="${i.qty}" style="width:70px" onchange="updateEditLine(${idx}, 'qty', this.value)"></td>
-      <td><input type="number" min="0" step="0.01" value="${i.price}" style="width:95px" onchange="updateEditLine(${idx}, 'price', this.value)"></td>
-      <td><input type="number" min="0" max="100" step="0.01" value="${Math.round(i.pct)}" style="width:80px" onchange="updateEditLine(${idx}, 'pct', this.value)"></td>
-      <td class="num" style="font-family:AppBangla,sans-serif">৳${num(lineNet(i))}${i.discount > 0 ? `<br><small style="color:var(--muted)">কমিশন ৳${num(i.discount)}</small>` : ''}</td>
+      <td><input type="number" min="0" step="0.01" value="${i.price}" style="width:85px" onchange="updateEditLine(${idx}, 'price', this.value)"></td>
+      <td><span style="display:inline-flex; align-items:center; gap:4px; padding:4px 6px; border:1px solid var(--border); border-radius:8px">
+            <input type="number" min="0" max="100" step="0.01" value="${round2(i.pct)}" style="width:62px" onchange="updateEditLine(${idx}, 'pct', this.value)">%
+            <span style="color:var(--muted)">→</span>৳<input type="number" min="0" step="1" value="${round2(lineNet(i) / i.qty)}" style="width:70px" onchange="updateEditLine(${idx}, 'unit', this.value)">
+          </span>${i.discount > 0 ? `<br><small style="color:var(--muted)">কমিশন −৳${num(i.discount)}</small>` : ''}</td>
+      <td>৳<input type="number" min="0" step="1" value="${lineNet(i)}" style="width:85px" onchange="updateEditLine(${idx}, 'total', this.value)"></td>
       <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" title="বাদ দিন" onclick="removeEditLine(${idx})">${icon('trash', 12)}</button></td>
     </tr>`).join('') || '<tr><td colspan="6" style="color:var(--danger)">কমপক্ষে একটি বই লাগবে।</td></tr>';
   renderEditTotals();
@@ -395,6 +407,13 @@ function updateEditLine(idx, key, value) {
   if (key === 'qty') i.qty = Math.max(1, parseInt(value) || 1);
   if (key === 'price') i.price = Math.max(0, round2(value));
   if (key === 'pct') i.pct = Math.min(100, Math.max(0, round2(value)));
+  // দাম বা মোট টাকা লিখলে সেখান থেকে কমিশন % বের হয়, POS-এর মতো
+  if (key === 'unit' || key === 'total') {
+    const gross = i.price * i.qty, net = Number(value) * (key === 'unit' ? i.qty : 1);
+    if (!(gross > 0) || !(net >= 0)) { renderEditItems(); return; }
+    if (net > gross) { toast('গায়ের মূল্যের চেয়ে বেশি দাম রাখা যাবে না।', 'error'); renderEditItems(); return; }
+    i.pct = (1 - net / gross) * 100;
+  }
   // কমিশন % ঠিক রেখে টাকার ছাড় নতুন করে বসে, POS-এর মতো
   i.discount = wholeTakaDiscount(i);
   renderEditItems();
@@ -411,12 +430,13 @@ function editTotal() {
 
 function renderEditTotals() {
   if (!editState || !document.getElementById('ed-totals')) return;
-  const s = editState.sale, total = editTotal(), paid = Number(s.paid_amount), due = round2(total - paid);
+  const s = editState.sale, total = editTotal(), paid = editVal('ed-paid'), due = round2(total - paid);
+  const paidDiff = round2(paid - Number(s.paid_amount));
   document.getElementById('ed-totals').innerHTML = `
     আগের বিল: <strong>৳${num(s.total)}</strong> → নতুন বিল: <strong>৳${num(total)}</strong> •
-    পাওয়া গেছে: <strong>৳${num(paid)}</strong> •
+    পাওয়া গেছে: <strong>৳${num(paid)}</strong>${paidDiff ? ` <small>(${paidDiff > 0 ? '+' : '−'}৳${num(Math.abs(paidDiff))} ${paidDiff > 0 ? 'নতুন পেমেন্ট হিসেবে বসবে' : 'ফেরত হিসেবে বসবে'})</small>` : ''} •
     বাকি: <strong style="color:${due < 0 ? 'var(--danger)' : 'inherit'}">৳${num(due)}</strong>
-    ${due < 0 ? '<div style="color:var(--danger); margin-top:4px">নতুন বিল পাওয়া টাকার চেয়ে কম — আগে "পেমেন্ট" থেকে বাড়তি পেমেন্ট মুছুন।</div>' : ''}`;
+    ${due < 0 ? '<div style="color:var(--danger); margin-top:4px">পাওয়া টাকা নতুন বিলের চেয়ে বেশি — পাওয়া টাকা কমান।</div>' : ''}`;
 }
 
 function searchEditBook() {
@@ -462,6 +482,9 @@ async function saveSaleEdit() {
       edit_count: editState.editCount,
       customer_name: document.getElementById('ed-name').value.trim(),
       customer_phone: document.getElementById('ed-phone').value.trim(),
+      customer_address: document.getElementById('ed-address').value.trim(),
+      sale_type: document.getElementById('ed-sale-type').value,
+      paid_amount: editVal('ed-paid').toFixed(2), payment_method: document.getElementById('ed-pay-method').value,
       discount: editVal('ed-discount'), packaging_charge: editVal('ed-pack'),
       courier_charge: editVal('ed-courier'), transaction_fee: editVal('ed-txfee'),
       note: document.getElementById('ed-note').value, reason: document.getElementById('ed-reason').value.trim(),

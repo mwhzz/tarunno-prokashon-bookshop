@@ -248,7 +248,15 @@ class ExternalTrade(models.Model):
     purchase_commission = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="বডি রেট থেকে কত % কমিশনে কেনা হয়েছে")
     sale_commission = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="বডি রেট থেকে কত % কমিশনে বিক্রি হয়েছে/হবে")
 
+    ACCOUNT_CHOICES = [
+        ('cash', 'Cash'),
+        ('bkash', 'bKash'),
+        ('nagad', 'Nagad'),
+        ('bank', 'Bank'),
+    ]
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="প্রতি কপি ক্রয়মূল্য (নগদ)")
+    purchase_account = models.CharField(max_length=20, choices=ACCOUNT_CHOICES, default='cash', help_text="কেনার টাকা কোন অ্যাকাউন্ট থেকে গেছে")
+    sale_account = models.CharField(max_length=20, choices=ACCOUNT_CHOICES, default='cash', help_text="বিক্রির টাকা কোন অ্যাকাউন্টে এসেছে")
     selling_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="প্রতি কপি বিক্রয়মূল্য")
 
     customer_name = models.CharField(max_length=200, blank=True)

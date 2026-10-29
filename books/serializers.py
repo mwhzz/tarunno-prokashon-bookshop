@@ -16,6 +16,16 @@ class GroupSerializer(serializers.ModelSerializer):
         return obj.books.count()
 
 
+def hide_cost_from_staff(serializer, data):
+    """কেনা দাম মালিকের ব্যক্তিগত তথ্য — শুধু অ্যাডমিন/ম্যানেজার পায়"""
+    request = serializer.context.get('request')
+    user = getattr(request, 'user', None)
+    role = getattr(getattr(user, 'profile', None), 'role', None)
+    if not (user and (user.is_superuser or role in ('admin', 'manager'))):
+        data.pop('purchase_price', None)
+    return data
+
+
 class BookSerializer(serializers.ModelSerializer):
     # Multipart forms omit this field; DRF otherwise treats it as an unchecked checkbox.
     is_active = serializers.BooleanField(required=False, default=True)
@@ -25,6 +35,9 @@ class BookSerializer(serializers.ModelSerializer):
     godown_quantity = serializers.IntegerField(source='stock_summary.godown_quantity', read_only=True, default=0)
     image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
     source_display = serializers.CharField(source='get_source_display', read_only=True)
+
+    def to_representation(self, instance):
+        return hide_cost_from_staff(self, super().to_representation(instance))
 
     class Meta:
         model = Book
@@ -82,13 +95,7 @@ class BookListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for lists"""
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        role = getattr(getattr(user, 'profile', None), 'role', None)
-        if not (user and (user.is_superuser or role in ('admin', 'manager'))):
-            data.pop('purchase_price', None)
-        return data
+        return hide_cost_from_staff(self, super().to_representation(instance))
 
     group_name = serializers.CharField(source='group.name', read_only=True)
     current_stock = serializers.IntegerField(read_only=True)

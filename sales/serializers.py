@@ -50,11 +50,12 @@ class SaleSerializer(serializers.ModelSerializer):
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     realized_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     total_discount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    customer_address = serializers.CharField(source='customer.address', read_only=True, default='')
 
     class Meta:
         model = Sale
         fields = [
-            'id', 'invoice_number', 'customer_name', 'customer_phone',
+            'id', 'invoice_number', 'customer_name', 'customer_phone', 'customer_address', 'sale_type',
             'subtotal', 'discount', 'total_discount',
             'packaging_charge', 'courier_charge', 'transaction_fee',
             'total', 'total_cost', 'paid_amount', 'due_amount',
@@ -214,14 +215,15 @@ class ExternalTradeSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'book_title', 'author', 'publisher', 'quantity',
             'body_rate', 'purchase_commission', 'sale_commission',
-            'purchase_price', 'selling_price',
+            'purchase_price', 'selling_price', 'purchase_account', 'sale_account',
             'customer_name', 'customer_phone',
             'status', 'status_display', 'note',
             'total_purchase', 'total_sale', 'profit',
             'converted_book', 'converted_book_title',
             'created_at', 'sold_at',
         ]
-        read_only_fields = ['status', 'sold_at', 'converted_book']
+        # কোন অ্যাকাউন্টে টাকা গেছে সেটা পরে বদলালে লেজার মিলবে না, তাই শুধু তৈরি/বিক্রির সময় বসে
+        read_only_fields = ['status', 'sold_at', 'converted_book', 'purchase_account', 'sale_account']
 
 
 class ExternalTradeCreateSerializer(serializers.Serializer):
@@ -237,6 +239,8 @@ class ExternalTradeCreateSerializer(serializers.Serializer):
     purchase_commission = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=0, min_value=0, max_value=100)
     sale_commission = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=0, min_value=0, max_value=100)
     purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    purchase_account = serializers.ChoiceField(choices=ExternalTrade.ACCOUNT_CHOICES, default='cash')
+    sale_account = serializers.ChoiceField(choices=ExternalTrade.ACCOUNT_CHOICES, default='cash')
     already_sold = serializers.BooleanField(default=False)
     selling_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0, min_value=0)
     customer_name = serializers.CharField(max_length=200, required=False, allow_blank=True, default='')
@@ -258,15 +262,17 @@ class ExternalTradeCreateSerializer(serializers.Serializer):
             **validated_data
         )
 
+        # ক্যাশ ছাড়া অন্য অ্যাকাউন্টের টাকা ক্যাশ লেজারে যায় না; সেগুলোর ব্যালেন্স accounts.money হিসাব করে
         daily_cash = DailyCash.get_for_today()
-        CashTransaction.objects.create(
-            daily_cash=daily_cash,
-            transaction_type='cash_out',
-            amount=trade.total_purchase,
-            note=f"বাইরের বই ক্রয়: {trade.book_title} x{trade.quantity}",
-            reference_id=f"ext_{trade.id}",
-        )
-        if already_sold and trade.total_sale > 0:
+        if trade.purchase_account == 'cash':
+            CashTransaction.objects.create(
+                daily_cash=daily_cash,
+                transaction_type='cash_out',
+                amount=trade.total_purchase,
+                note=f"বাইরের বই ক্রয়: {trade.book_title} x{trade.quantity}",
+                reference_id=f"ext_{trade.id}",
+            )
+        if already_sold and trade.total_sale > 0 and trade.sale_account == 'cash':
             CashTransaction.objects.create(
                 daily_cash=daily_cash,
                 transaction_type='cash_in',

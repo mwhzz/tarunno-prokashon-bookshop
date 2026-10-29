@@ -21,7 +21,7 @@
       </div></section>
       <section class="editor-card"><div class="editor-section-heading"><span class="section-number">০২</span><div><h2>কস্টিং ও বিক্রয়মূল্য</h2><p>প্রতি কপির দাম লিখুন। কস্টিং ও বিক্রয়মূল্য আলাদাভাবে হিসাব হবে।</p></div></div>
       <div class="editor-fields">
-        <div class="editor-field cost-field"><label for="edit-cost">কস্টিং / ক্রয়মূল্য (৳)</label><input id="edit-cost" name="purchase_price" type="number" min="0" max="99999999.99" step="0.01" required><span class="field-help">স্টকের খরচ এই দাম অনুযায়ী হিসাব হয়।</span><small data-error="purchase_price"></small></div>
+        {% if request.user.is_superuser or request.user.profile.role == 'admin' or request.user.profile.role == 'manager' %}<div class="editor-field cost-field"><label for="edit-cost">কস্টিং / ক্রয়মূল্য (৳)</label><input id="edit-cost" name="purchase_price" type="number" min="0" max="99999999.99" step="0.01" required><span class="field-help">স্টকের খরচ এই দাম অনুযায়ী হিসাব হয়।</span><small data-error="purchase_price"></small></div>{% endif %}
         <div class="editor-field"><label for="edit-price">বিক্রয়মূল্য (৳)</label><input id="edit-price" name="selling_price" type="number" min="0" max="99999999.99" step="0.01" required><small data-error="selling_price"></small></div>
         <div class="editor-field"><label for="edit-mrp">বইয়ের গায়ের দাম / MRP (৳)</label><input id="edit-mrp" name="mrp" type="number" min="0" max="99999999.99" step="0.01" required><small data-error="mrp"></small></div>
         <div class="editor-field"><label for="edit-commission">কমিশন (%)</label><input id="edit-commission" name="commission" type="number" min="0" max="100" step="0.01" required><small data-error="commission"></small></div>
@@ -38,4 +38,4 @@
   </form><button type="button" id="retry-editor" class="editor-secondary" hidden>আবার চেষ্টা করুন</button>
 </div>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'edit-book.js' %}?v=1"></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'price-link.js' %}?v=1"></script><script src="{% static 'edit-book.js' %}?v=1"></script><script>document.addEventListener('DOMContentLoaded', () => linkPrices('edit-mrp', 'edit-commission', 'edit-price'));</script>{% endblock %}

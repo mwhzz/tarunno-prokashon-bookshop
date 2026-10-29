@@ -94,7 +94,7 @@ class SaleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """ড্যাশবোর্ডের জন্য বিস্তারিত আর্থিক ও স্টক ডাটা"""
-        from .reports import sales_report, stock_value_report, get_date_range
+        from .reports import collections_and_profit, sales_report, stock_value_report, get_date_range
         
         period = request.query_params.get('period', 'month')
         date_from, date_to = get_date_range(period)
@@ -109,13 +109,14 @@ class SaleViewSet(viewsets.ModelViewSet):
         today = timezone.now().date()
         today_sales = Sale.objects.filter(created_at__date=today)
         today_external_profit = sum(float(t.profit) for t in ExternalTrade.objects.filter(status='sold', sold_at__date=today))
+        today_collected, today_profit = collections_and_profit(today, today)
         today_stats = {
             'total_revenue': float(today_sales.aggregate(total=Sum('total'))['total'] or 0),
-            'total_paid': float(today_sales.aggregate(paid=Sum('paid_amount'))['paid'] or 0),
+            'total_paid': sum(today_collected.values()),
             'total_due': float(today_sales.aggregate(due=Sum('due_amount'))['due'] or 0),
             'total_invoices': today_sales.count(),
             'external_trade_profit': today_external_profit,
-            'realized_profit': sum(float(s.realized_profit) for s in today_sales) + today_external_profit,
+            'realized_profit': sum(today_profit.values()) + today_external_profit,
         }
 
         return Response({
@@ -377,19 +378,24 @@ class ExternalTradeViewSet(viewsets.ModelViewSet):
         if customer_phone:
             trade.customer_phone = customer_phone
 
+        sale_account = request.data.get('sale_account') or 'cash'
+        if sale_account not in dict(ExternalTrade.ACCOUNT_CHOICES):
+            return Response({'error': 'সঠিক অ্যাকাউন্ট বাছুন।'}, status=status.HTTP_400_BAD_REQUEST)
+
         trade.selling_price = selling_price
+        trade.sale_account = sale_account
         trade.status = 'sold'
         trade.sold_at = timezone.now()
         trade.save()
 
-        daily_cash = DailyCash.get_for_today()
-        CashTransaction.objects.create(
-            daily_cash=daily_cash,
-            transaction_type='cash_in',
-            amount=trade.total_sale,
-            note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
-            reference_id=f"ext_{trade.id}",
-        )
+        if sale_account == 'cash':
+            CashTransaction.objects.create(
+                daily_cash=DailyCash.get_for_today(),
+                transaction_type='cash_in',
+                amount=trade.total_sale,
+                note=f"বাইরের বই বিক্রয়: {trade.book_title} x{trade.quantity}",
+                reference_id=f"ext_{trade.id}",
+            )
 
         return Response(ExternalTradeSerializer(trade).data)
 

@@ -10,12 +10,12 @@
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from rest_framework import serializers
 
 from expenses.models import Expense, ExpenseCategory
 from purchase.models import VendorPayment
-from sales.models import Payment
+from sales.models import ExternalTrade, Payment
 from .models import ACCOUNT_CHOICES, CashTransaction, DailyCash, MoneyMovement
 
 ACCOUNT_LABELS = dict(ACCOUNT_CHOICES)
@@ -35,9 +35,17 @@ def cash_balance():
     return day.closing_balance
 
 
+def _external_total(qs, price_field):
+    return _sum(qs.annotate(line=ExpressionWrapper(F(price_field) * F('quantity'), output_field=DecimalField(max_digits=14, decimal_places=2))), 'line')
+
+
 def account_balance(account):
     if account == 'cash':
         return cash_balance()
+    external = (
+        _external_total(ExternalTrade.objects.filter(status='sold', sale_account=account), 'selling_price')
+        - _external_total(ExternalTrade.objects.filter(purchase_account=account), 'purchase_price')
+    )
     moved_in = _sum(MoneyMovement.objects.filter(to_account=account))
     moved_out = _sum(MoneyMovement.objects.filter(from_account=account))
     return (
@@ -45,6 +53,7 @@ def account_balance(account):
         - _sum(VendorPayment.objects.filter(method=account))
         - _sum(Expense.objects.filter(account=account))
         + moved_in - moved_out
+        + external
     )
 
 
@@ -177,10 +186,16 @@ def statement(account, limit=200):
         rows.append({'at': v.created_at, 'amount': -v.amount, 'title': f"ভেন্ডর পেমেন্ট (বিল #{v.bill_id})", 'detail': v.bill.vendor_name})
     for e in Expense.objects.filter(account=account).select_related('category').order_by('id'):
         rows.append({'at': e.date, 'amount': -e.amount, 'title': f"খরচ: {e.category.name}", 'detail': e.note})
+    for t in ExternalTrade.objects.filter(purchase_account=account).order_by('id'):
+        rows.append({'at': t.created_at, 'amount': -t.total_purchase, 'title': f"বাইরের বই ক্রয়: {t.book_title} x{t.quantity}", 'detail': t.publisher})
+    for t in ExternalTrade.objects.filter(status='sold', sale_account=account).order_by('id'):
+        rows.append({'at': t.sold_at or t.created_at, 'amount': t.total_sale, 'title': f"বাইরের বই বিক্রয়: {t.book_title} x{t.quantity}", 'detail': t.customer_name})
     for m in (MoneyMovement.objects.filter(from_account=account) | MoneyMovement.objects.filter(to_account=account)).order_by('id'):
         sign = 1 if m.to_account == account else -1
         if m.kind == 'transfer':
             title = f"ট্রান্সফার: {ACCOUNT_LABELS[m.from_account]} → {ACCOUNT_LABELS[m.to_account]}"
+        elif m.kind == 'collection':
+            title = 'পুরনো বাকি আদায়'
         else:
             title = 'ব্যালেন্স সমন্বয়'
         rows.append({'at': m.created_at, 'amount': sign * m.amount, 'title': title, 'detail': m.note})

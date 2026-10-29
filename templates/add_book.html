@@ -1396,6 +1396,7 @@ select.wiz-input { cursor: pointer; }
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'price-link.js' %}?v=1"></script>
 <script>
 let currentStep = 1;
 const TOTAL_STEPS = 5;
@@ -1671,7 +1672,7 @@ function switchMode(mode) {
 }
 
 // start on manual by default — hide others
-document.addEventListener('DOMContentLoaded', () => switchMode('manual'));
+document.addEventListener('DOMContentLoaded', () => { switchMode('manual'); linkPrices('b-mrp', 'b-commission', 'b-price'); });
 
 /* ══════════════════════════════
    QUICK ADD

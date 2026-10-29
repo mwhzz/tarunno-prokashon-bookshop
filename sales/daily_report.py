@@ -120,6 +120,8 @@ def build_daily_owner_summary(report_date=None):
 
     method_labels = {
         "cash": "Cash",
+        "bkash": "bKash",
+        "nagad": "Nagad (নগদ)",
         "bank": "Bank",
         "mobile": "Mobile",
         "credit": "Credit",
@@ -190,6 +192,8 @@ def build_telegram_daily_owner_summary(report_date=None):
     if payment_summary["by_method"]:
         method_labels = {
             "cash": "Cash",
+            "bkash": "bKash",
+            "nagad": "Nagad (নগদ)",
             "bank": "Bank",
             "mobile": "Mobile",
             "credit": "Credit",

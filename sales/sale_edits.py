@@ -7,9 +7,10 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
+from accounts.models import CashTransaction, DailyCash
 from books.models import Book
 from stock.models import StockEntry, StockSummary
-from .models import Customer, Sale, SaleEdit, SaleItem
+from .models import Customer, Payment, Sale, SaleEdit, SaleItem
 
 
 class SaleEditConflict(APIException):
@@ -33,6 +34,10 @@ class SaleEditInput(serializers.Serializer):
     edit_count = serializers.IntegerField(min_value=0)
     customer_name = serializers.CharField(max_length=200, allow_blank=True, default='')
     customer_phone = serializers.CharField(max_length=20, allow_blank=True, default='')
+    customer_address = serializers.CharField(allow_blank=True, required=False)
+    sale_type = serializers.ChoiceField(choices=Sale.SALE_TYPE_CHOICES, required=False)
+    paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False)
+    payment_method = serializers.ChoiceField(choices=['cash', 'bkash', 'nagad', 'bank'], default='cash')
     discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
     packaging_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
     courier_charge = serializers.DecimalField(max_digits=10, decimal_places=2, default=0, min_value=0)
@@ -63,6 +68,8 @@ def snapshot(sale):
     return {
         'customer_name': sale.customer_name,
         'customer_phone': sale.customer_phone,
+        'customer_address': sale.customer.address if sale.customer else '',
+        'sale_type': sale.sale_type,
         'discount': _money(sale.discount - payment_discount_total(sale)),
         'packaging_charge': _money(sale.packaging_charge),
         'courier_charge': _money(sale.courier_charge),
@@ -80,9 +87,11 @@ def snapshot(sale):
 
 
 FIELD_LABELS = [
-    ('customer_name', 'গ্রাহকের নাম'), ('customer_phone', 'ফোন'), ('discount', 'বাড়তি ছাড়'),
+    ('customer_name', 'গ্রাহকের নাম'), ('customer_phone', 'ফোন'), ('customer_address', 'ঠিকানা'),
+    ('sale_type', 'বিক্রয়ের ধরন'), ('discount', 'বাড়তি ছাড়'),
     ('packaging_charge', 'প্যাকিং চার্জ'), ('courier_charge', 'কুরিয়ার চার্জ'),
-    ('transaction_fee', 'ট্রানজেকশন ফি'), ('note', 'নোট'), ('total', 'মোট বিল'), ('due_amount', 'বাকি'),
+    ('transaction_fee', 'ট্রানজেকশন ফি'), ('note', 'নোট'), ('total', 'মোট বিল'),
+    ('paid_amount', 'পাওয়া টাকা'), ('due_amount', 'বাকি'),
 ]
 
 
@@ -138,10 +147,11 @@ def edit_sale(sale_pk, raw, user=None):
         raise serializers.ValidationError({'discount': 'ছাড় বইয়ের মোট দামের বেশি হতে পারবে না।'})
     payment_discount = payment_discount_total(sale)
     total = subtotal - data['discount'] - payment_discount + data['packaging_charge'] + data['courier_charge'] + data['transaction_fee']
-    if total < sale.paid_amount:
-        raise serializers.ValidationError({'items': f"নতুন বিল (৳{_money(total)}) আগে পাওয়া টাকার (৳{_money(sale.paid_amount)}) চেয়ে কম। আগে পেমেন্ট ঠিক করুন।"})
+    new_paid = data.get('paid_amount', sale.paid_amount)
+    if total < new_paid:
+        raise serializers.ValidationError({'paid_amount': f"নতুন বিল (৳{_money(total)}) পাওয়া টাকার (৳{_money(new_paid)}) চেয়ে কম। পাওয়া টাকা কমান।"})
     phone = data['customer_phone'].strip()
-    if total > sale.paid_amount and not phone:
+    if total > new_paid and not phone:
         raise serializers.ValidationError({'customer_phone': 'বাকি থাকলে ক্রেতার ফোন নম্বর লাগবে।'})
 
     # স্টক: শুধু পরিমাণের পার্থক্যটুকু দোকান থেকে নেওয়া/ফেরত দেওয়া হয়
@@ -180,8 +190,24 @@ def edit_sale(sale_pk, raw, user=None):
         )
 
     # কাস্টমারের বাকি: পুরনো কাস্টমার থেকে আগের বাকি সরিয়ে নতুন/একই কাস্টমারে নতুন বাকি বসে
+    # পাওয়া টাকা ভুল লেখা থাকলে পার্থক্যটা একটা পেমেন্ট হিসেবে বসে, তাই ক্যাশ/অ্যাকাউন্টও মিলে যায়
+    paid_diff = new_paid - sale.paid_amount
+    if paid_diff:
+        payment = Payment.objects.create(
+            sale=sale, amount=paid_diff, method=data['payment_method'], transaction_id='MEMO-EDIT',
+        )
+        if paid_diff < 0 and data['payment_method'] == 'cash':
+            day = DailyCash.objects.select_for_update().get(pk=DailyCash.get_for_today().pk)
+            if day.is_closed:
+                raise serializers.ValidationError('আজকের ক্যাশ ক্লোজ করা হয়েছে, ক্যাশ ফেরত দেখানো যাবে না।')
+            CashTransaction.objects.create(
+                daily_cash=day, transaction_type='cash_out', amount=-paid_diff,
+                note=f"মেমো সংশোধন: পাওয়া টাকা কমানো #{sale.invoice_number}", reference_id=f"pay_{payment.id}",
+            )
+        sale.paid_amount = new_paid
+
     old_due = sale.due_amount
-    new_due = total - sale.paid_amount
+    new_due = total - new_paid
     customer = sale.customer
     if phone and (not customer or customer.phone != phone):
         customer, _ = Customer.objects.get_or_create(phone=phone, defaults={'name': data['customer_name'] or phone})
@@ -192,6 +218,11 @@ def edit_sale(sale_pk, raw, user=None):
     if customer and new_due:
         Customer.objects.filter(pk=customer.pk).update(total_due=F('total_due') + new_due)
 
+    if customer and 'customer_address' in data and customer.address != data['customer_address']:
+        customer.address = data['customer_address']
+        customer.save(update_fields=['address'])
+    if 'sale_type' in data:
+        sale.sale_type = data['sale_type']
     sale.customer = customer
     sale.customer_name = data['customer_name'] or 'Walk-in Customer'
     sale.customer_phone = phone

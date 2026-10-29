@@ -66,6 +66,7 @@ class MoneyMovement(models.Model):
     KIND_CHOICES = [
         ('transfer', 'ট্রান্সফার'),
         ('adjustment', 'ব্যালেন্স সমন্বয়'),
+        ('collection', 'পুরনো বাকি আদায়'),
     ]
     request_id = models.UUIDField(unique=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)

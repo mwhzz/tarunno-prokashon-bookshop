@@ -69,7 +69,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                 return Response(SaleSerializer(submission.sale).data, status=200)
         serializer = SaleCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        sale = serializer.save()
+        sale = serializer.save(created_by=request.user if request.user.is_authenticated else None)
         if submission:
             submission.sale = sale
             submission.save(update_fields=['sale'])
@@ -249,12 +249,8 @@ class SaleViewSet(viewsets.ModelViewSet):
         import pathlib
         font_uri = pathlib.Path(font_path).as_uri()
         
-        context = {
-            'sale': sale,
-            'logo_path': logo_path,
-            'font_path': font_uri,
-            'invoice_date_bn': bengali_date_str(sale.created_at),
-        }
+        from .invoice import invoice_context
+        context = {**invoice_context(sale), 'logo_src': logo_path, 'font_path': font_uri}
         
         # Render HTML to string
         html = render_to_string('invoice_pdf.html', context)
@@ -275,7 +271,9 @@ class SaleViewSet(viewsets.ModelViewSet):
     def print_invoice(self, request, pk=None):
         """Printable browser invoice with Bangla font, theme, and logo."""
         sale = self.get_object()
-        html = render_to_string('invoice_print.html', {'sale': sale}, request=request)
+        from django.templatetags.static import static
+        from .invoice import invoice_context
+        html = render_to_string('invoice_print.html', {**invoice_context(sale), 'logo_src': static('images/logo.jpeg')}, request=request)
         return HttpResponse(html)
 
 

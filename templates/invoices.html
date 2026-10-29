@@ -369,6 +369,12 @@ async function showEditUI(saleId) {
 
 function closeEditUI() { document.getElementById('edit-modal')?.remove(); editState = null; }
 
+// কমিশনের পরের দাম পুরো টাকায় রাউন্ড হয়, POS-এর মতোই
+function wholeTakaDiscount(i) {
+  const gross = i.price * i.qty;
+  return round2(gross - Math.round(Math.max(0, gross - gross * i.pct / 100)));
+}
+
 function lineNet(i) { return round2(i.price * i.qty - i.discount); }
 
 function renderEditItems() {
@@ -377,7 +383,7 @@ function renderEditItems() {
       <td>${esc(i.title)}</td>
       <td><input type="number" min="1" step="1" value="${i.qty}" style="width:70px" onchange="updateEditLine(${idx}, 'qty', this.value)"></td>
       <td><input type="number" min="0" step="0.01" value="${i.price}" style="width:95px" onchange="updateEditLine(${idx}, 'price', this.value)"></td>
-      <td><input type="number" min="0" max="100" step="0.01" value="${i.pct}" style="width:80px" onchange="updateEditLine(${idx}, 'pct', this.value)"></td>
+      <td><input type="number" min="0" max="100" step="0.01" value="${Math.round(i.pct)}" style="width:80px" onchange="updateEditLine(${idx}, 'pct', this.value)"></td>
       <td class="num" style="font-family:AppBangla,sans-serif">৳${num(lineNet(i))}${i.discount > 0 ? `<br><small style="color:var(--muted)">কমিশন ৳${num(i.discount)}</small>` : ''}</td>
       <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" title="বাদ দিন" onclick="removeEditLine(${idx})">${icon('trash', 12)}</button></td>
     </tr>`).join('') || '<tr><td colspan="6" style="color:var(--danger)">কমপক্ষে একটি বই লাগবে।</td></tr>';
@@ -390,7 +396,7 @@ function updateEditLine(idx, key, value) {
   if (key === 'price') i.price = Math.max(0, round2(value));
   if (key === 'pct') i.pct = Math.min(100, Math.max(0, round2(value)));
   // কমিশন % ঠিক রেখে টাকার ছাড় নতুন করে বসে, POS-এর মতো
-  i.discount = round2(i.price * i.qty * i.pct / 100);
+  i.discount = wholeTakaDiscount(i);
   renderEditItems();
 }
 
@@ -441,7 +447,7 @@ function addEditBook(idx) {
     editState.items.push({ book: b.id, title: b.title, qty: 1, price, pct, discount: 0 });
   }
   const line = existing || editState.items[editState.items.length - 1];
-  line.discount = round2(line.price * line.qty * line.pct / 100);
+  line.discount = wholeTakaDiscount(line);
   document.getElementById('ed-book-search').value = '';
   document.getElementById('ed-book-results').style.display = 'none';
   renderEditItems();

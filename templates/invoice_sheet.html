@@ -1,0 +1,79 @@
+<table class="inv-head">
+  <tr>
+    <td class="inv-logo-cell"><img class="inv-logo" src="{{ logo_src }}" alt="Logo"></td>
+    <td class="inv-brand">
+      <div class="inv-shop">তারুণ্য প্রকাশন</div>
+      <div class="inv-shop-meta">৩৮ বাংলাবাজার (৩য় তলা), ঢাকা-১১০০</div>
+      <div class="inv-shop-meta">01761-804511 | tarunyaprokashon@gmail.com</div>
+    </td>
+    <td class="inv-logo-cell"></td>
+  </tr>
+</table>
+
+<table class="inv-meta">
+  <tr>
+    <td><strong>Customer Code:</strong> {{ customer_code|default:"-" }}</td>
+    <td class="right"><strong>Sold By:</strong> {% if sold_by %}{{ sold_by }}, {% endif %}{{ sale.created_at|date:"d M, Y" }} ({{ sale.created_at|date:"g:i A" }})</td>
+  </tr>
+</table>
+
+<table class="inv-box">
+  <tr>
+    <th class="lbl">Name</th><td>{{ sale.customer_name|default:"Walk-in Customer" }}</td>
+    <th class="lbl">Invoice No.</th><td class="center">{{ sale.invoice_number }}</td>
+  </tr>
+  <tr>
+    <th class="lbl">Address</th><td colspan="3">{{ customer_address|default:"-" }}</td>
+  </tr>
+  <tr>
+    <th class="lbl">Contact No.</th><td>{{ sale.customer_phone|default:"-" }}</td>
+    <th class="lbl">Date</th><td class="center">{{ sale.created_at|date:"d M, Y" }}</td>
+  </tr>
+</table>
+
+<table class="inv-items">
+  <thead>
+    <tr>
+      <th class="c-sn">SN</th>
+      <th class="c-book">Book</th>
+      <th class="c-qty">Qty.</th>
+      <th class="c-mrp">MRP</th>
+      <th class="c-unit">Unit Price</th>
+      <th class="c-total">Line Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="center">{{ r.sn }}</td>
+      <td>{{ r.title }}</td>
+      <td class="center">{{ r.qty }}</td>
+      <td class="center">{{ r.mrp }}</td>
+      <td class="center">{{ r.unit_price }}{% if r.commission %} <span class="pct">{{ r.commission }}%</span>{% endif %}</td>
+      <td class="right">{{ r.line_total }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="inv-total-row">
+      <td colspan="2" class="right"><strong>Total:</strong></td>
+      <td class="center"><strong>{{ total_qty }}</strong></td>
+      <td class="center"><strong>{{ gross_total }}</strong></td>
+      <td></td>
+      <td class="right"><strong>{{ line_total_sum }}</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="inv-bottom">
+  <tr>
+    <td class="inv-due-cell"><strong>Total Due:</strong> {{ total_due }}</td>
+    <td class="right">
+      {% for label, amount in adjustments %}<div>{{ label }}: {{ amount }}</div>{% endfor %}
+      <div><strong>Selling Price:</strong> {{ selling_price }}</div>
+      <div><strong>Total Received Amount:</strong> {{ received }}</div>
+      <div><strong>Due Amount:</strong> {{ due }}</div>
+    </td>
+  </tr>
+</table>
+
+<div class="inv-words"><strong>Amount in word:</strong> {{ amount_words }}</div>
+{% if sale.note %}<div class="inv-note"><strong>Note:</strong> {{ sale.note }}</div>{% endif %}

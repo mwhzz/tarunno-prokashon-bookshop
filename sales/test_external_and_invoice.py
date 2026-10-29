@@ -52,10 +52,11 @@ class InvoiceCommissionTests(TestCase):
         self.assertEqual(response.status_code, 201, response.data)
         sale_id = response.data['id']
         html = self.client.get(f'/api/sales/{sale_id}/print_invoice/').content.decode()
-        self.assertIn('কমিশন', html)
-        self.assertIn('20%', html)
-        self.assertIn('৳590.00', html)  # মোট গায়ের মূল্য, কমিশনের আগে
-        self.assertIn('৳472.00', html)
+        self.assertIn('472 <span class="pct">20%</span>', html)  # কমিশনের পরের দাম ও কমিশন
+        self.assertIn('<strong>590</strong>', html)  # মোট গায়ের মূল্য
+        self.assertIn('Selling Price:</strong> 472', html)
+        self.assertIn('Four Hundred And Seventy Two Tk Only', html)
+        self.assertNotIn('.00', html)
         self.assertEqual(self.client.get(f'/api/sales/{sale_id}/download_pdf/').status_code, 200)
 
 
@@ -74,3 +75,13 @@ class BuyingPriceVisibilityTests(TestCase):
     def test_staff_never_receive_buying_price(self):
         self.assertNotIn('purchase_price', self.books_for('staff'))
         self.assertEqual(self.books_for('manager')['purchase_price'], '55.00')
+
+
+class AmountInWordsTests(TestCase):
+    def test_bangladeshi_number_words(self):
+        from .invoice import amount_in_words, taka
+        self.assertEqual(amount_in_words(Decimal('14580.5')), 'Fourteen Thousand Five Hundred And Eighty One Tk Only')
+        self.assertEqual(amount_in_words(150000), 'One Lakh Fifty Thousand Tk Only')
+        self.assertEqual(amount_in_words(12345678), 'One Crore Twenty Three Lakh Forty Five Thousand Six Hundred And Seventy Eight Tk Only')
+        self.assertEqual(amount_in_words(0), 'Zero Tk Only')
+        self.assertEqual(taka(Decimal('30650.40')), '30,650')

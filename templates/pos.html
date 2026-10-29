@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block page_title %}নতুন বিক্রয়{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'pos-workspace.css' %}?v=cols-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'pos-workspace.css' %}?v=edit-cells-1">{% endblock %}
 {% block content %}
 <div class="sales-desk single-sale">
 <header class="sales-heading"><div><span class="sales-eyebrow">বিক্রয় কেন্দ্র</span><h1>নতুন বিক্রয়</h1><p>বই, পরিমাণ, ছাড় ও টাকা—সব এক পেজে। টাকার হিসাব নিজে হবে।</p></div><a href="/sales/" class="pos-button secondary">আগের বিল দেখুন ↗</a></header>
 <div id="pos-root"><div class="pos-loading" role="status">বইয়ের তালিকা লোড হচ্ছে…</div></div>
 </div>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'pos-workspace.js' %}?v=cols-1"></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'pos-workspace.js' %}?v=edit-cells-1"></script>{% endblock %}

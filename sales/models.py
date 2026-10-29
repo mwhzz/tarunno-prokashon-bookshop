@@ -89,6 +89,7 @@ class Sale(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='cash')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='paid')
     note = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales_made')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

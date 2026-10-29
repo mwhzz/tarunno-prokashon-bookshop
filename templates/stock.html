@@ -119,8 +119,8 @@ function stockRowHtml(s) {
     <td class="numeric ${s.godown_quantity <= 0 ? 'quantity-zero' : ''}">${num(s.godown_quantity)}</td>
     <td class="numeric inventory-total">${num(s.quantity)}</td>
     <td><span class="inventory-status ${statusClass}">${status}</span></td>
-    <td class="numeric"><strong class="stock-cost-line">৳${num(s.purchase_price)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.selling_price)} <small>বিক্রয়</small></span></td>
-    <td class="numeric inventory-value"><strong class="stock-cost-line">৳${num(s.cost_stock_value)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.stock_value)} <small>বিক্রয়</small></span>${Number(s.purchase_price) <= 0 && s.quantity > 0 ? '<small class="stock-cost-warning">কস্টিং দেওয়া নেই</small>' : ''}</td>
+    <td class="numeric"><span class="stock-mrp-line">৳${num(s.mrp)} <small>গায়ের মূল্য</small></span><strong class="stock-cost-line">৳${num(s.purchase_price)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.selling_price)} <small>বিক্রয়</small></span></td>
+    <td class="numeric inventory-value"><span class="stock-mrp-line">৳${num(Number(s.mrp || 0) * Number(s.quantity || 0))} <small>গায়ের মূল্য</small></span><strong class="stock-cost-line">৳${num(s.cost_stock_value)} <small>কস্টিং</small></strong><span class="stock-retail-line">৳${num(s.stock_value)} <small>বিক্রয়</small></span>${Number(s.purchase_price) <= 0 && s.quantity > 0 ? '<small class="stock-cost-warning">কস্টিং দেওয়া নেই</small>' : ''}</td>
     <td><div class="inventory-row-actions">
       ${s.is_active ? `<a class="inventory-add" href="/stock/add/?book=${s.book}">${icon('plus', 13)} স্টক</a>` : `<a class="inventory-add" href="/books/edit/${s.book}/">বই দেখুন</a>`}
       <button type="button" class="inventory-damage" data-damage-book="${s.book}" ${empty ? 'disabled' : ''} aria-label="ড্যামেজ রেকর্ড করুন" title="ড্যামেজ রেকর্ড করুন">${icon('alert-triangle', 14)}</button>

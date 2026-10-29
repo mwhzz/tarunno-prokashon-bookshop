@@ -250,3 +250,4 @@ body{font-family:AppBangla,sans-serif;font-weight:400;line-height:1.65}
 .book-editor .editor-cover{background:#f1f5f9}
 .app-auth{background:#f3f5f9;--navy:#2563eb;--navy-dk:#1e3a8a;--gold:#93c5fd;--text:#0f172a;--muted:#475569}
 .app-auth .card-head{background:#0f172a}
+.stock-mrp-line{display:block;color:#64748b;font-size:15px;margin-bottom:4px}.stock-mrp-line small{font-size:14px;font-weight:400;margin-left:4px}

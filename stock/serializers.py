@@ -24,7 +24,7 @@ class StockCatalogSerializer(serializers.ModelSerializer):
         model = Book
         fields = [
             'book', 'book_title', 'book_author', 'book_source', 'product_code',
-            'isbn', 'is_active', 'purchase_price', 'cost_stock_value', 'selling_price', 'shop_quantity',
+            'isbn', 'is_active', 'mrp', 'purchase_price', 'cost_stock_value', 'selling_price', 'shop_quantity',
             'godown_quantity', 'quantity', 'stock_value',
         ]
 

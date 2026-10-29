@@ -166,18 +166,18 @@ def statement(account, limit=200):
     """একটা অ্যাকাউন্টের সাম্প্রতিক লেনদেন, প্রতিটার পরে ব্যালেন্স কত ছিল সহ।
     ক্যাশের পুরো হিসাব দৈনিক ক্যাশ লেজারে থাকে, তাই এটা শুধু অন্য অ্যাকাউন্টের জন্য।"""
     rows = []
-    for p in Payment.objects.filter(method=account).select_related('sale'):
+    for p in Payment.objects.filter(method=account).select_related('sale').order_by('id'):
         refund = p.amount < 0
         rows.append({
             'at': p.created_at, 'amount': p.amount,
             'title': ('বই ফেরতের টাকা ফেরত' if refund else 'বিক্রয়ের টাকা') + f" #{p.sale.invoice_number}",
             'detail': p.sale.customer_name,
         })
-    for v in VendorPayment.objects.filter(method=account).select_related('bill'):
+    for v in VendorPayment.objects.filter(method=account).select_related('bill').order_by('id'):
         rows.append({'at': v.created_at, 'amount': -v.amount, 'title': f"ভেন্ডর পেমেন্ট (বিল #{v.bill_id})", 'detail': v.bill.vendor_name})
-    for e in Expense.objects.filter(account=account).select_related('category'):
+    for e in Expense.objects.filter(account=account).select_related('category').order_by('id'):
         rows.append({'at': e.date, 'amount': -e.amount, 'title': f"খরচ: {e.category.name}", 'detail': e.note})
-    for m in MoneyMovement.objects.filter(from_account=account) | MoneyMovement.objects.filter(to_account=account):
+    for m in (MoneyMovement.objects.filter(from_account=account) | MoneyMovement.objects.filter(to_account=account)).order_by('id'):
         sign = 1 if m.to_account == account else -1
         if m.kind == 'transfer':
             title = f"ট্রান্সফার: {ACCOUNT_LABELS[m.from_account]} → {ACCOUNT_LABELS[m.to_account]}"
@@ -185,7 +185,9 @@ def statement(account, limit=200):
             title = 'ব্যালেন্স সমন্বয়'
         rows.append({'at': m.created_at, 'amount': sign * m.amount, 'title': title, 'detail': m.note})
 
-    rows.sort(key=lambda r: r['at'], reverse=True)
+    # একই মুহূর্তের লেনদেনে আগে যেটা ঘটেছে সেটা আগে থাকে (stable sort), তারপর নতুনটা উপরে
+    rows.sort(key=lambda r: r['at'])
+    rows.reverse()
     balance = account_balance(account)
     for row in rows:
         row['balance_after'] = balance
